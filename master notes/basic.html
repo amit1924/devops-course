@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docker & Kubernetes Comprehensive Guide</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --neon-blue: #0ff0fc;
+        --neon-purple: #bc13fe;
+        --neon-green: #39ff14;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a0f;
+        --card-bg: #12121f;
+        --accent: #1a1a2e;
+      }
+
+      body {
+        background-color: var(--dark-bg);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: hidden;
+      }
+
+      .neon-border {
+        border: 1px solid var(--neon-blue);
+        box-shadow:
+          0 0 10px var(--neon-blue),
+          inset 0 0 10px rgba(15, 240, 252, 0.1);
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 5px var(--neon-blue);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 5px var(--neon-purple);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 5px var(--neon-green);
+      }
+
+      .neon-text-pink {
+        color: var(--neon-pink);
+        text-shadow: 0 0 5px var(--neon-pink);
+      }
+
+      .card-bg {
+        background-color: var(--card-bg);
+      }
+
+      .accent-bg {
+        background-color: var(--accent);
+      }
+
+      .glow-on-hover:hover {
+        box-shadow: 0 0 15px var(--neon-blue);
+      }
+
+      .command-box {
+        background-color: #000;
+        border-left: 3px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .keyword {
+        color: var(--neon-green);
+        font-weight: bold;
+      }
+
+      .docker-color {
+        color: #2496ed;
+      }
+
+      .kubernetes-color {
+        color: #326ce5;
+      }
+
+      /* Smooth transitions */
+      .transition-all {
+        transition: all 0.3s ease;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--accent);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--neon-purple);
+        border-radius: 5px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--neon-blue);
+      }
+
+      /* Mobile optimizations */
+      @media (max-width: 768px) {
+        .mobile-stack {
+          flex-direction: column;
+        }
+
+        .mobile-full {
+          width: 100%;
+        }
+
+        .mobile-text-center {
+          text-align: center;
+        }
+
+        .command-box {
+          font-size: 0.9rem;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-6">
+    <!-- Header -->
+    <header class="mb-10">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1
+          class="text-3xl md:text-4xl font-bold mb-4 md:mb-0 mobile-text-center"
+        >
+          <span class="neon-text-blue">Docker</span> &
+          <span class="neon-text-purple">Kubernetes</span>
+          <span class="neon-text-green">Master Guide</span>
+        </h1>
+        <div class="flex space-x-4">
+          <button
+            id="dockerBtn"
+            class="px-4 py-2 rounded-lg accent-bg neon-border transition-all glow-on-hover"
+          >
+            <i class="fab fa-docker docker-color mr-2"></i> Docker
+          </button>
+          <button
+            id="k8sBtn"
+            class="px-4 py-2 rounded-lg accent-bg neon-border transition-all glow-on-hover"
+          >
+            <i class="fas fa-cube kubernetes-color mr-2"></i> Kubernetes
+          </button>
+          <button
+            id="allBtn"
+            class="px-4 py-2 rounded-lg accent-bg neon-border transition-all glow-on-hover"
+          >
+            <i class="fas fa-layer-group neon-text-pink mr-2"></i> All
+          </button>
+        </div>
+      </div>
+
+      <p class="text-lg md:text-xl text-center text-gray-300 max-w-4xl mx-auto">
+        A comprehensive guide with definitions, commands, real examples, and key
+        concepts for mastering containerization and orchestration.
+      </p>
+    </header>
+
+    <div class="flex mobile-stack">
+      <!-- Sidebar Navigation -->
+      <aside class="w-full md:w-1/4 pr-0 md:pr-6 mb-8 md:mb-0">
+        <div class="card-bg rounded-xl p-5 neon-border sticky top-4">
+          <h2 class="text-xl font-bold mb-4 neon-text-blue">
+            <i class="fas fa-bookmark mr-2"></i> Navigation
+          </h2>
+          <ul class="space-y-3">
+            <li>
+              <a
+                href="#docker-basics"
+                class="flex items-center p-2 rounded hover:bg-purple-900/30 transition-all docker-section"
+                ><i class="fab fa-docker docker-color mr-3"></i> Docker
+                Basics</a
+              >
+            </li>
+            <li>
+              <a
+                href="#docker-commands"
+                class="flex items-center p-2 rounded hover:bg-purple-900/30 transition-all docker-section"
+                ><i class="fas fa-terminal docker-color mr-3"></i> Docker
+                Commands</a
+              >
+            </li>
+            <li>
+              <a
+                href="#docker-examples"
+                class="flex items-center p-2 rounded hover:bg-purple-900/30 transition-all docker-section"
+                ><i class="fas fa-code docker-color mr-3"></i> Docker
+                Examples</a
+              >
+            </li>
+            <li>
+              <a
+                href="#k8s-basics"
+                class="flex items-center p-2 rounded hover:bg-blue-900/30 transition-all k8s-section"
+                ><i class="fas fa-cube kubernetes-color mr-3"></i> Kubernetes
+                Basics</a
+              >
+            </li>
+            <li>
+              <a
+                href="#k8s-commands"
+                class="flex items-center p-2 rounded hover:bg-blue-900/30 transition-all k8s-section"
+                ><i class="fas fa-terminal kubernetes-color mr-3"></i> Kubectl
+                Commands</a
+              >
+            </li>
+            <li>
+              <a
+                href="#k8s-examples"
+                class="flex items-center p-2 rounded hover:bg-blue-900/30 transition-all k8s-section"
+                ><i class="fas fa-code kubernetes-color mr-3"></i> Kubernetes
+                Examples</a
+              >
+            </li>
+            <li>
+              <a
+                href="#glossary"
+                class="flex items-center p-2 rounded hover:bg-green-900/30 transition-all"
+                ><i class="fas fa-glossary neon-text-green mr-3"></i>
+                Glossary</a
+              >
+            </li>
+          </ul>
+
+          <div class="mt-8 pt-5 border-t border-gray-700">
+            <h3 class="font-bold mb-3 neon-text-pink">
+              <i class="fas fa-lightbulb mr-2"></i> Quick Tips
+            </h3>
+            <ul class="text-sm space-y-2">
+              <li class="flex items-start">
+                <i
+                  class="fas fa-chevron-right text-xs mt-1 mr-2 neon-text-green"
+                ></i>
+                Use <span class="keyword">docker ps</span> to list running
+                containers
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-chevron-right text-xs mt-1 mr-2 neon-text-green"
+                ></i>
+                <span class="keyword">kubectl get pods</span> lists pods in
+                current namespace
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-chevron-right text-xs mt-1 mr-2 neon-text-green"
+                ></i>
+                Always use Docker images from trusted sources
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-chevron-right text-xs mt-1 mr-2 neon-text-green"
+                ></i>
+                Use namespaces to organize Kubernetes resources
+              </li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="w-full md:w-3/4">
+        <!-- Docker Basics Section -->
+        <section
+          id="docker-basics"
+          class="card-bg rounded-xl p-6 mb-8 neon-border docker-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fab fa-docker text-3xl docker-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              Docker Basics & Concepts
+            </h2>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-bold mb-3 neon-text-green">
+              <i class="fas fa-info-circle mr-2"></i> What is Docker?
+            </h3>
+            <p class="text-gray-300 mb-4">
+              Docker is a platform for developing, shipping, and running
+              applications in containers. Containers package an application with
+              all its dependencies, ensuring it runs uniformly across different
+              environments.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="accent-bg p-4 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-blue">
+                  <i class="fas fa-box mr-2"></i> Key Components
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li>
+                    <span class="keyword">Docker Engine</span>: The core product
+                    that creates and runs containers
+                  </li>
+                  <li>
+                    <span class="keyword">Docker Image</span>: A read-only
+                    template with instructions for creating a container
+                  </li>
+                  <li>
+                    <span class="keyword">Docker Container</span>: A runnable
+                    instance of an image
+                  </li>
+                  <li>
+                    <span class="keyword">Docker Registry</span>: A repository
+                    for Docker images (Docker Hub)
+                  </li>
+                  <li>
+                    <span class="keyword">Dockerfile</span>: A text file with
+                    commands to build an image
+                  </li>
+                </ul>
+              </div>
+
+              <div class="accent-bg p-4 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-blue">
+                  <i class="fas fa-cogs mr-2"></i> How Docker Works
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li>Uses containerization technology</li>
+                  <li>Shares the host OS kernel</li>
+                  <li>Isolates applications in containers</li>
+                  <li>Uses Union File Systems for efficiency</li>
+                  <li>Provides consistent environments</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold mb-3 neon-text-green">
+              <i class="fas fa-star mr-2"></i> Key Docker Concepts
+            </h3>
+            <div class="space-y-4">
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 docker-color">Container</h4>
+                <p class="text-sm text-gray-300">
+                  A lightweight, standalone, executable package that includes
+                  everything needed to run a piece of software.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 docker-color">Image</h4>
+                <p class="text-sm text-gray-300">
+                  A read-only template with instructions for creating a Docker
+                  container. Built from a Dockerfile.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 docker-color">Dockerfile</h4>
+                <p class="text-sm text-gray-300">
+                  A text document that contains all the commands a user could
+                  call on the command line to assemble an image.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 docker-color">Volume</h4>
+                <p class="text-sm text-gray-300">
+                  Persistent data storage that exists outside a container's
+                  lifecycle, used to share data between containers or persist
+                  data.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Docker Commands Section -->
+        <section
+          id="docker-commands"
+          class="card-bg rounded-xl p-6 mb-8 neon-border docker-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fas fa-terminal text-3xl docker-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              Essential Docker Commands
+            </h2>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-cube mr-2"></i> Container Management
+            </h3>
+            <div class="space-y-5">
+              <div>
+                <h4 class="font-bold mb-2 docker-color">Run a container</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker run</span> [options] image
+                  [command] [args]
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Creates and starts a container from an image.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="text-yellow-400"
+                    ># Example: Run an Nginx container</span
+                  ><br />
+                  <span class="keyword">docker run</span> -d -p 80:80 --name
+                  my-nginx nginx
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 docker-color">List containers</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker ps</span> [options]
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Lists running containers. Use -a to show all containers.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker ps</span> -a<br />
+                  <span class="keyword">docker ps</span> --filter
+                  "status=exited"
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 docker-color">
+                  Stop/Start containers
+                </h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker stop</span> container<br />
+                  <span class="keyword">docker start</span> container<br />
+                  <span class="keyword">docker restart</span> container
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Manage container lifecycle.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker stop</span> my-nginx<br />
+                  <span class="keyword">docker start</span> my-nginx
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-image mr-2"></i> Image Management
+            </h3>
+            <div class="space-y-5">
+              <div>
+                <h4 class="font-bold mb-2 docker-color">Build an image</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker build</span> [options] path
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Builds an image from a Dockerfile.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker build</span> -t my-app:1.0 .<br />
+                  <span class="keyword">docker build</span> -f Dockerfile.prod
+                  -t my-app:prod .
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 docker-color">Manage images</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker images</span><br />
+                  <span class="keyword">docker rmi</span> image<br />
+                  <span class="keyword">docker pull</span> image<br />
+                  <span class="keyword">docker push</span> image
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  List, remove, pull, and push images.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker pull</span> ubuntu:20.04<br />
+                  <span class="keyword">docker rmi</span> ubuntu:18.04
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-network-wired mr-2"></i> Advanced Docker Commands
+            </h3>
+            <div class="space-y-5">
+              <div>
+                <h4 class="font-bold mb-2 docker-color">Docker Compose</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker-compose up</span> [options]<br />
+                  <span class="keyword">docker-compose down</span><br />
+                  <span class="keyword">docker-compose ps</span>
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Manage multi-container applications.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker-compose up</span> -d<br />
+                  <span class="keyword">docker-compose down</span> -v
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 docker-color">Logs and Inspection</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">docker logs</span> container<br />
+                  <span class="keyword">docker exec</span> [options] container
+                  command<br />
+                  <span class="keyword">docker inspect</span> container
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Check container logs, execute commands, and inspect details.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">docker logs</span> -f my-nginx<br />
+                  <span class="keyword">docker exec</span> -it my-nginx bash
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Docker Examples Section -->
+        <section
+          id="docker-examples"
+          class="card-bg rounded-xl p-6 mb-8 neon-border docker-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fas fa-code text-3xl docker-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              Docker Real-World Examples
+            </h2>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-file-code mr-2"></i> Dockerfile Example
+            </h3>
+            <div class="command-box p-4 rounded-lg mb-6">
+              <span class="text-yellow-400"
+                ># Dockerfile for a Node.js application</span
+              ><br /><br />
+              <span class="keyword">FROM</span> node:14-alpine<br /><br />
+              <span class="keyword">WORKDIR</span> /app<br /><br />
+              <span class="keyword">COPY</span> package*.json ./<br />
+              <span class="keyword">RUN</span> npm install<br /><br />
+              <span class="keyword">COPY</span> . .<br /><br />
+              <span class="keyword">EXPOSE</span> 3000<br /><br />
+              <span class="keyword">CMD</span> ["npm", "start"]
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4">
+              <div class="flex-1">
+                <h4 class="font-bold mb-2 neon-text-blue">Build and Run</h4>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword"># Build the image</span><br />
+                  <span class="keyword">docker build</span> -t my-node-app .<br /><br />
+                  <span class="keyword"># Run the container</span><br />
+                  <span class="keyword">docker run</span> -d -p 3000:3000 --name
+                  node-app my-node-app
+                </div>
+              </div>
+
+              <div class="flex-1">
+                <h4 class="font-bold mb-2 neon-text-blue">
+                  Docker Compose Example
+                </h4>
+                <div class="command-box p-3 rounded">
+                  <span class="text-yellow-400"># docker-compose.yml</span
+                  ><br />
+                  version: '3.8'<br />
+                  services:<br />
+                  &nbsp;&nbsp;web:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;build: .<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;ports:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "3000:3000"<br />
+                  &nbsp;&nbsp;db:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;image: postgres:13<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;environment:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;POSTGRES_PASSWORD: example
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Kubernetes Basics Section -->
+        <section
+          id="k8s-basics"
+          class="card-bg rounded-xl p-6 mb-8 neon-border k8s-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fas fa-cube text-3xl kubernetes-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Kubernetes Basics & Concepts
+            </h2>
+          </div>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-bold mb-3 neon-text-green">
+              <i class="fas fa-info-circle mr-2"></i> What is Kubernetes?
+            </h3>
+            <p class="text-gray-300 mb-4">
+              Kubernetes (K8s) is an open-source container orchestration
+              platform that automates deploying, scaling, and managing
+              containerized applications.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div class="accent-bg p-4 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-purple">
+                  <i class="fas fa-layer-group mr-2"></i> Key Components
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li>
+                    <span class="keyword">Pod</span>: Smallest deployable unit
+                    (one or more containers)
+                  </li>
+                  <li>
+                    <span class="keyword">Node</span>: Worker machine (VM or
+                    physical)
+                  </li>
+                  <li>
+                    <span class="keyword">Cluster</span>: Set of nodes running
+                    containerized apps
+                  </li>
+                  <li>
+                    <span class="keyword">Deployment</span>: Manages pods and
+                    ReplicaSets
+                  </li>
+                  <li>
+                    <span class="keyword">Service</span>: Network endpoint for
+                    pods
+                  </li>
+                  <li>
+                    <span class="keyword">Namespace</span>: Virtual cluster
+                    within a physical cluster
+                  </li>
+                </ul>
+              </div>
+
+              <div class="accent-bg p-4 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-purple">
+                  <i class="fas fa-archway mr-2"></i> Architecture
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li>
+                    <span class="keyword">Control Plane</span>: Manages the
+                    cluster (API Server, etcd, Scheduler)
+                  </li>
+                  <li>
+                    <span class="keyword">Worker Nodes</span>: Run containerized
+                    applications
+                  </li>
+                  <li>
+                    <span class="keyword">kubelet</span>: Agent running on each
+                    node
+                  </li>
+                  <li>
+                    <span class="keyword">kube-proxy</span>: Network proxy on
+                    each node
+                  </li>
+                  <li>
+                    <span class="keyword">Container Runtime</span>: Docker,
+                    containerd, etc.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold mb-3 neon-text-green">
+              <i class="fas fa-star mr-2"></i> Key Kubernetes Concepts
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 kubernetes-color">Pod</h4>
+                <p class="text-sm text-gray-300">
+                  Smallest deployable unit in Kubernetes, containing one or more
+                  containers that share storage and network.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 kubernetes-color">Deployment</h4>
+                <p class="text-sm text-gray-300">
+                  Manages a replicated application, ensuring the desired number
+                  of pods are running and available.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 kubernetes-color">Service</h4>
+                <p class="text-sm text-gray-300">
+                  Abstract way to expose an application running on a set of pods
+                  as a network service.
+                </p>
+              </div>
+
+              <div class="p-4 accent-bg rounded-lg">
+                <h4 class="font-bold mb-1 kubernetes-color">Namespace</h4>
+                <p class="text-sm text-gray-300">
+                  Virtual cluster within a Kubernetes cluster, used to organize
+                  resources and divide cluster resources.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Kubernetes Commands Section -->
+        <section
+          id="k8s-commands"
+          class="card-bg rounded-xl p-6 mb-8 neon-border k8s-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fas fa-terminal text-3xl kubernetes-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Essential kubectl Commands
+            </h2>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-boxes mr-2"></i> Basic Resource Management
+            </h3>
+            <div class="space-y-5">
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">Get resources</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl get</span> resource_type
+                  [options]
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  List resources like pods, deployments, services.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">kubectl get</span> pods<br />
+                  <span class="keyword">kubectl get</span> pods -n default<br />
+                  <span class="keyword">kubectl get</span> pods
+                  --all-namespaces<br />
+                  <span class="keyword">kubectl get</span> deployments,services
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">
+                  Create resources
+                </h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl create</span> [options]<br />
+                  <span class="keyword">kubectl apply</span> -f file.yaml
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Create resources from file or command line.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">kubectl create</span> deployment nginx
+                  --image=nginx<br />
+                  <span class="keyword">kubectl apply</span> -f deployment.yaml
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">
+                  Describe resources
+                </h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl describe</span>
+                  resource_type/resource_name
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Show detailed information about a resource.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">kubectl describe</span> pod/my-pod<br />
+                  <span class="keyword">kubectl describe</span> deployment/nginx
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-tools mr-2"></i> Advanced kubectl Commands
+            </h3>
+            <div class="space-y-5">
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">
+                  Logs and debugging
+                </h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl logs</span> pod_name
+                  [options]<br />
+                  <span class="keyword">kubectl exec</span> [options] pod_name
+                  -- command
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Check pod logs and execute commands in pods.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">kubectl logs</span> my-pod -f<br />
+                  <span class="keyword">kubectl exec</span> -it my-pod -- bash
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">Port forwarding</h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl port-forward</span> pod_name
+                  local_port:pod_port
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Forward local port to a pod.
+                </p>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword">kubectl port-forward</span> my-pod
+                  8080:80
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold mb-2 kubernetes-color">
+                  Managing deployments
+                </h4>
+                <div class="command-box p-3 rounded mb-2">
+                  <span class="keyword">kubectl rollout</span> status
+                  deployment/deployment_name<br />
+                  <span class="keyword">kubectl scale</span>
+                  deployment/deployment_name --replicas=3<br />
+                  <span class="keyword">kubectl set image</span>
+                  deployment/deployment_name container=image:tag
+                </div>
+                <p class="text-sm text-gray-400 mb-2">
+                  Monitor, scale, and update deployments.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Kubernetes Examples Section -->
+        <section
+          id="k8s-examples"
+          class="card-bg rounded-xl p-6 mb-8 neon-border k8s-section"
+        >
+          <div class="flex items-center mb-6">
+            <i class="fas fa-code text-3xl kubernetes-color mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Kubernetes Real-World Examples
+            </h2>
+          </div>
+
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 neon-text-green">
+              <i class="fas fa-file-code mr-2"></i> Deployment YAML Example
+            </h3>
+            <div class="command-box p-4 rounded-lg mb-6">
+              <span class="text-yellow-400"># nginx-deployment.yaml</span><br />
+              apiVersion: apps/v1<br />
+              kind: Deployment<br />
+              metadata:<br />
+              &nbsp;&nbsp;name: nginx-deployment<br />
+              &nbsp;&nbsp;labels:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;app: nginx<br />
+              spec:<br />
+              &nbsp;&nbsp;replicas: 3<br />
+              &nbsp;&nbsp;selector:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;matchLabels:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;app: nginx<br />
+              &nbsp;&nbsp;template:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;metadata:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;labels:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;app: nginx<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;spec:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;containers:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: nginx<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;image:
+              nginx:1.14.2<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ports:<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- containerPort:
+              80
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4">
+              <div class="flex-1">
+                <h4 class="font-bold mb-2 neon-text-purple">
+                  Service YAML Example
+                </h4>
+                <div class="command-box p-3 rounded">
+                  <span class="text-yellow-400"># nginx-service.yaml</span
+                  ><br />
+                  apiVersion: v1<br />
+                  kind: Service<br />
+                  metadata:<br />
+                  &nbsp;&nbsp;name: nginx-service<br />
+                  spec:<br />
+                  &nbsp;&nbsp;selector:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;app: nginx<br />
+                  &nbsp;&nbsp;ports:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;- protocol: TCP<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;port: 80<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;targetPort: 80<br />
+                  &nbsp;&nbsp;type: LoadBalancer
+                </div>
+              </div>
+
+              <div class="flex-1">
+                <h4 class="font-bold mb-2 neon-text-purple">
+                  Commands to Apply
+                </h4>
+                <div class="command-box p-3 rounded">
+                  <span class="keyword"># Create the deployment</span><br />
+                  <span class="keyword">kubectl apply</span> -f
+                  nginx-deployment.yaml<br /><br />
+                  <span class="keyword"># Create the service</span><br />
+                  <span class="keyword">kubectl apply</span> -f
+                  nginx-service.yaml<br /><br />
+                  <span class="keyword"># Check status</span><br />
+                  <span class="keyword">kubectl get</span> deployments<br />
+                  <span class="keyword">kubectl get</span> pods<br />
+                  <span class="keyword">kubectl get</span> services
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Glossary Section -->
+        <section id="glossary" class="card-bg rounded-xl p-6 neon-border">
+          <div class="flex items-center mb-6">
+            <i class="fas fa-glossary text-3xl neon-text-green mr-4"></i>
+            <h2 class="text-2xl font-bold neon-text-green">
+              Docker & Kubernetes Glossary
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="text-xl font-bold mb-4 neon-text-blue">
+                Docker Terms
+              </h3>
+              <div class="space-y-4">
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 docker-color">Docker Hub</h4>
+                  <p class="text-sm text-gray-300">
+                    Cloud-based registry service for sharing Docker images.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 docker-color">Docker Compose</h4>
+                  <p class="text-sm text-gray-300">
+                    Tool for defining and running multi-container Docker
+                    applications.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 docker-color">Docker Swarm</h4>
+                  <p class="text-sm text-gray-300">
+                    Docker's native clustering and orchestration tool.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 docker-color">Union File System</h4>
+                  <p class="text-sm text-gray-300">
+                    Layered file system that Docker uses for images.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-bold mb-4 neon-text-purple">
+                Kubernetes Terms
+              </h3>
+              <div class="space-y-4">
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 kubernetes-color">ConfigMap</h4>
+                  <p class="text-sm text-gray-300">
+                    API object used to store non-confidential data in key-value
+                    pairs.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 kubernetes-color">Secret</h4>
+                  <p class="text-sm text-gray-300">
+                    Object that contains a small amount of sensitive data.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 kubernetes-color">Ingress</h4>
+                  <p class="text-sm text-gray-300">
+                    API object that manages external access to services.
+                  </p>
+                </div>
+
+                <div class="p-3 accent-bg rounded-lg">
+                  <h4 class="font-bold mb-1 kubernetes-color">StatefulSet</h4>
+                  <p class="text-sm text-gray-300">
+                    Manages stateful applications, maintaining pod identity.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer
+      class="mt-12 pt-6 border-t border-gray-800 text-center text-gray-400"
+    >
+      <p class="mb-4">
+        Docker & Kubernetes Comprehensive Guide | Made for Learning & Revision
+      </p>
+      <div class="flex justify-center space-x-6 mb-4">
+        <a href="#" class="hover:text-blue-400 transition-colors"
+          ><i class="fab fa-docker"></i> Docker Docs</a
+        >
+        <a href="#" class="hover:text-blue-400 transition-colors"
+          ><i class="fas fa-cube"></i> Kubernetes Docs</a
+        >
+        <a href="#" class="hover:text-green-400 transition-colors"
+          ><i class="fas fa-book"></i> Full Documentation</a
+        >
+      </div>
+      <p class="text-sm">
+        Use the filter buttons at the top to show only Docker, only Kubernetes,
+        or all content.
+      </p>
+    </footer>
+
+    <script>
+      // Filter content by Docker/Kubernetes/All
+      document.getElementById('dockerBtn').addEventListener('click', () => {
+        filterContent('docker');
+      });
+
+      document.getElementById('k8sBtn').addEventListener('click', () => {
+        filterContent('k8s');
+      });
+
+      document.getElementById('allBtn').addEventListener('click', () => {
+        filterContent('all');
+      });
+
+      function filterContent(type) {
+        const dockerSections = document.querySelectorAll('.docker-section');
+        const k8sSections = document.querySelectorAll('.k8s-section');
+
+        // Reset all buttons
+        document.getElementById('dockerBtn').classList.remove('bg-blue-900/50');
+        document.getElementById('k8sBtn').classList.remove('bg-blue-900/50');
+        document.getElementById('allBtn').classList.remove('bg-blue-900/50');
+
+        if (type === 'docker') {
+          // Show Docker, hide K8s
+          dockerSections.forEach((section) => {
+            section.style.display = 'block';
+          });
+          k8sSections.forEach((section) => {
+            section.style.display = 'none';
+          });
+          document.getElementById('dockerBtn').classList.add('bg-blue-900/50');
+        } else if (type === 'k8s') {
+          // Show K8s, hide Docker
+          dockerSections.forEach((section) => {
+            section.style.display = 'none';
+          });
+          k8sSections.forEach((section) => {
+            section.style.display = 'block';
+          });
+          document.getElementById('k8sBtn').classList.add('bg-blue-900/50');
+        } else {
+          // Show all
+          dockerSections.forEach((section) => {
+            section.style.display = 'block';
+          });
+          k8sSections.forEach((section) => {
+            section.style.display = 'block';
+          });
+          document.getElementById('allBtn').classList.add('bg-blue-900/50');
+        }
+
+        // Scroll to top for better UX
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Initialize with all content shown
+      document.getElementById('allBtn').classList.add('bg-blue-900/50');
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 20,
+              behavior: 'smooth',
+            });
+          }
+        });
+      });
+
+      // Highlight current section in sidebar
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.3,
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute('id');
+          const navLink = document.querySelector(`a[href="#${id}"]`);
+
+          if (entry.isIntersecting) {
+            navLink.classList.add('bg-purple-900/30');
+          } else {
+            navLink.classList.remove('bg-purple-900/30');
+          }
+        });
+      }, observerOptions);
+
+      // Observe all sections
+      document.querySelectorAll('section[id]').forEach((section) => {
+        observer.observe(section);
+      });
+
+      // Mobile menu toggle (if we had a mobile menu)
+      // This is a placeholder for future enhancement
+      console.log('Docker & Kubernetes Guide loaded successfully!');
+    </script>
+  </body>
+</html>

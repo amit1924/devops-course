@@ -1,0 +1,3123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docker & Kubernetes Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+      * {
+        font-family: 'Inter', sans-serif;
+      }
+
+      :root {
+        --neon-blue: #00d9ff;
+        --neon-purple: #9d4edd;
+        --neon-pink: #ff00ff;
+        --neon-green: #00ff9d;
+        --dark-bg: #0a0a0f;
+        --darker-bg: #05050a;
+        --card-bg: #11111f;
+      }
+
+      body {
+        background-color: var(--dark-bg);
+        color: #e0e0ff;
+        background-image:
+          radial-gradient(
+            circle at 10% 20%,
+            rgba(157, 78, 221, 0.05) 0%,
+            transparent 20%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(0, 217, 255, 0.05) 0%,
+            transparent 20%
+          );
+      }
+
+      .neon-border {
+        border: 1px solid rgba(0, 217, 255, 0.3);
+        box-shadow: 0 0 10px rgba(0, 217, 255, 0.1);
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 5px rgba(0, 217, 255, 0.5);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 5px rgba(157, 78, 221, 0.5);
+      }
+
+      .neon-text-pink {
+        color: var(--neon-pink);
+        text-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 5px rgba(0, 255, 157, 0.5);
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, var(--card-bg), #151525);
+      }
+
+      .section-icon {
+        font-size: 1.5rem;
+        margin-right: 10px;
+      }
+
+      .command-box {
+        background-color: #1a1a2e;
+        border-left: 4px solid var(--neon-blue);
+        padding: 12px 16px;
+        font-family: monospace;
+        margin: 10px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .code-block {
+        background-color: #1a1a2e;
+        border: 1px solid rgba(0, 217, 255, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+
+      .diagram-box {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(0, 217, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .important-note {
+        background-color: rgba(157, 78, 221, 0.1);
+        border-left: 4px solid var(--neon-purple);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .danger-note {
+        background-color: rgba(255, 0, 0, 0.1);
+        border-left: 4px solid #ff5555;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .tip-box {
+        background-color: rgba(0, 255, 157, 0.1);
+        border-left: 4px solid var(--neon-green);
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        border: 1px solid rgba(0, 217, 255, 0.3);
+        padding: 12px 15px;
+        text-align: left;
+      }
+
+      .comparison-table th {
+        background-color: rgba(0, 217, 255, 0.1);
+        color: var(--neon-blue);
+      }
+
+      .comparison-table tr:nth-child(even) {
+        background-color: rgba(0, 217, 255, 0.05);
+      }
+
+      @media (max-width: 640px) {
+        .section-icon {
+          font-size: 1.2rem;
+          margin-right: 8px;
+        }
+
+        .command-box {
+          font-size: 0.8rem;
+          padding: 8px 12px;
+        }
+
+        .code-block {
+          font-size: 0.8rem;
+          padding: 10px;
+        }
+
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="mb-8 md:mb-12 text-center">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2 neon-text-blue">
+        <i class="fas fa-ship section-icon"></i>Docker & Kubernetes Complete
+        Guide
+      </h1>
+      <p class="text-lg md:text-xl text-gray-300">
+        No Bakwas. Straight to the point.
+      </p>
+      <div class="flex justify-center mt-4 space-x-4">
+        <span class="px-3 py-1 gradient-bg rounded-full text-sm neon-border"
+          >Step-by-Step</span
+        >
+        <span class="px-3 py-1 gradient-bg rounded-full text-sm neon-border"
+          >Child-Level Explanation</span
+        >
+        <span class="px-3 py-1 gradient-bg rounded-full text-sm neon-border"
+          >Production Ready</span
+        >
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto">
+      <!-- Section 1: Docker Image Basics -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-layer-group section-icon"></i>1. Docker Image Basics
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What a Docker Image Looks Like
+          </h3>
+          <p class="mb-4">
+            A Docker image is NOT one file. It's a stack of read-only layers.
+          </p>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center font-mono text-sm mb-2">
+              Image Layer Stack
+            </div>
+            <div
+              class="border border-gray-700 rounded-lg overflow-hidden max-w-md mx-auto"
+            >
+              <div class="bg-blue-900/30 p-3 border-b border-gray-700">
+                Your App Code
+                <span class="text-gray-400 text-sm">← COPY . .</span>
+              </div>
+              <div class="bg-purple-900/30 p-3 border-b border-gray-700">
+                npm install dependencies
+              </div>
+              <div class="bg-pink-900/30 p-3 border-b border-gray-700">
+                Node.js runtime
+              </div>
+              <div class="bg-green-900/30 p-3">OS base (alpine/ubuntu)</div>
+            </div>
+            <p class="text-center mt-3 text-gray-300">
+              Each line = one layer. Docker reuses layers → fast builds.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h4 class="text-lg font-medium mb-2 neon-text-green">
+                Image = Template
+              </h4>
+              <p>Static blueprint for containers.</p>
+            </div>
+            <div>
+              <h4 class="text-lg font-medium mb-2 neon-text-green">
+                Container = Running Instance
+              </h4>
+              <p>Live application from an image.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            How Docker Image is Created (Command Flow)
+          </h3>
+
+          <div class="mb-4">
+            <h4 class="font-medium mb-2">1️⃣ Dockerfile (Image Recipe)</h4>
+            <div class="code-block">
+              <span class="text-green-400"># Base image</span><br />
+              <span class="text-blue-400">FROM</span> node:18-alpine<br /><br />
+              <span class="text-green-400"># Working directory</span><br />
+              <span class="text-blue-400">WORKDIR</span> /app<br /><br />
+              <span class="text-green-400"># Copy package files</span><br />
+              <span class="text-blue-400">COPY</span> package*.json .<br /><br />
+              <span class="text-green-400"># Install dependencies</span><br />
+              <span class="text-blue-400">RUN</span> npm install<br /><br />
+              <span class="text-green-400"># Copy app code</span><br />
+              <span class="text-blue-400">COPY</span> . .<br /><br />
+              <span class="text-green-400"># App port</span><br />
+              <span class="text-blue-400">EXPOSE</span> 3000<br /><br />
+              <span class="text-green-400"># Start app</span><br />
+              <span class="text-blue-400">CMD</span> ["node", "index.js"]
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-medium mb-2">2️⃣ Build Image</h4>
+            <div class="command-box">docker build -t my-express-app .</div>
+            <p class="mt-2">What happens:</p>
+            <ul class="list-disc pl-5 mt-2 space-y-1">
+              <li>Reads Dockerfile</li>
+              <li>Creates layers</li>
+              <li>Saves image locally</li>
+            </ul>
+            <div class="command-box mt-3">
+              docker images <span class="text-gray-400"># Check images</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h4 class="font-medium mb-2">3️⃣ Run Container from Image</h4>
+            <div class="command-box">
+              docker run -p 3000:3000 my-express-app
+            </div>
+            <p class="mt-2">
+              Meaning:
+              <span class="text-gray-300"
+                >-p 3000:3000 → host:container port</span
+              >
+            </p>
+          </div>
+        </div>
+
+        <div class="important-note">
+          <h4 class="font-bold mb-2 neon-text-purple">
+            <i class="fas fa-brain mr-2"></i>Important Mental Model
+          </h4>
+          <p class="text-center font-mono text-lg">
+            Dockerfile → docker build → Image → docker run → Container
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <h4 class="font-medium mb-2 neon-text-green">
+            Essential Docker Commands
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="command-box">docker ps</div>
+            <div class="command-box">docker ps -a</div>
+            <div class="command-box">docker stop &lt;id&gt;</div>
+            <div class="command-box">docker rm &lt;id&gt;</div>
+            <div class="command-box">docker rmi &lt;image&gt;</div>
+            <div class="command-box">docker logs &lt;id&gt;</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Docker Compose -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-code-branch section-icon"></i>2. Docker Compose -
+          Ultra Simple
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What is Docker Compose?
+          </h3>
+          <p class="mb-4">
+            Docker Compose = run multiple containers with ONE command.
+          </p>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center font-mono text-sm mb-4">
+              docker-compose.yml
+            </div>
+            <div class="flex flex-col items-center">
+              <div class="mb-2">│</div>
+              <div class="mb-2">├── app container (Express)</div>
+              <div class="mb-2">├── mongo container</div>
+              <div class="mb-2">└── network (auto created)</div>
+            </div>
+          </div>
+
+          <div class="important-note">
+            <p>
+              <span class="font-bold">All containers:</span> Same network, can
+              talk using service names
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Simplest docker-compose.yml
+          </h3>
+          <div class="code-block">
+            <span class="text-blue-400">version</span>:
+            <span class="text-yellow-400">"3.8"</span><br /><br />
+            <span class="text-blue-400">services</span>:<br />
+            &nbsp;&nbsp;<span class="text-blue-400">backend</span>:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">build</span>:
+            .<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">ports</span
+            >:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+            <span class="text-yellow-400">"3000:3000"</span><br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400"
+              >environment</span
+            >:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+            <span class="text-blue-400">MONGO_URL</span>=<span
+              class="text-yellow-400"
+              >mongodb://mongo:27017/test</span
+            ><br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">depends_on</span
+            >:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- mongo<br /><br />
+            &nbsp;&nbsp;<span class="text-blue-400">mongo</span>:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">image</span>:
+            mongo<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">ports</span
+            >:<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+            <span class="text-yellow-400">"27017:27017"</span>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Important Concepts
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-medium mb-2 neon-text-green">Services</h4>
+              <p>Each service = one container</p>
+            </div>
+            <div>
+              <h4 class="font-medium mb-2 neon-text-green">mongo:27017</h4>
+              <p>
+                <span class="font-mono">mongo</span> = service name. Docker DNS
+                resolves it automatically.
+              </p>
+            </div>
+          </div>
+
+          <div class="danger-note mt-4">
+            <h4 class="font-bold mb-2">
+              <i class="fas fa-exclamation-triangle mr-2"></i>Key Rule (VERY
+              IMPORTANT)
+            </h4>
+            <p>Inside Docker:</p>
+            <p class="font-mono mt-2">❌ localhost → means same container</p>
+            <p class="font-mono">✅ use service name</p>
+            <p class="mt-2">
+              So: <span class="font-mono">mongodb://mongo:27017/db</span>
+            </p>
+            <p class="font-mono">
+              NOT:
+              <span class="text-red-400">mongodb://localhost:27017/db</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">Commands</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div class="command-box">docker compose up</div>
+              <p class="text-sm text-gray-400 mt-1">Start all services</p>
+            </div>
+            <div>
+              <div class="command-box">docker compose up --build</div>
+              <p class="text-sm text-gray-400 mt-1">Start with rebuild</p>
+            </div>
+            <div>
+              <div class="command-box">docker compose down</div>
+              <p class="text-sm text-gray-400 mt-1">Stop everything</p>
+            </div>
+            <div>
+              <div class="command-box">docker compose logs</div>
+              <p class="text-sm text-gray-400 mt-1">View logs</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="important-note">
+          <h4 class="font-bold mb-2 neon-text-purple">
+            <i class="fas fa-lightbulb mr-2"></i>Mental Model
+          </h4>
+          <p>Dockerfile → builds image</p>
+          <p>Docker Compose → runs multiple images together</p>
+          <p class="font-bold mt-2">
+            Kubernetes → runs Docker Compose at scale
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 3: Kubernetes vs Docker -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-brain section-icon"></i>3. Kubernetes vs Docker - Why
+          Kubernetes?
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Short Answer
+          </h3>
+          <div class="text-center p-4 mb-6">
+            <p class="text-2xl font-bold neon-text-blue">
+              Docker runs containers.
+            </p>
+            <p class="text-2xl font-bold neon-text-purple mt-2">
+              Kubernetes manages containers.
+            </p>
+            <p class="mt-4">Docker = engine | Kubernetes = brain</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Why Docker Alone is NOT Enough
+          </h3>
+          <p class="mb-4">
+            With Docker you can build images and run containers, but Docker
+            cannot handle real production problems:
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">App crashes ❌</h4>
+              <p>Stays down with Docker</p>
+            </div>
+            <div class="tip-box">
+              <h4 class="font-bold mb-2">Auto restart ✅</h4>
+              <p>Kubernetes creates new container automatically</p>
+            </div>
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">Traffic increases ❌</h4>
+              <p>No auto scaling with Docker</p>
+            </div>
+            <div class="tip-box">
+              <h4 class="font-bold mb-2">Auto scaling ✅</h4>
+              <p>Kubernetes: 1 container → 5 containers → 10 containers</p>
+            </div>
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">Server dies ❌</h4>
+              <p>App gone with Docker</p>
+            </div>
+            <div class="tip-box">
+              <h4 class="font-bold mb-2">Self healing ✅</h4>
+              <p>Kubernetes recreates everything</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Kubernetes Solves (Real Use)
+          </h3>
+
+          <div class="space-y-4">
+            <div class="flex items-start">
+              <div class="bg-blue-900/30 p-2 rounded-lg mr-4">
+                <i class="fas fa-redo text-blue-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold mb-1">1️⃣ Auto Restart</h4>
+                <p>
+                  App crashes? Kubernetes creates new container automatically.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start">
+              <div class="bg-purple-900/30 p-2 rounded-lg mr-4">
+                <i class="fas fa-expand-arrows-alt text-purple-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold mb-1">2️⃣ Auto Scaling</h4>
+                <p>Traffic high? Kubernetes automatically scales containers.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start">
+              <div class="bg-pink-900/30 p-2 rounded-lg mr-4">
+                <i class="fas fa-balance-scale text-pink-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold mb-1">3️⃣ Load Balancing</h4>
+                <p>User requests are spread across containers automatically.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start">
+              <div class="bg-green-900/30 p-2 rounded-lg mr-4">
+                <i class="fas fa-clock text-green-400"></i>
+              </div>
+              <div>
+                <h4 class="font-bold mb-1">4️⃣ Zero Downtime Deployment</h4>
+                <p>
+                  Old version running, new version coming - users don't feel
+                  anything.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Relationship (MUST REMEMBER)
+          </h3>
+          <div class="text-center font-mono text-lg p-4 bg-black/30 rounded-lg">
+            Docker Image → Kubernetes Pod → Deployment → Service
+          </div>
+          <p class="text-center mt-2">
+            Kubernetes uses Docker images. It does NOT replace Docker.
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Docker vs Kubernetes Comparison
+          </h3>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Thing</th>
+                <th>Docker</th>
+                <th>Kubernetes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Run container</td>
+                <td>✅</td>
+                <td>❌ (uses Docker)</td>
+              </tr>
+              <tr>
+                <td>Build image</td>
+                <td>✅</td>
+                <td>❌</td>
+              </tr>
+              <tr>
+                <td>Auto restart</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Auto scaling</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Load balancing</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Production ready</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="important-note">
+          <h4 class="font-bold mb-2 neon-text-purple">Real-life Analogy</h4>
+          <p><span class="font-bold">Docker = truck</span> - can move goods</p>
+          <p>
+            <span class="font-bold">Kubernetes = traffic system + manager</span>
+            - decides how many trucks, where to send, what if truck breaks
+          </p>
+        </div>
+
+        <div class="tip-box">
+          <h4 class="font-bold mb-2 neon-text-green">
+            <i class="fas fa-lightbulb mr-2"></i>When to Use What
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h5 class="font-bold">Use Docker only when:</h5>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Learning</li>
+                <li>Local development</li>
+                <li>Small demo apps</li>
+              </ul>
+            </div>
+            <div>
+              <h5 class="font-bold">Use Kubernetes when:</h5>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Production</li>
+                <li>High traffic</li>
+                <li>Multiple services</li>
+                <li>Cloud deployment</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-4 mt-6 bg-black/30 rounded-lg">
+          <p class="text-xl font-bold neon-text-blue">
+            Final One-liner (Lock This in Brain)
+          </p>
+          <p class="text-lg mt-2">
+            Docker creates containers. Kubernetes keeps them alive, scalable,
+            and production-ready.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 4: Kubernetes Step-by-Step -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-baby section-icon"></i>4. Kubernetes Step-by-Step
+          (Child Level)
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-4 neon-text-purple">
+            Step 0: The Characters (Story Time)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-2">
+                <div class="bg-blue-900/40 p-2 rounded-lg mr-3">
+                  <i class="fas fa-box text-blue-400"></i>
+                </div>
+                <h4 class="font-bold">🧱 Docker Image</h4>
+              </div>
+              <p>
+                A lunchbox recipe 📦. It tells what food (Node, app, deps) and
+                how to cook. Image is not running.
+              </p>
+            </div>
+
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-2">
+                <div class="bg-purple-900/40 p-2 rounded-lg mr-3">
+                  <i class="fas fa-running text-purple-400"></i>
+                </div>
+                <h4 class="font-bold">🏃 Container</h4>
+              </div>
+              <p>Lunchbox opened and eaten. Running app.</p>
+            </div>
+
+            <div class="bg-pink-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-2">
+                <div class="bg-pink-900/40 p-2 rounded-lg mr-3">
+                  <i class="fas fa-cube text-pink-400"></i>
+                </div>
+                <h4 class="font-bold">📦 Pod (Kubernetes thing)</h4>
+              </div>
+              <p>
+                Kubernetes does NOT run containers directly. A Pod = wrapper
+                around container(s). Usually: 1 Pod = 1 Container.
+              </p>
+            </div>
+
+            <div class="bg-green-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-2">
+                <div class="bg-green-900/40 p-2 rounded-lg mr-3">
+                  <i class="fas fa-user-tie text-green-400"></i>
+                </div>
+                <h4 class="font-bold">🧑‍🏫 Kubernetes (Teacher)</h4>
+              </div>
+              <p>
+                Teacher watches children (containers): fall? → stand them up.
+                More kids come? → add more chairs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-4 neon-text-purple">
+            The REAL Flow (Step-by-Step)
+          </h3>
+
+          <div class="space-y-8">
+            <!-- Step 1 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-blue-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">1️⃣</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 neon-text-blue">
+                  Step 1: Create Docker Image
+                </h4>
+                <div class="command-box">docker build -t my-app .</div>
+                <p class="mt-2">Result: 📦 my-app image</p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-purple-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">2️⃣</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 neon-text-purple">
+                  Step 2: Image Goes to Registry
+                </h4>
+                <p>Kubernetes cannot see your laptop. So image must be in:</p>
+                <ul class="list-disc pl-5 mt-2">
+                  <li>Docker Hub</li>
+                  <li>AWS ECR</li>
+                  <li>GCP Artifact Registry</li>
+                </ul>
+                <div class="command-box mt-3">
+                  docker tag my-app amit/my-app<br />
+                  docker push amit/my-app
+                </div>
+                <p class="mt-2">Now image lives on internet ☁️</p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-pink-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">3️⃣</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 neon-text-pink">
+                  Step 3: Kubernetes Manifest (Instruction Book)
+                </h4>
+                <p>You tell Kubernetes: "Hey teacher, run this image"</p>
+                <div class="code-block mt-3">
+                  <span class="text-blue-400">apiVersion</span>: apps/v1<br />
+                  <span class="text-blue-400">kind</span>: Deployment<br /><br />
+                  <span class="text-blue-400">metadata</span>:<br />
+                  &nbsp;&nbsp;<span class="text-blue-400">name</span>: my-app<br /><br />
+                  <span class="text-blue-400">spec</span>:<br />
+                  &nbsp;&nbsp;<span class="text-blue-400">replicas</span>:
+                  <span class="text-yellow-400">2</span><br />
+                  &nbsp;&nbsp;<span class="text-blue-400">selector</span>:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400"
+                    >matchLabels</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >app</span
+                  >: my-app<br /><br />
+                  &nbsp;&nbsp;<span class="text-blue-400">template</span>:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400"
+                    >metadata</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >labels</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >app</span
+                  >: my-app<br /><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-blue-400">spec</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >containers</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+                  <span class="text-blue-400">name</span>: my-app<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >image</span
+                  >: amit/my-app<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span
+                    class="text-blue-400"
+                    >ports</span
+                  >:<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+                  <span class="text-blue-400">containerPort</span>:
+                  <span class="text-yellow-400">3000</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-green-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">4️⃣</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 neon-text-green">
+                  Step 4: Apply It
+                </h4>
+                <div class="command-box">kubectl apply -f deployment.yaml</div>
+                <p class="mt-2">
+                  Kubernetes says: "Ok, I will handle this now 😎"
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-yellow-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">5️⃣</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 text-yellow-300">
+                  Step 5: What Kubernetes Does Internally
+                </h4>
+                <p>Kubernetes thinks like this:</p>
+                <div class="bg-black/30 p-4 rounded-lg mt-3">
+                  <p class="font-mono">"I need 2 replicas"</p>
+                  <p class="font-mono">"I will create 2 Pods"</p>
+                  <p class="font-mono mt-2">
+                    Each Pod needs: container from image amit/my-app
+                  </p>
+                </div>
+                <div class="diagram-box mt-4">
+                  <div class="text-center mb-2">📦 Pod Creation</div>
+                  <div class="flex justify-center space-x-4">
+                    <div class="text-center">
+                      <div class="bg-blue-900/30 p-3 rounded-lg">Pod 1</div>
+                      <div class="mt-1">→ pulls image → runs container</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="bg-purple-900/30 p-3 rounded-lg">Pod 2</div>
+                      <div class="mt-1">→ pulls image → runs container</div>
+                    </div>
+                  </div>
+                  <p class="text-center mt-3">If image missing → ❌ error</p>
+                  <p class="text-center">If image ok → ✅ running</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-red-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">💀</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 text-red-300">
+                  Step 7: If Container Dies 💀
+                </h4>
+                <p>Container crashes? Kubernetes:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div class="danger-note">
+                    <p class="font-mono">❌ container dead</p>
+                  </div>
+                  <div class="tip-box">
+                    <p class="font-mono">✅ new container created</p>
+                  </div>
+                </div>
+                <p class="mt-3">
+                  You do nothing. This is called:
+                  <span class="font-bold neon-text-green">🟢 Self Healing</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-indigo-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">🚶🚶🚶</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 text-indigo-300">
+                  Step 8: More Users Come 🚶🚶🚶
+                </h4>
+                <p>Traffic increases? You change:</p>
+                <div class="code-block">
+                  <span class="text-blue-400">replicas</span>:
+                  <span class="text-yellow-400">5</span>
+                  <span class="text-gray-500"># Changed from 2 to 5</span>
+                </div>
+                <p class="mt-2">Apply again:</p>
+                <div class="command-box">kubectl apply -f deployment.yaml</div>
+                <p class="mt-2">
+                  Kubernetes: <span class="font-mono">2 Pods → 5 Pods</span>
+                </p>
+                <p class="text-gray-300">
+                  Auto scaling (manual now, automatic later)
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 8 -->
+            <div class="flex flex-col md:flex-row items-start">
+              <div class="bg-teal-900/40 p-3 rounded-lg mb-4 md:mb-0 md:mr-6">
+                <span class="text-2xl font-bold">🚪</span>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 text-teal-300">
+                  Step 9: Service (Gatekeeper 🚪)
+                </h4>
+                <p>
+                  Pods have random IP, they come & go. So Kubernetes adds
+                  Service:
+                </p>
+                <div class="code-block">
+                  <span class="text-blue-400">kind</span>: Service
+                </div>
+                <p class="mt-3"><span class="font-bold">Service:</span></p>
+                <ul class="list-disc pl-5 mt-2">
+                  <li>Gives stable IP / DNS</li>
+                  <li>Load balances traffic</li>
+                </ul>
+                <div class="diagram-box mt-4">
+                  <div class="text-center">Flow:</div>
+                  <div class="text-center mt-2">
+                    <div>User → Service → Pod1 / Pod2 / Pod3</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="important-note mt-8">
+          <h4 class="font-bold text-lg mb-2 neon-text-purple">
+            Full Picture (Draw This in Mind)
+          </h4>
+          <div class="text-center font-mono space-y-1 mt-3">
+            <p>Docker Image</p>
+            <p>↓</p>
+            <p>Kubernetes pulls image</p>
+            <p>↓</p>
+            <p>Pod created</p>
+            <p>↓</p>
+            <p>Container runs</p>
+            <p>↓</p>
+            <p>Deployment manages Pods</p>
+            <p>↓</p>
+            <p>Service exposes Pods</p>
+          </div>
+        </div>
+
+        <div class="danger-note mt-6">
+          <h4 class="font-bold text-lg mb-2">
+            <i class="fas fa-exclamation-circle mr-2"></i>One Golden Rule (NEVER
+            Forget)
+          </h4>
+          <p class="text-center text-xl">
+            Kubernetes NEVER cares about your code.
+          </p>
+          <p class="text-center text-xl">It only cares about Docker image.</p>
+        </div>
+
+        <div class="text-center p-6 mt-8 bg-black/30 rounded-lg">
+          <h4 class="text-2xl font-bold mb-4 neon-text-blue">
+            Final Baby Summary 🍼
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div class="bg-blue-900/40 p-4 rounded-lg">
+                <p>Docker = cooks food</p>
+              </div>
+            </div>
+            <div>
+              <div class="bg-purple-900/40 p-4 rounded-lg">
+                <p>Image = recipe</p>
+              </div>
+            </div>
+            <div>
+              <div class="bg-pink-900/40 p-4 rounded-lg">
+                <p>Pod = plate</p>
+              </div>
+            </div>
+            <div>
+              <div class="bg-green-900/40 p-4 rounded-lg">
+                <p>Container = food</p>
+              </div>
+            </div>
+            <div class="md:col-span-2">
+              <div class="bg-yellow-900/40 p-4 rounded-lg">
+                <p>Kubernetes = teacher managing plates</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Pod vs Deployment -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-cube section-icon"></i>5. Pod vs Deployment (Step 1)
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What is a POD?
+          </h3>
+          <div class="bg-blue-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-blue">
+              👉 Pod = smallest thing Kubernetes runs
+            </p>
+            <p class="mt-2">
+              Pod contains: 1 container (usually) from Docker image.
+            </p>
+          </div>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center">Think:</div>
+            <div class="flex justify-center items-center mt-4">
+              <div class="bg-blue-900/40 p-4 rounded-lg mr-4">
+                <p class="font-bold">Pod = box</p>
+              </div>
+              <div class="text-2xl">→</div>
+              <div class="bg-purple-900/40 p-4 rounded-lg ml-4">
+                <p class="font-bold">Container = toy inside box</p>
+              </div>
+            </div>
+            <p class="text-center mt-4">
+              Kubernetes never runs container alone. It always puts it inside a
+              Pod.
+            </p>
+          </div>
+
+          <div class="code-block mb-6">
+            <span class="text-green-400"># Pod example</span><br />
+            <span class="text-blue-400">kind</span>: Pod
+          </div>
+
+          <div class="danger-note">
+            <h4 class="font-bold mb-2">Problem with Pod ❌</h4>
+            <ul class="list-disc pl-5 mt-2">
+              <li>If Pod dies → Kubernetes does NOT recreate it</li>
+              <li>No auto healing</li>
+              <li>Not used in production</li>
+            </ul>
+            <p class="mt-3">So Pod alone is weak.</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What is a DEPLOYMENT?
+          </h3>
+          <div class="bg-purple-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-purple">
+              👉 Deployment = Pod manager
+            </p>
+            <p class="mt-2">
+              Deployment says: How many Pods? Restart if Pod dies? Update Pods
+              safely?
+            </p>
+          </div>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center">Think:</div>
+            <div class="flex justify-center items-center mt-4">
+              <div class="bg-purple-900/40 p-4 rounded-lg">
+                <p class="font-bold">Deployment = parent</p>
+              </div>
+              <div class="mx-4 text-2xl">↓</div>
+              <div class="bg-blue-900/40 p-4 rounded-lg">
+                <p class="font-bold">Pods = children</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-block mb-6">
+            <span class="text-green-400"># Deployment example</span><br />
+            <span class="text-blue-400">kind</span>: Deployment<br />
+            <span class="text-blue-400">replicas</span>:
+            <span class="text-yellow-400">3</span>
+          </div>
+
+          <div class="tip-box">
+            <h4 class="font-bold mb-2 neon-text-green">
+              Meaning: "Always keep 3 Pods running"
+            </h4>
+            <p>
+              If Pod dies 💀 → Deployment says: "Oh no 😱 → Create new Pod" →
+              You do nothing.
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            IMPORTANT Difference (Lock This)
+          </h3>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Thing</th>
+                <th>Pod</th>
+                <th>Deployment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Runs container</td>
+                <td>✅</td>
+                <td>❌</td>
+              </tr>
+              <tr>
+                <td>Auto restart</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Scaling</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Production use</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="danger-note">
+          <h4 class="font-bold text-lg mb-2">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Rule (VERY
+            IMPORTANT)
+          </h4>
+          <div class="text-center">
+            <p class="text-xl font-mono">❌ Never create Pod directly</p>
+            <p class="text-xl font-mono mt-2">✅ Always create Deployment</p>
+          </div>
+        </div>
+
+        <div class="text-center p-4 mt-6 bg-black/30 rounded-lg">
+          <h4 class="text-xl font-bold mb-2 neon-text-blue">
+            Mental Picture 🧠
+          </h4>
+          <div class="font-mono space-y-1">
+            <p>Deployment</p>
+            <p>↓</p>
+            <p>Pods (many)</p>
+            <p>↓</p>
+            <p>Containers</p>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8">
+          <div
+            class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 p-6 rounded-lg"
+          >
+            <h4 class="text-2xl font-bold mb-2 neon-text-blue">
+              One-line Baby Summary 🍼
+            </h4>
+            <p class="text-xl">Pod = runs app</p>
+            <p class="text-xl">Deployment = keeps app alive</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Service -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-door-open section-icon"></i>6. Service (Step 2)
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            First: The Problem 😵
+          </h3>
+          <div class="danger-note">
+            <p>Pods are unstable:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>Pod can die</li>
+              <li>Pod can be recreated</li>
+              <li>IP address changes every time</li>
+            </ul>
+            <p class="mt-3 font-bold">❓ How does user reach your app?</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Solution: SERVICE 🚪
+          </h3>
+          <div class="bg-purple-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-purple">
+              👉 Service = permanent door to Pods
+            </p>
+            <p class="mt-2">
+              Service gives: One stable IP, One stable name, Load balancing
+            </p>
+          </div>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center font-mono space-y-2">
+              <div>User</div>
+              <div>↓</div>
+              <div class="bg-purple-900/30 p-2">Service (fixed)</div>
+              <div>↓</div>
+              <div class="flex justify-center space-x-4">
+                <div class="bg-blue-900/30 p-2">Pod 1</div>
+                <div class="bg-blue-900/30 p-2">Pod 2</div>
+                <div class="bg-blue-900/30 p-2">Pod 3</div>
+              </div>
+            </div>
+            <p class="text-center mt-4">User never talks to Pods directly.</p>
+          </div>
+
+          <div class="tip-box">
+            <h4 class="font-bold mb-2 neon-text-green">
+              What Service actually does
+            </h4>
+            <p>
+              Service says: "Any request coming to me → send to healthy Pod"
+            </p>
+          </div>
+
+          <div class="code-block mt-4">
+            <span class="text-green-400"># Example Service</span><br />
+            <span class="text-blue-400">kind</span>: Service
+          </div>
+
+          <div class="important-note mt-6">
+            <h4 class="font-bold mb-2 neon-text-purple">
+              Service talks to Pods using LABELS 🏷️
+            </h4>
+            <p>Pods have labels: <span class="font-mono">app: my-app</span></p>
+            <p class="mt-2">
+              Service says: "Send traffic to Pods with
+              <span class="font-mono">app: my-app</span>"
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Types of Services (Only 3 You Must Know)
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <h4 class="font-bold text-lg mb-2 neon-text-blue">
+                1️⃣ ClusterIP (default)
+              </h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Internal only</li>
+                <li>Backend ↔ Backend</li>
+                <li>Not accessible from browser</li>
+              </ul>
+              <div class="mt-3 p-2 bg-black/30 rounded">
+                <p class="text-sm font-bold">🧠 Think: inside school only</p>
+              </div>
+            </div>
+
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <h4 class="font-bold text-lg mb-2 neon-text-purple">
+                2️⃣ NodePort
+              </h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Opens port on machine</li>
+                <li>For testing</li>
+              </ul>
+              <div class="mt-3 p-2 bg-black/30 rounded">
+                <p class="text-sm font-bold">Example: http://NodeIP:30080</p>
+              </div>
+              <div class="mt-2 p-2 bg-black/30 rounded">
+                <p class="text-sm font-bold">🧠 School gate opened</p>
+              </div>
+            </div>
+
+            <div class="bg-green-900/20 p-4 rounded-lg">
+              <h4 class="font-bold text-lg mb-2 neon-text-green">
+                3️⃣ LoadBalancer
+              </h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Cloud only</li>
+                <li>Public internet access</li>
+                <li>AWS / GCP / Azure</li>
+              </ul>
+              <div class="mt-3 p-2 bg-black/30 rounded">
+                <p class="text-sm font-bold">🧠 Main highway road</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="danger-note">
+          <h4 class="font-bold text-lg mb-2">
+            <i class="fas fa-key mr-2"></i>Golden Rule 🔑
+          </h4>
+          <div class="text-center">
+            <p class="text-xl font-mono">❌ Never expose Pod</p>
+            <p class="text-xl font-mono mt-2">✅ Always expose Service</p>
+          </div>
+        </div>
+
+        <div class="text-center p-4 mt-6 bg-black/30 rounded-lg">
+          <h4 class="text-xl font-bold mb-2 neon-text-blue">Baby Summary 🍼</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <p>Pods change</p>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <p>Service does not change</p>
+            </div>
+          </div>
+          <p class="mt-4 font-bold">Service = fixed address</p>
+        </div>
+
+        <div class="text-center p-6 mt-8">
+          <h4 class="text-2xl font-bold mb-4 neon-text-purple">
+            Flow Till Now
+          </h4>
+          <div class="font-mono space-y-1 bg-black/30 p-6 rounded-lg">
+            <p>Docker Image</p>
+            <p>↓</p>
+            <p>Deployment</p>
+            <p>↓</p>
+            <p>Pods</p>
+            <p>↓</p>
+            <p>Service</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: ConfigMap & Secret -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-key section-icon"></i>7. ConfigMap & Secret (.env in
+          Kubernetes) (Step 3)
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            First: The Problem 😵
+          </h3>
+          <div class="danger-note">
+            <p>Your app needs:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>DB URL</li>
+              <li>PORT</li>
+              <li>API keys</li>
+            </ul>
+            <p class="mt-3">
+              In Docker you used: <span class="font-mono">.env</span> file
+            </p>
+            <p class="mt-2 font-bold">In Kubernetes:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>❌ Do NOT hardcode inside image</li>
+              <li>❌ Do NOT put secrets in code</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Solution: ConfigMap & Secret 📦🔐
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <h4 class="font-bold text-lg mb-2 neon-text-blue">
+                👉 ConfigMap
+              </h4>
+              <p>For normal values:</p>
+              <ul class="list-disc pl-5 mt-2">
+                <li>PORT</li>
+                <li>DB_HOST</li>
+                <li>MODE</li>
+              </ul>
+            </div>
+
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <h4 class="font-bold text-lg mb-2 neon-text-purple">👉 Secret</h4>
+              <p>For private values:</p>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Password</li>
+                <li>API key</li>
+                <li>Token</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="important-note">
+            <h4 class="font-bold mb-2 neon-text-purple">
+              Simple Difference (Remember This)
+            </h4>
+            <table class="w-full">
+              <tr>
+                <th class="text-left p-2">Thing</th>
+                <th class="text-left p-2">Used for</th>
+              </tr>
+              <tr>
+                <td class="p-2">ConfigMap</td>
+                <td class="p-2">public config</td>
+              </tr>
+              <tr>
+                <td class="p-2">Secret</td>
+                <td class="p-2">sensitive data</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="diagram-box mt-6">
+            <div class="text-center mb-4">How Kubernetes stores them</div>
+            <div class="text-center">
+              Think: <span class="font-mono">.env</span> file → split into two
+              boxes
+            </div>
+            <div class="flex justify-center space-x-6 mt-4">
+              <div class="bg-blue-900/30 p-4 rounded-lg">
+                <p>ConfigMap box</p>
+              </div>
+              <div
+                class="bg-purple-900/30 p-4 rounded-lg border-2 border-yellow-500"
+              >
+                <p>Secret box (locked 🔒)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Example ConfigMap (simple)
+          </h3>
+          <div class="code-block">
+            <span class="text-blue-400">kind</span>: ConfigMap<br />
+            <span class="text-green-400"># Contains:</span><br />
+            <span class="text-blue-400">PORT</span>=<span
+              class="text-yellow-400"
+              >3000</span
+            ><br />
+            <span class="text-blue-400">NODE_ENV</span>=<span
+              class="text-yellow-400"
+              >production</span
+            >
+          </div>
+
+          <h3 class="text-xl font-semibold mb-3 mt-6 neon-text-purple">
+            Example Secret (simple)
+          </h3>
+          <div class="code-block">
+            <span class="text-blue-400">kind</span>: Secret<br />
+            <span class="text-green-400"># Contains:</span><br />
+            <span class="text-blue-400">DB_PASSWORD</span>=<span
+              class="text-yellow-400"
+              >123456</span
+            ><br />
+            <span class="text-gray-500"># (Kubernetes encodes it)</span>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            How App Gets Values 🤔
+          </h3>
+          <div class="tip-box">
+            <p>Kubernetes injects them as environment variables</p>
+            <p class="mt-2 font-mono">
+              Inside app: process.env.PORT, process.env.DB_PASSWORD
+            </p>
+            <p class="mt-2 font-bold neon-text-green">Same as .env 🎉</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Important Rule 🔑
+          </h3>
+          <div class="important-note">
+            <p><span class="font-bold">Image = same everywhere</span></p>
+            <p>
+              <span class="font-bold">Config = changes per environment</span>
+            </p>
+            <div class="mt-3 p-3 bg-black/30 rounded">
+              <p>So:</p>
+              <p>Same image</p>
+              <p>Different ConfigMap</p>
+              <p>Different Secret</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What Happens If Value Changes?
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg text-center">
+              <p class="font-bold">1. Update ConfigMap</p>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg text-center">
+              <p class="font-bold">2. Restart Pods</p>
+            </div>
+            <div class="bg-green-900/20 p-4 rounded-lg text-center">
+              <p class="font-bold">3. App gets new values</p>
+            </div>
+          </div>
+          <p class="text-center mt-4 font-bold">No rebuild needed 😎</p>
+        </div>
+
+        <div class="text-center p-4 mt-6 bg-black/30 rounded-lg">
+          <h4 class="text-xl font-bold mb-2 neon-text-blue">Flow Till Now</h4>
+          <div class="font-mono space-y-1">
+            <p>Docker Image</p>
+            <p>↓</p>
+            <p>Deployment</p>
+            <p>↓</p>
+            <p>ConfigMap / Secret</p>
+            <p>↓</p>
+            <p>Pods</p>
+            <p>↓</p>
+            <p>Service</p>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8">
+          <div
+            class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 p-6 rounded-lg"
+          >
+            <h4 class="text-2xl font-bold mb-2 neon-text-blue">
+              Baby Summary 🍼
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div class="bg-red-900/20 p-3 rounded-lg">
+                <p>.env ❌ inside image</p>
+              </div>
+              <div class="bg-blue-900/20 p-3 rounded-lg">
+                <p>ConfigMap / Secret ✅</p>
+              </div>
+              <div class="bg-green-900/20 p-3 rounded-lg">
+                <p>Kubernetes injects envs</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Full Flow + Compose Mapping -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-project-diagram section-icon"></i>8. Full Flow +
+          Docker Compose → Kubernetes (Step 4)
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            FULL KUBERNETES FLOW (One Picture)
+          </h3>
+          <div
+            class="text-center font-mono space-y-1 bg-black/30 p-6 rounded-lg"
+          >
+            <p>Dockerfile</p>
+            <p>↓</p>
+            <p>Docker Image</p>
+            <p>↓</p>
+            <p>(Container Registry)</p>
+            <p>↓</p>
+            <p>Deployment</p>
+            <p>↓</p>
+            <p>Pods</p>
+            <p>↓</p>
+            <p>Service</p>
+            <p>↓</p>
+            <p>User</p>
+          </div>
+          <p class="text-center mt-4 font-bold">
+            That's it. This is Kubernetes.
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What Kubernetes REALLY Does
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <div class="bg-blue-900/30 p-2 rounded-lg mr-3">
+                  <i class="fas fa-download text-blue-400"></i>
+                </div>
+                <p>Pulls image</p>
+              </div>
+              <div class="flex items-center">
+                <div class="bg-purple-900/30 p-2 rounded-lg mr-3">
+                  <i class="fas fa-play text-purple-400"></i>
+                </div>
+                <p>Runs containers inside Pods</p>
+              </div>
+              <div class="flex items-center">
+                <div class="bg-pink-900/30 p-2 rounded-lg mr-3">
+                  <i class="fas fa-heart text-pink-400"></i>
+                </div>
+                <p>Keeps Pods alive</p>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center">
+                <div class="bg-green-900/30 p-2 rounded-lg mr-3">
+                  <i class="fas fa-door-open text-green-400"></i>
+                </div>
+                <p>Exposes via Service</p>
+              </div>
+              <div class="flex items-center">
+                <div class="bg-yellow-900/30 p-2 rounded-lg mr-3">
+                  <i class="fas fa-cog text-yellow-400"></i>
+                </div>
+                <p>Injects config</p>
+              </div>
+            </div>
+          </div>
+          <div class="important-note mt-6">
+            <p class="text-center font-bold">
+              You only describe state. Kubernetes maintains it.
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Now: Docker Compose → Kubernetes Mapping
+          </h3>
+          <p class="mb-4">Docker Compose file does everything in one place:</p>
+          <div class="code-block">
+            <span class="text-blue-400">services</span>:<br />
+            &nbsp;&nbsp;<span class="text-blue-400">backend</span>:<br />
+            &nbsp;&nbsp;<span class="text-blue-400">mongo</span>:
+          </div>
+          <p class="mt-4">Kubernetes splits responsibilities.</p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Mapping Table (VERY IMPORTANT)
+          </h3>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Docker Compose</th>
+                <th>Kubernetes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>build</td>
+                <td>Dockerfile</td>
+              </tr>
+              <tr>
+                <td>image</td>
+                <td>image</td>
+              </tr>
+              <tr>
+                <td>services</td>
+                <td>Deployment</td>
+              </tr>
+              <tr>
+                <td>ports</td>
+                <td>Service</td>
+              </tr>
+              <tr>
+                <td>environment</td>
+                <td>ConfigMap / Secret</td>
+              </tr>
+              <tr>
+                <td>depends_on</td>
+                <td>handled automatically</td>
+              </tr>
+              <tr>
+                <td>volumes</td>
+                <td>PersistentVolume</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Example Comparison (Mental)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <h4 class="font-bold mb-2 neon-text-blue">
+                Docker Compose thinking:
+              </h4>
+              <p>"Run app + db together"</p>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <h4 class="font-bold mb-2 neon-text-purple">
+                Kubernetes thinking:
+              </h4>
+              <p>
+                "I want 3 app Pods, always running, reachable, configurable"
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Real Production Truth 🚨
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">Docker Compose ❌ production</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Single machine</li>
+                <li>Manual recovery</li>
+              </ul>
+            </div>
+            <div class="tip-box">
+              <h4 class="font-bold mb-2 neon-text-green">
+                Kubernetes ✅ production
+              </h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Multi machines</li>
+                <li>Self healing</li>
+                <li>Auto scaling</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="text-center p-6 mt-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg"
+        >
+          <h4 class="text-2xl font-bold mb-4 neon-text-blue">
+            FINAL GOLDEN SUMMARY 🥇
+          </h4>
+          <div class="space-y-3 text-lg">
+            <p>Docker builds images.</p>
+            <p>Kubernetes runs and manages them at scale.</p>
+            <p>Deployment keeps Pods alive.</p>
+            <p>Service exposes Pods.</p>
+            <p>ConfigMap & Secret replace .env.</p>
+          </div>
+          <p class="mt-6 font-bold italic">Say this in interviews.</p>
+        </div>
+
+        <div class="mt-8">
+          <h3 class="text-xl font-semibold mb-4 neon-text-purple">
+            Your Learning Path (Perfect Order)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg text-center">
+              <div class="text-2xl font-bold mb-2">1️⃣</div>
+              <p>Pod vs Deployment</p>
+              <div class="mt-2 text-green-400">✅</div>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg text-center">
+              <div class="text-2xl font-bold mb-2">2️⃣</div>
+              <p>Service</p>
+              <div class="mt-2 text-green-400">✅</div>
+            </div>
+            <div class="bg-pink-900/20 p-4 rounded-lg text-center">
+              <div class="text-2xl font-bold mb-2">3️⃣</div>
+              <p>ConfigMap & Secret</p>
+              <div class="mt-2 text-green-400">✅</div>
+            </div>
+            <div class="bg-green-900/20 p-4 rounded-lg text-center">
+              <div class="text-2xl font-bold mb-2">4️⃣</div>
+              <p>Full flow + mapping</p>
+              <div class="mt-2 text-green-400">✅</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box mt-8">
+          <h4 class="font-bold text-lg mb-2 neon-text-green">
+            <i class="fas fa-lightbulb mr-2"></i>Next (Advanced But Logical)
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            <div>
+              <p>• Volumes (Mongo data safe)</p>
+              <p>• Ingress (Nginx)</p>
+            </div>
+            <div>
+              <p>• HPA (auto scale)</p>
+              <p>• CI/CD to Kubernetes</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8 bg-black/30 rounded-lg">
+          <p class="text-lg">Whenever confused, come back to this flow.</p>
+          <p class="text-xl font-bold mt-2 neon-text-blue">
+            You're not slow — this stuff is confusing for everyone.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 9: Nodes -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-server section-icon"></i>9. Nodes - The Missing
+          Puzzle Piece
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What is a Node? 🖥️
+          </h3>
+          <div class="bg-blue-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-blue">
+              👉 Node = a machine (computer / server)
+            </p>
+            <p class="mt-2">It can be:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>Your laptop (minikube)</li>
+              <li>Cloud VM (AWS EC2, GCP VM)</li>
+            </ul>
+            <p class="mt-3">Kubernetes runs on nodes.</p>
+          </div>
+
+          <div class="diagram-box mb-6">
+            <div class="text-center font-mono">Cluster Picture 🧠</div>
+            <div class="mt-4">
+              <div class="font-bold text-center">Kubernetes Cluster</div>
+              <div class="flex flex-col items-center mt-3">
+                <div>│</div>
+                <div>├── Node 1 (machine)</div>
+                <div>├── Node 2 (machine)</div>
+                <div>└── Node 3 (machine)</div>
+              </div>
+            </div>
+            <p class="text-center mt-4">
+              <span class="font-bold">Cluster = group of nodes.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What Lives on a Node?
+          </h3>
+          <p>Each Node can run:</p>
+          <ul class="list-disc pl-5 mt-2">
+            <li>Pods</li>
+            <li>Containers</li>
+          </ul>
+
+          <div class="diagram-box mt-4">
+            <div class="text-center">Example:</div>
+            <div class="mt-4">
+              <div class="font-bold">Node 1</div>
+              <div class="flex flex-col items-center">
+                <div>├── Pod A</div>
+                <div>├── Pod B</div>
+              </div>
+            </div>
+            <div class="mt-6">
+              <div class="font-bold">Node 2</div>
+              <div class="flex flex-col items-center">
+                <div>├── Pod C</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Who Decides Where Pods Go? 🤔
+          </h3>
+          <div class="important-note">
+            <p class="text-lg font-bold neon-text-purple">
+              👉 Kubernetes Scheduler
+            </p>
+            <p>Scheduler says: "Node 1 has space → put Pod here"</p>
+            <p class="mt-2 font-bold">You don't choose manually.</p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Types of Nodes
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-3">
+                <div class="bg-blue-900/40 p-3 rounded-lg mr-4">
+                  <i class="fas fa-brain text-blue-400"></i>
+                </div>
+                <h4 class="font-bold text-lg">1️⃣ Master (Control Plane)</h4>
+              </div>
+              <p>Brain 🧠 Does NOT run your app.</p>
+              <p class="mt-2">It:</p>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Makes decisions</li>
+                <li>Watches cluster</li>
+                <li>Schedules Pods</li>
+              </ul>
+            </div>
+
+            <div class="bg-green-900/20 p-4 rounded-lg">
+              <div class="flex items-center mb-3">
+                <div class="bg-green-900/40 p-3 rounded-lg mr-4">
+                  <i class="fas fa-dumbbell text-green-400"></i>
+                </div>
+                <h4 class="font-bold text-lg">2️⃣ Worker Node</h4>
+              </div>
+              <p>Muscle 💪 Runs:</p>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Pods</li>
+                <li>Containers</li>
+                <li>Your app</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="important-note mb-6">
+          <h4 class="font-bold mb-2 neon-text-purple">Simple Rule 🔑</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="text-center">
+              <p class="text-xl font-bold">Master = thinking</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xl font-bold">Worker = working</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            What Happens If a Node Dies? 💀
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="danger-note">
+              <p class="font-mono">❌ Node dead</p>
+            </div>
+            <div class="tip-box">
+              <p class="font-mono">✅ Move Pods to another Node</p>
+            </div>
+          </div>
+          <p class="mt-4">This is self-healing at machine level.</p>
+          <p class="font-bold mt-2">Docker cannot do this.</p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            FULL Picture (Now Complete)
+          </h3>
+          <div class="diagram-box">
+            <div class="font-mono">
+              <div>Cluster</div>
+              <div>├── Master Node</div>
+              <div>│ └── Scheduler / Controller</div>
+              <div>│</div>
+              <div>├── Worker Node 1</div>
+              <div>│ └── Pod → Container</div>
+              <div>│</div>
+              <div>└── Worker Node 2</div>
+              <div>└── Pod → Container</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Where Service Fits Now
+          </h3>
+          <div class="tip-box">
+            <p>Service does NOT care:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>which Pod</li>
+              <li>which Node</li>
+            </ul>
+            <div class="font-mono text-center mt-4 space-y-1">
+              <div>User</div>
+              <div>↓</div>
+              <div>Service</div>
+              <div>↓</div>
+              <div>Pod on any Node</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8 bg-black/30 rounded-lg">
+          <h4 class="text-2xl font-bold mb-2 neon-text-blue">
+            Baby Summary 🍼
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <p>Node = machine</p>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <p>Pod runs on Node</p>
+            </div>
+            <div class="bg-green-900/20 p-4 rounded-lg">
+              <p>Kubernetes moves Pods if Node dies</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="important-note mt-8">
+          <h4 class="font-bold text-lg mb-2 neon-text-purple">
+            One Powerful Sentence (Interview)
+          </h4>
+          <p class="text-center text-xl">
+            Kubernetes schedules Pods on Nodes and reschedules them
+            automatically if a Node fails.
+          </p>
+        </div>
+
+        <div
+          class="text-center p-6 mt-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg"
+        >
+          <h4 class="text-2xl font-bold mb-4 neon-text-blue">
+            Now You Know FULL Kubernetes Story:
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="bg-blue-900/20 p-3 rounded-lg">Image</div>
+            <div class="bg-purple-900/20 p-3 rounded-lg">Pod</div>
+            <div class="bg-pink-900/20 p-3 rounded-lg">Deployment</div>
+            <div class="bg-green-900/20 p-3 rounded-lg">Service</div>
+            <div class="bg-yellow-900/20 p-3 rounded-lg">Config</div>
+            <div class="bg-indigo-900/20 p-3 rounded-lg">Node</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 10: Ingress -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-globe section-icon"></i>10. Ingress - Very Very
+          Simple
+        </h2>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            First: The Problem 😵
+          </h3>
+          <p class="mb-4">You already know:</p>
+          <ul class="list-disc pl-5 mt-2">
+            <li>Service exposes app</li>
+            <li>Service works inside cluster</li>
+          </ul>
+          <div class="danger-note mt-4">
+            <p class="font-bold">
+              ❓ How does real internet (domain, https) reach your app?
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Answer: INGRESS 🚪🌍
+          </h3>
+          <div class="bg-purple-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-purple">
+              👉 Ingress = main gate of Kubernetes
+            </p>
+            <p class="mt-2">Ingress:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>Takes internet traffic</li>
+              <li>Sends it to correct Service</li>
+            </ul>
+          </div>
+
+          <div class="diagram-box mb-6">
+            <div class="font-mono text-center space-y-1">
+              <div>Internet</div>
+              <div>↓</div>
+              <div class="bg-purple-900/30 p-2">Ingress (gate)</div>
+              <div>↓</div>
+              <div class="bg-blue-900/30 p-2">Service</div>
+              <div>↓</div>
+              <div class="bg-green-900/30 p-2">Pods</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Why Service Alone is Not Enough
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <h4 class="font-bold mb-2 neon-text-blue">Service:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Can expose one app</li>
+                <li>Uses ports</li>
+              </ul>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <h4 class="font-bold mb-2 neon-text-purple">Ingress:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Can expose many apps</li>
+                <li>Uses domain names</li>
+                <li>Handles HTTPS</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Real-life Analogy 🏫
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-900/20 p-4 rounded-lg text-center">
+              <h4 class="font-bold mb-2">Service = classroom door</h4>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg text-center">
+              <h4 class="font-bold mb-2">Ingress = school main gate</h4>
+              <p class="text-sm mt-2">
+                Security guard checks: which student, which class
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Example (Just Idea)
+          </h3>
+          <div class="code-block">
+            <span class="text-green-400"># Same cluster. Same IP.</span><br />
+            google.com → frontend service<br />
+            api.google.com → backend service
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            How Ingress Decides 🤔
+          </h3>
+          <p>Using rules.</p>
+          <div class="code-block mt-3">
+            Rule says:<br />
+            If URL = /api → backend<br />
+            If URL = / → frontend
+          </div>
+        </div>
+
+        <div class="danger-note mb-6">
+          <h4 class="font-bold mb-2">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Important Thing 🚨
+          </h4>
+          <p>Ingress is NOT magic.</p>
+          <p class="mt-2 font-bold">
+            You need:
+            <span class="neon-text-purple"
+              >👉 Ingress Controller (like Nginx)</span
+            >
+          </p>
+          <p class="mt-2">Controller = real software running as Pod.</p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Ingress Flow (Full)
+          </h3>
+          <div class="diagram-box">
+            <div class="font-mono text-center space-y-1">
+              <div>User</div>
+              <div>↓</div>
+              <div>LoadBalancer / NodePort</div>
+              <div>↓</div>
+              <div class="bg-purple-900/30 p-2">Ingress Controller (Nginx)</div>
+              <div>↓</div>
+              <div class="bg-blue-900/30 p-2">Ingress rules</div>
+              <div>↓</div>
+              <div class="bg-green-900/30 p-2">Service</div>
+              <div>↓</div>
+              <div>Pods</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-4 mt-6 bg-black/30 rounded-lg">
+          <h4 class="text-xl font-bold mb-2 neon-text-blue">
+            One-line Definition (Remember)
+          </h4>
+          <p class="text-lg font-bold">
+            Ingress = HTTP traffic router for Kubernetes
+          </p>
+        </div>
+
+        <div class="text-center p-6 mt-8">
+          <div
+            class="bg-gradient-to-r from-blue-900/40 to-purple-900/40 p-6 rounded-lg"
+          >
+            <h4 class="text-2xl font-bold mb-2 neon-text-blue">
+              Baby Summary 🍼
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div class="bg-blue-900/20 p-3 rounded-lg">
+                <p>Service = internal</p>
+              </div>
+              <div class="bg-purple-900/20 p-3 rounded-lg">
+                <p>Ingress = external</p>
+              </div>
+              <div class="bg-green-900/20 p-3 rounded-lg">
+                <p>Ingress uses domain & paths</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6 mt-8">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            When to Use Ingress
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <ul class="list-disc pl-5">
+                <li>Multiple services</li>
+                <li>Domain-based routing</li>
+              </ul>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <ul class="list-disc pl-5">
+                <li>HTTPS</li>
+                <li>Production apps</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8 bg-black/30 rounded-lg">
+          <h4 class="text-2xl font-bold mb-4 neon-text-purple">
+            Final Mental Map 🧠 (COMPLETE)
+          </h4>
+          <div class="font-mono space-y-1">
+            <p>Docker Image</p>
+            <p>↓</p>
+            <p>Deployment</p>
+            <p>↓</p>
+            <p>Pods</p>
+            <p>↓</p>
+            <p>Service</p>
+            <p>↓</p>
+            <p>Ingress</p>
+            <p>↓</p>
+            <p>Internet</p>
+          </div>
+          <p class="mt-6 text-lg font-bold">
+            You now understand Kubernetes better than many devs.
+          </p>
+        </div>
+
+        <div class="tip-box mt-8">
+          <h4 class="font-bold text-lg mb-2 neon-text-green">
+            If You Want Next:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+            <div>
+              <p>• Ingress vs LoadBalancer</p>
+            </div>
+            <div>
+              <p>• Nginx Ingress real example</p>
+            </div>
+            <div>
+              <p>• Full Express + Mongo + Ingress flow</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 11: LoadBalancer -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-balance-scale-right section-icon"></i>11.
+          LoadBalancer - Public IP Magic
+        </h2>
+
+        <div class="mb-6">
+          <div class="danger-note mb-6">
+            <h3 class="text-xl font-semibold mb-2 neon-text-purple">
+              Step 0️⃣ Why LoadBalancer Exists
+            </h3>
+            <h4 class="font-bold mb-2">Problem:</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+              <div class="bg-red-900/20 p-3 rounded-lg">
+                <p class="font-mono">Pods change</p>
+              </div>
+              <div class="bg-red-900/20 p-3 rounded-lg">
+                <p class="font-mono">Nodes change</p>
+              </div>
+              <div class="bg-red-900/20 p-3 rounded-lg">
+                <p class="font-mono">IPs change</p>
+              </div>
+            </div>
+            <div class="tip-box mt-4">
+              <h4 class="font-bold mb-2">Internet users need:</h4>
+              <p class="text-center text-xl neon-text-blue">
+                👉 ONE stable public IP
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 1️⃣ What is LoadBalancer?
+          </h3>
+          <div class="bg-blue-900/20 p-4 rounded-lg mb-6">
+            <p class="text-lg font-bold neon-text-blue">
+              👉 LoadBalancer = public internet entry point
+            </p>
+            <p class="mt-2">It gives:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>Public IP</li>
+              <li>Forwards traffic into Kubernetes</li>
+            </ul>
+            <div class="important-note mt-4">
+              <h4 class="font-bold mb-2">Usually provided by:</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="bg-yellow-900/20 p-2 rounded text-center">AWS</div>
+                <div class="bg-blue-900/20 p-2 rounded text-center">GCP</div>
+                <div class="bg-purple-900/20 p-2 rounded text-center">
+                  Azure
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 2️⃣ Where LoadBalancer Lives
+          </h3>
+          <div class="tip-box">
+            <p>LoadBalancer is created when you do:</p>
+            <div class="code-block mt-3">
+              <span class="text-blue-400">kind</span>: Service<br />
+              <span class="text-blue-400">type</span>: LoadBalancer
+            </div>
+          </div>
+          <div class="important-note mt-4">
+            <h4 class="font-bold mb-2 neon-text-purple">So:</h4>
+            <p class="text-center text-lg">
+              LoadBalancer is actually a Service type
+            </p>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 3️⃣ What Happens When You Apply It
+          </h3>
+          <div class="command-box">kubectl apply -f service.yaml</div>
+          <div class="diagram-box mt-4">
+            <div class="text-center">Kubernetes says:</div>
+            <div class="bg-blue-900/30 p-3 rounded-lg mt-2 text-center">
+              <p class="font-mono">"Cloud, give me a load balancer"</p>
+            </div>
+            <div class="text-center mt-4">Cloud replies:</div>
+            <div class="bg-green-900/30 p-3 rounded-lg mt-2 text-center">
+              <p class="font-mono">"Here is your public IP 🌍"</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 4️⃣ Traffic Flow (VERY IMPORTANT)
+          </h3>
+          <div class="diagram-box">
+            <div class="font-mono text-center space-y-1">
+              <div class="bg-yellow-900/30 p-2">User (browser)</div>
+              <div>↓</div>
+              <div class="bg-blue-900/30 p-2">
+                Cloud LoadBalancer (public IP)
+              </div>
+              <div>↓</div>
+              <div class="bg-purple-900/30 p-2">Service (LoadBalancer)</div>
+              <div>↓</div>
+              <div class="bg-green-900/30 p-2">Pods</div>
+            </div>
+          </div>
+          <p class="text-center mt-4 font-bold">
+            User never sees Pods or Nodes.
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 5️⃣ How Traffic is Balanced
+          </h3>
+          <div class="bg-blue-900/20 p-4 rounded-lg mb-4">
+            <p>LoadBalancer:</p>
+            <ul class="list-disc pl-5 mt-2">
+              <li>Distributes requests</li>
+              <li>Across healthy Pods</li>
+              <li>Across Nodes</li>
+            </ul>
+          </div>
+          <div class="diagram-box">
+            <div class="text-center">Load Balancing:</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div class="bg-blue-900/20 p-3 rounded-lg text-center">
+                <p class="font-mono">Request 1 → Pod A</p>
+              </div>
+              <div class="bg-purple-900/20 p-3 rounded-lg text-center">
+                <p class="font-mono">Request 2 → Pod B</p>
+              </div>
+              <div class="bg-green-900/20 p-3 rounded-lg text-center">
+                <p class="font-mono">Request 3 → Pod C</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 6️⃣ What If Pod Dies 💀
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="danger-note">
+              <p class="font-mono text-center">❌ Pod removed</p>
+            </div>
+            <div class="tip-box">
+              <p class="font-mono text-center">
+                ✅ Traffic sent to healthy Pods only
+              </p>
+            </div>
+          </div>
+          <p class="text-center mt-4 font-bold neon-text-green">Automatic.</p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 7️⃣ What If Node Dies 💀
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="danger-note">
+              <p class="font-mono text-center">❌ Node removed</p>
+            </div>
+            <div class="tip-box">
+              <p class="font-mono text-center">
+                ✅ Traffic routed to other Nodes
+              </p>
+            </div>
+          </div>
+          <p class="text-center mt-4 font-bold neon-text-green">Automatic.</p>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            Step 8️⃣ Why Ingress Still Needed 🤔
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">LoadBalancer:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Exposes one service</li>
+                <li>One public IP per service ❌ (costly)</li>
+              </ul>
+            </div>
+            <div class="tip-box">
+              <h4 class="font-bold mb-2 neon-text-green">Ingress:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Uses one LoadBalancer</li>
+                <li>Routes to many services ✅</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            LoadBalancer vs Ingress (Simple)
+          </h3>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Thing</th>
+                <th>LoadBalancer</th>
+                <th>Ingress</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Public IP</td>
+                <td>✅</td>
+                <td>❌ (uses LB)</td>
+              </tr>
+              <tr>
+                <td>HTTPS</td>
+                <td>❌ (basic)</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Multiple apps</td>
+                <td>❌</td>
+                <td>✅</td>
+              </tr>
+              <tr>
+                <td>Cost</td>
+                <td>High</td>
+                <td>Low</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold mb-3 neon-text-purple">
+            When to Use LoadBalancer
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="tip-box">
+              <h4 class="font-bold mb-2">✅ Use for:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Quick demo</li>
+                <li>Single app</li>
+                <li>Testing</li>
+              </ul>
+            </div>
+            <div class="danger-note">
+              <h4 class="font-bold mb-2">❌ When NOT to use:</h4>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Many services</li>
+                <li>Production (Ingress better)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="text-center p-6 mt-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg"
+        >
+          <h4 class="text-2xl font-bold mb-4 neon-text-blue">
+            Baby Summary 🍼
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <p class="font-bold">LoadBalancer = public IP</p>
+            </div>
+            <div class="bg-purple-900/20 p-4 rounded-lg">
+              <p class="font-bold">Service = traffic manager</p>
+            </div>
+            <div class="bg-green-900/20 p-4 rounded-lg">
+              <p class="font-bold">Pods = workers</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center p-6 mt-8 bg-black/30 rounded-lg">
+          <h4 class="text-2xl font-bold mb-4 neon-text-purple">
+            Final Full Flow 🧠
+          </h4>
+          <div class="font-mono space-y-1">
+            <div>Internet</div>
+            <div>↓</div>
+            <div class="bg-blue-900/30 p-2">LoadBalancer</div>
+            <div>↓</div>
+            <div class="bg-purple-900/30 p-2">Ingress (optional)</div>
+            <div>↓</div>
+            <div class="bg-green-900/30 p-2">Service</div>
+            <div>↓</div>
+            <div class="bg-yellow-900/30 p-2">Pods</div>
+            <div>↓</div>
+            <div>Containers</div>
+          </div>
+        </div>
+      </section>
+      <!-- Section 12: Volumes & Auto Scaling -->
+      <section class="gradient-bg rounded-xl p-5 md:p-8 mb-8 neon-border">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 neon-text-blue">
+          <i class="fas fa-database section-icon"></i>12. Volumes & Auto Scaling
+          (HPA)
+        </h2>
+
+        <!-- PART 1: VOLUMES -->
+        <div class="mb-10">
+          <div class="text-center mb-6">
+            <h3 class="text-2xl font-bold neon-text-pink mb-2">
+              PART 1️⃣ — VOLUMES (data safety)
+            </h3>
+            <div class="bg-pink-900/20 inline-block px-4 py-1 rounded-full">
+              MongoDB Protection
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 0️⃣ The Problem 😵
+            </h4>
+            <div class="danger-note">
+              <p class="mb-3">Containers are temporary.</p>
+              <p class="mb-3">If:</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div class="bg-red-900/30 p-3 rounded text-center">
+                  <p>Pod dies</p>
+                </div>
+                <div class="bg-red-900/30 p-3 rounded text-center">
+                  <p>Pod restarts</p>
+                </div>
+                <div class="bg-red-900/30 p-3 rounded text-center">
+                  <p>Pod moves to another Node</p>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xl font-bold neon-text-red">
+                  👉 Data inside container is LOST
+                </p>
+              </div>
+              <div class="danger-note mt-4">
+                <h5 class="font-bold mb-2">This is deadly for:</h5>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="bg-red-900/20 p-2 rounded text-center">
+                    MongoDB
+                  </div>
+                  <div class="bg-red-900/20 p-2 rounded text-center">Files</div>
+                  <div class="bg-red-900/20 p-2 rounded text-center">
+                    Uploads
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 1️⃣ What is a Volume?
+            </h4>
+            <div class="bg-blue-900/20 p-4 rounded-lg mb-4">
+              <p class="text-lg font-bold neon-text-blue">
+                👉 Volume = safe place to store data
+              </p>
+              <p class="mt-3">Data lives:</p>
+              <ul class="list-disc pl-5 mt-2">
+                <li>Outside container</li>
+                <li>Survives Pod restart</li>
+              </ul>
+            </div>
+            <div class="diagram-box">
+              <div class="text-center">Think:</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div class="bg-yellow-900/30 p-4 rounded-lg text-center">
+                  <p class="font-bold">Container = RAM</p>
+                  <p class="text-sm mt-2">Temporary, disappears</p>
+                </div>
+                <div class="bg-green-900/30 p-4 rounded-lg text-center">
+                  <p class="font-bold">Volume = Hard disk</p>
+                  <p class="text-sm mt-2">Permanent, survives</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 2️⃣ Kubernetes Volume Chain (IMPORTANT)
+            </h4>
+            <div class="important-note">
+              <p class="text-center text-xl font-bold">
+                Kubernetes splits storage into 3 parts:
+              </p>
+              <div class="text-center font-mono text-lg mt-4 space-y-1">
+                <p>PVC → PV → Real Storage</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 3️⃣ PVC (What You Ask For) 🙋
+            </h4>
+            <div class="bg-purple-900/20 p-4 rounded-lg mb-4">
+              <p class="text-lg font-bold neon-text-purple">
+                PersistentVolumeClaim
+              </p>
+              <p class="mt-3">You say:</p>
+              <div class="code-block mt-2">
+                <span class="text-green-400">"I need 10GB storage"</span>
+              </div>
+              <p class="mt-3 font-bold">You don't care where it comes from.</p>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 4️⃣ PV (What Cluster Gives) 🎁
+            </h4>
+            <div class="bg-green-900/20 p-4 rounded-lg mb-4">
+              <p class="text-lg font-bold neon-text-green">PersistentVolume</p>
+              <p class="mt-3">Cluster says:</p>
+              <div class="code-block mt-2">
+                <span class="text-green-400">"Here is disk space"</span>
+              </div>
+              <div class="important-note mt-4">
+                <h5 class="font-bold mb-2">PV can be:</h5>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="bg-yellow-900/20 p-2 rounded text-center">
+                    AWS EBS
+                  </div>
+                  <div class="bg-blue-900/20 p-2 rounded text-center">
+                    GCP Disk
+                  </div>
+                  <div class="bg-gray-800 p-2 rounded text-center">
+                    Local disk
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 5️⃣ Pod Uses PVC
+            </h4>
+            <div class="diagram-box">
+              <div class="text-center font-mono space-y-1">
+                <div class="bg-blue-900/30 p-2">Pod</div>
+                <div>→</div>
+                <div class="bg-purple-900/30 p-2">PVC</div>
+                <div>→</div>
+                <div class="bg-green-900/30 p-2">PV</div>
+                <div>→</div>
+                <div class="bg-yellow-900/30 p-2">Disk</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 6️⃣ Simple Mongo Example 🧠
+            </h4>
+            <div class="diagram-box">
+              <div class="text-center">Mongo Pod</div>
+              <div class="text-center mt-2">
+                └── Volume mounted at <span class="font-mono">/data/db</span>
+              </div>
+              <div class="mt-4 p-3 bg-green-900/20 rounded-lg text-center">
+                <p class="font-mono">
+                  Mongo writes data → volume → safe forever
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 7️⃣ What Happens If Pod Dies 💀
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="danger-note">
+                <p class="font-mono text-center">❌ Pod dead</p>
+              </div>
+              <div class="tip-box">
+                <p class="font-mono text-center">✅ New Pod created</p>
+              </div>
+              <div class="tip-box">
+                <p class="font-mono text-center">✅ Volume attached again</p>
+              </div>
+            </div>
+            <div class="text-center mt-4">
+              <p class="text-xl font-bold neon-text-green">Data stays 🎉</p>
+            </div>
+          </div>
+
+          <div class="danger-note mt-6">
+            <h4 class="font-bold text-lg mb-2">
+              <i class="fas fa-key mr-2"></i>Golden Rule 🔑
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="text-center">
+                <p class="font-mono">Stateless app → no volume</p>
+              </div>
+              <div class="text-center">
+                <p class="font-mono">Database → volume mandatory</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="text-center p-6 mt-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg"
+          >
+            <h4 class="text-2xl font-bold mb-4 neon-text-blue">
+              Volume Baby Summary 🍼
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-red-900/20 p-4 rounded-lg">
+                <p class="font-bold">Containers die</p>
+              </div>
+              <div class="bg-green-900/20 p-4 rounded-lg">
+                <p class="font-bold">Volumes don't</p>
+              </div>
+              <div class="bg-purple-900/20 p-4 rounded-lg">
+                <p class="font-bold">PVC asks, PV gives</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PART 2: AUTO SCALING -->
+        <div class="mt-12">
+          <div class="text-center mb-6">
+            <h3 class="text-2xl font-bold neon-text-green mb-2">
+              PART 2️⃣ — AUTO SCALING (HPA)
+            </h3>
+            <div class="bg-green-900/20 inline-block px-4 py-1 rounded-full">
+              Smart Resource Management
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 0️⃣ The Problem 😵
+            </h4>
+            <div class="danger-note">
+              <p class="mb-3">Traffic increases suddenly.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="bg-red-900/30 p-4 rounded-lg text-center">
+                  <p class="font-mono">1 Pod ❌ cannot handle</p>
+                </div>
+                <div class="bg-red-900/30 p-4 rounded-lg text-center">
+                  <p class="font-mono">Manual scaling ❌ too slow</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 1️⃣ What is Auto Scaling?
+            </h4>
+            <div class="bg-blue-900/20 p-4 rounded-lg">
+              <p class="text-lg font-bold neon-text-blue">
+                👉 Automatically increase/decrease Pods
+              </p>
+              <div class="important-note mt-4">
+                <h5 class="font-bold mb-2">Based on:</h5>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="bg-yellow-900/20 p-2 rounded text-center">
+                    CPU
+                  </div>
+                  <div class="bg-purple-900/20 p-2 rounded text-center">
+                    Memory
+                  </div>
+                  <div class="bg-blue-900/20 p-2 rounded text-center">
+                    Requests
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 2️⃣ HPA (Important Name)
+            </h4>
+            <div class="bg-purple-900/20 p-4 rounded-lg mb-4">
+              <p class="text-lg font-bold neon-text-purple">
+                Horizontal Pod Autoscaler
+              </p>
+              <p class="mt-3">It changes:</p>
+              <div class="code-block mt-2">
+                <span class="text-blue-400">replicas</span>
+              </div>
+              <p class="mt-3 text-center font-bold neon-text-green">
+                Automatically.
+              </p>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 3️⃣ Simple Rule 🧠
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-red-900/20 p-4 rounded-lg text-center">
+                <p class="font-mono text-xl">CPU high → more Pods</p>
+              </div>
+              <div class="bg-green-900/20 p-4 rounded-lg text-center">
+                <p class="font-mono text-xl">CPU low → fewer Pods</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 4️⃣ Example Thinking
+            </h4>
+            <div class="diagram-box">
+              <div class="text-center mb-4">You say:</div>
+              <div class="bg-blue-900/30 p-3 rounded-lg text-center">
+                <p class="font-mono">"Keep CPU at 50%"</p>
+              </div>
+              <div class="text-center mt-6 mb-4">Kubernetes does math:</div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-red-900/20 p-3 rounded text-center">
+                  <p class="font-mono">If CPU > 50% → add Pods</p>
+                </div>
+                <div class="bg-green-900/20 p-3 rounded text-center">
+                  <p class="font-mono">If CPU < 50% → remove Pods</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 5️⃣ What HPA Controls
+            </h4>
+            <div class="tip-box">
+              <p class="text-center font-bold">
+                HPA does NOT touch Pods directly.
+              </p>
+              <div class="text-center font-mono text-lg mt-4 space-y-1">
+                <p>HPA → Deployment → Pods</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 6️⃣ Flow (Complete)
+            </h4>
+            <div class="diagram-box">
+              <div class="font-mono text-center space-y-1">
+                <div class="bg-yellow-900/30 p-2">User traffic</div>
+                <div>↓</div>
+                <div class="bg-blue-900/30 p-2">Service</div>
+                <div>↓</div>
+                <div class="bg-purple-900/30 p-2">Pods (load increases)</div>
+                <div>↓</div>
+                <div class="bg-red-900/30 p-2">HPA detects CPU</div>
+                <div>↓</div>
+                <div class="bg-green-900/30 p-2">Deployment scales Pods</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <h4 class="text-xl font-semibold mb-3 neon-text-purple">
+              Step 7️⃣ What If Traffic Drops 📉
+            </h4>
+            <div class="diagram-box">
+              <div class="text-center text-xl font-mono">
+                <p>10 Pods → 2 Pods</p>
+              </div>
+              <div class="text-center mt-4">
+                <p class="text-2xl font-bold neon-text-green">Money saved 💰</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="text-center p-6 mt-8 bg-gradient-to-r from-green-900/30 to-blue-900/30 rounded-lg"
+          >
+            <h4 class="text-2xl font-bold mb-4 neon-text-green">
+              HPA Baby Summary 🍼
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-blue-900/20 p-4 rounded-lg">
+                <p class="font-bold">Volumes save data</p>
+              </div>
+              <div class="bg-purple-900/20 p-4 rounded-lg">
+                <p class="font-bold">HPA saves performance</p>
+              </div>
+              <div class="bg-green-900/20 p-4 rounded-lg">
+                <p class="font-bold">Kubernetes handles both</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FINAL COMPLETE MAP -->
+        <div class="mt-12">
+          <div class="text-center mb-6">
+            <h3 class="text-2xl font-bold neon-text-blue mb-2">
+              FINAL COMPLETE KUBERNETES MAP 🧠
+            </h3>
+            <div class="bg-blue-900/20 inline-block px-4 py-1 rounded-full">
+              Everything Connected
+            </div>
+          </div>
+
+          <div class="diagram-box">
+            <div class="font-mono text-center space-y-1">
+              <div class="bg-yellow-900/30 p-2">Internet</div>
+              <div>↓</div>
+              <div class="bg-blue-900/30 p-2">LoadBalancer</div>
+              <div>↓</div>
+              <div class="bg-purple-900/30 p-2">Ingress</div>
+              <div>↓</div>
+              <div class="bg-green-900/30 p-2">Service</div>
+              <div>↓</div>
+              <div class="bg-red-900/30 p-2">Deployment ← HPA</div>
+              <div>↓</div>
+              <div class="bg-pink-900/30 p-2">Pods</div>
+              <div>↓</div>
+              <div class="bg-indigo-900/30 p-2">Containers</div>
+              <div>↓</div>
+              <div class="bg-teal-900/30 p-2">Volumes (PVC → PV)</div>
+              <div>↓</div>
+              <div class="bg-gray-700 p-2">Nodes</div>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <p class="text-lg font-bold neon-text-purple">
+              This is the complete picture. You now understand Kubernetes fully!
+              🎯
+            </p>
+          </div>
+        </div>
+      </section>
+      <!-- Footer -->
+      <footer class="text-center py-8 text-gray-400">
+        <p class="mb-2">Complete Docker & Kubernetes Guide</p>
+        <p>No Bakwas. Straight to the point. 🔥</p>
+        <div class="mt-4 flex justify-center space-x-4">
+          <div class="bg-blue-900/20 px-3 py-1 rounded-full text-sm">
+            Step-by-Step
+          </div>
+          <div class="bg-purple-900/20 px-3 py-1 rounded-full text-sm">
+            Child-Level Explanation
+          </div>
+          <div class="bg-green-900/20 px-3 py-1 rounded-full text-sm">
+            Production Ready
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Simple script for mobile responsiveness
+      document.addEventListener('DOMContentLoaded', function () {
+        // Add click to copy functionality for command boxes
+        const commandBoxes = document.querySelectorAll('.command-box');
+        commandBoxes.forEach((box) => {
+          box.addEventListener('click', function () {
+            const text = this.textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+              const originalText = this.textContent;
+              this.textContent = '✅ Copied!';
+              setTimeout(() => {
+                this.textContent = originalText;
+              }, 1500);
+            });
+          });
+        });
+
+        // Make code blocks more readable on mobile
+        const codeBlocks = document.querySelectorAll('.code-block');
+        codeBlocks.forEach((block) => {
+          block.style.fontSize = window.innerWidth < 640 ? '0.75rem' : '0.9rem';
+        });
+      });
+
+      // Adjust on resize
+      window.addEventListener('resize', function () {
+        const codeBlocks = document.querySelectorAll('.code-block');
+        codeBlocks.forEach((block) => {
+          block.style.fontSize = window.innerWidth < 640 ? '0.75rem' : '0.9rem';
+        });
+      });
+    </script>
+  </body>
+</html>
