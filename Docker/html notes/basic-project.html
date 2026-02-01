@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docker + Node.js Express Project Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+      }
+
+      .code-block {
+        font-family: 'JetBrains Mono', monospace;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+      }
+
+      .code-block:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        border-color: #475569;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        transition: all 0.3s ease;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        transform: translateY(-2px);
+      }
+
+      .copy-btn:active {
+        transform: translateY(0);
+      }
+
+      .section-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+      }
+
+      .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        border-color: #475569;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .success-badge {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+
+      .warning-badge {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+
+      .info-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .danger-badge {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      .command-line {
+        counter-reset: line;
+      }
+
+      .command-line code::before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        width: 2em;
+        margin-right: 1em;
+        color: #64748b;
+        text-align: right;
+      }
+
+      ::selection {
+        background: rgba(59, 130, 246, 0.5);
+        color: white;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      .file-structure {
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 15px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+      }
+
+      .file-icon {
+        color: #3b82f6;
+        margin-right: 8px;
+      }
+
+      .folder-icon {
+        color: #f59e0b;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <header class="mb-10">
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+        >
+          <div>
+            <h1
+              class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+            >
+              <i class="fab fa-docker mr-3"></i>Docker + Node.js Express Project
+              Guide
+            </h1>
+            <p class="text-slate-400 mt-2">
+              Complete breakdown of Dockerfile, package.json, and
+              troubleshooting
+            </p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="status-badge success-badge">
+              <i class="fas fa-check-circle mr-2"></i>Project Working
+            </span>
+            <span class="status-badge info-badge">
+              <i class="fab fa-node-js mr-2"></i>Node.js + Express
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Project Structure -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-folder-tree text-blue-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">Project Structure</h2>
+        </div>
+
+        <div class="file-structure mb-4">
+          <div class="text-green-400 mb-2">
+            <i class="fas fa-folder folder-icon"></i>basic-project/
+          </div>
+          <div class="ml-4 space-y-1">
+            <div class="text-cyan-300">
+              <i class="far fa-file-code file-icon"></i>Dockerfile
+            </div>
+            <div class="text-yellow-300">
+              <i class="far fa-file-alt file-icon"></i>package.json
+            </div>
+            <div class="text-emerald-300">
+              <i class="far fa-file file-icon"></i>index.js
+            </div>
+            <div class="text-slate-400">
+              <i class="fas fa-folder folder-icon"></i>node_modules/
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dockerfile Breakdown -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fab fa-docker text-purple-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">Dockerfile Analysis</h2>
+        </div>
+
+        <div class="code-block p-4 mb-6 relative">
+          <div class="absolute top-3 right-3">
+            <button
+              onclick="copyCode('dockerfile')"
+              class="copy-btn text-white px-3 py-1 rounded-lg text-sm font-medium"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <div class="command-line overflow-x-auto scrollbar-custom">
+            <pre><code id="dockerfile" class="text-sm">FROM node:18-alpine
+WORKDIR /index
+COPY package*.json .
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["npm", "start"]</code></pre>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Line by Line Explanation -->
+          <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              Line by Line Explanation
+            </h3>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-blue-500"
+            >
+              <div class="font-mono text-blue-300 mb-1">
+                FROM node:18-alpine
+              </div>
+              <p class="text-slate-400 text-sm">
+                Uses Node.js 18 on Alpine Linux (lightweight ~50MB)
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-green-500"
+            >
+              <div class="font-mono text-green-300 mb-1">WORKDIR /index</div>
+              <p class="text-slate-400 text-sm">
+                Sets working directory inside container to
+                <code class="text-green-400">/index</code>
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-yellow-500"
+            >
+              <div class="font-mono text-yellow-300 mb-1">
+                COPY package*.json .
+              </div>
+              <p class="text-slate-400 text-sm">
+                Copies package.json and package-lock.json to working directory
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-red-500"
+            >
+              <div class="font-mono text-red-300 mb-1">RUN npm install</div>
+              <p class="text-slate-400 text-sm">
+                Installs dependencies listed in package.json
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-purple-500"
+            >
+              <div class="font-mono text-purple-300 mb-1">COPY . .</div>
+              <p class="text-slate-400 text-sm">
+                Copies all remaining project files to container
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-cyan-500"
+            >
+              <div class="font-mono text-cyan-300 mb-1">EXPOSE 3000</div>
+              <p class="text-slate-400 text-sm">
+                Documents that app listens on port 3000
+              </p>
+            </div>
+
+            <div
+              class="bg-slate-900/50 p-4 rounded-lg border-l-4 border-pink-500"
+            >
+              <div class="font-mono text-pink-300 mb-1">
+                CMD ["npm", "start"]
+              </div>
+              <p class="text-slate-400 text-sm">
+                Default command to run when container starts
+              </p>
+            </div>
+          </div>
+
+          <!-- Key Insights -->
+          <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              Key Insights
+            </h3>
+
+            <div
+              class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4"
+            >
+              <div class="flex items-start">
+                <i class="fas fa-lightbulb text-blue-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-blue-300">
+                    Layer Caching Strategy
+                  </h4>
+                  <p class="text-slate-400 text-sm mt-1">
+                    Package.json copied separately before
+                    <code>COPY . .</code> to leverage Docker layer caching.
+                    Dependency installation layer won't rebuild unless
+                    package.json changes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-green-900/20 border border-green-700/30 rounded-lg p-4"
+            >
+              <div class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-green-300">Alpine Advantage</h4>
+                  <p class="text-slate-400 text-sm mt-1">
+                    Alpine Linux base image reduces image size significantly
+                    compared to regular Node image (~180MB vs ~1GB).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-amber-900/20 border border-amber-700/30 rounded-lg p-4"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-exclamation-triangle text-amber-400 mt-1 mr-3"
+                ></i>
+                <div>
+                  <h4 class="font-medium text-amber-300">
+                    Convention vs Configuration
+                  </h4>
+                  <p class="text-slate-400 text-sm mt-1">
+                    While <code>WORKDIR /index</code> works, convention suggests
+                    <code>WORKDIR /app</code> for better readability and
+                    standardization.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Package.json Analysis -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fab fa-node-js text-green-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">
+            Package.json Analysis
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Original (Error) -->
+          <div>
+            <div class="flex items-center mb-4">
+              <h3 class="text-xl font-semibold text-slate-300">
+                Original (Error)
+              </h3>
+              <span class="ml-3 status-badge danger-badge text-sm"
+                >Missing Start Script</span
+              >
+            </div>
+
+            <div class="code-block p-4 mb-4 relative">
+              <div class="absolute top-3 right-3">
+                <button
+                  onclick="copyCode('package-error')"
+                  class="copy-btn text-white px-3 py-1 rounded-lg text-sm font-medium"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div class="overflow-x-auto scrollbar-custom">
+                <pre><code id="package-error" class="text-sm">{
+  "name": "basic-project",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+    // ❌ Missing "start" script!
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}</code></pre>
+              </div>
+            </div>
+
+            <div class="bg-red-900/20 border border-red-700/30 rounded-lg p-4">
+              <div class="flex items-start">
+                <i class="fas fa-times-circle text-red-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-red-300">The Problem</h4>
+                  <p class="text-slate-300 text-sm mt-1">
+                    Dockerfile runs <code>CMD ["npm", "start"]</code> but
+                    package.json has no "start" script. This causes the error:
+                    <code class="text-red-400"
+                      >npm error Missing script: "start"</code
+                    >
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fixed Version -->
+          <div>
+            <div class="flex items-center mb-4">
+              <h3 class="text-xl font-semibold text-slate-300">
+                Fixed Version
+              </h3>
+              <span class="ml-3 status-badge success-badge text-sm"
+                >Working</span
+              >
+            </div>
+
+            <div class="code-block p-4 mb-4 relative">
+              <div class="absolute top-3 right-3">
+                <button
+                  onclick="copyCode('package-fixed')"
+                  class="copy-btn text-white px-3 py-1 rounded-lg text-sm font-medium"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div class="overflow-x-auto scrollbar-custom">
+                <pre><code id="package-fixed" class="text-sm">{
+  "name": "basic-project",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js",  // ✅ Added start script
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}</code></pre>
+              </div>
+            </div>
+
+            <div
+              class="bg-green-900/20 border border-green-700/30 rounded-lg p-4"
+            >
+              <div class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mt-1 mr-3"></i>
+                <div>
+                  <h4 class="font-medium text-green-300">The Fix</h4>
+                  <p class="text-slate-300 text-sm mt-1">
+                    Added <code>"start": "node index.js"</code> to scripts. Now
+                    <code>npm start</code> will execute
+                    <code>node index.js</code> as expected.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- The Error & Solution -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-bug text-red-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">
+            Error Analysis & Solution
+          </h2>
+        </div>
+
+        <!-- Error Output -->
+        <div class="mb-8">
+          <h3 class="text-xl font-semibold text-slate-300 mb-4">
+            Error Output
+          </h3>
+          <div class="code-block p-4 relative">
+            <div class="command-line overflow-x-auto scrollbar-custom">
+              <pre><code class="text-sm text-red-300">docker run -p 3000:3000 basic-project
+npm error Missing script: "start"
+npm error
+npm error Did you mean one of these?
+npm error   npm star # Mark your favorite packages
+npm error   npm stars # View packages marked as favorites
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solution Steps -->
+        <div>
+          <h3 class="text-xl font-semibold text-slate-300 mb-4">
+            Solution in 2 Minutes
+          </h3>
+
+          <div class="space-y-4">
+            <div class="flex items-start bg-slate-900/50 p-4 rounded-lg">
+              <div
+                class="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center mr-4 flex-shrink-0"
+              >
+                <span class="font-bold text-blue-300">1</span>
+              </div>
+              <div>
+                <h4 class="font-medium text-slate-300 mb-1">
+                  Edit package.json
+                </h4>
+                <p class="text-slate-400 text-sm">
+                  Add the start script to your package.json
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start bg-slate-900/50 p-4 rounded-lg">
+              <div
+                class="w-8 h-8 rounded-full bg-green-800 flex items-center justify-center mr-4 flex-shrink-0"
+              >
+                <span class="font-bold text-green-300">2</span>
+              </div>
+              <div>
+                <h4 class="font-medium text-slate-300 mb-1">
+                  Rebuild Docker Image
+                </h4>
+                <div class="code-block p-3 mt-2">
+                  <code class="text-sm text-green-300"
+                    >docker build -t basic-project .</code
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start bg-slate-900/50 p-4 rounded-lg">
+              <div
+                class="w-8 h-8 rounded-full bg-purple-800 flex items-center justify-center mr-4 flex-shrink-0"
+              >
+                <span class="font-bold text-purple-300">3</span>
+              </div>
+              <div>
+                <h4 class="font-medium text-slate-300 mb-1">Run Container</h4>
+                <div class="code-block p-3 mt-2">
+                  <code class="text-sm text-green-300"
+                    >docker run -p 3000:3000 basic-project</code
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start bg-slate-900/50 p-4 rounded-lg">
+              <div
+                class="w-8 h-8 rounded-full bg-cyan-800 flex items-center justify-center mr-4 flex-shrink-0"
+              >
+                <span class="font-bold text-cyan-300">4</span>
+              </div>
+              <div>
+                <h4 class="font-medium text-slate-300 mb-1">
+                  Access Application
+                </h4>
+                <p class="text-slate-400 text-sm">
+                  Open browser and navigate to:
+                </p>
+                <div class="code-block p-3 mt-2">
+                  <code class="text-sm text-cyan-300"
+                    >http://localhost:3000</code
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Important Concepts -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-cyan-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-brain text-cyan-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">Important Concepts</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              Image vs Container
+            </h3>
+
+            <div class="bg-slate-900/50 p-4 rounded-lg">
+              <div class="flex items-center mb-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-box text-blue-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-slate-300">Docker Image</h4>
+                  <p class="text-slate-400 text-sm">Blueprint or template</p>
+                </div>
+              </div>
+              <div class="code-block p-3">
+                <code class="text-sm text-blue-300"
+                  >docker build -t basic-project .</code
+                >
+              </div>
+              <p class="text-slate-400 text-sm mt-2">
+                Creates an image from Dockerfile
+              </p>
+            </div>
+
+            <div class="bg-slate-900/50 p-4 rounded-lg">
+              <div class="flex items-center mb-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-cube text-green-400"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-slate-300">Docker Container</h4>
+                  <p class="text-slate-400 text-sm">
+                    Running instance of an image
+                  </p>
+                </div>
+              </div>
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300"
+                  >docker run -p 3000:3000 basic-project</code
+                >
+              </div>
+              <p class="text-slate-400 text-sm mt-2">
+                Starts a container from the image
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              Name Relationships
+            </h3>
+
+            <div class="bg-slate-900/50 p-4 rounded-lg">
+              <h4 class="font-medium text-slate-300 mb-3">package.json name</h4>
+              <div class="code-block p-3 mb-3">
+                <code class="text-sm text-yellow-300"
+                  >"name": "basic-project"</code
+                >
+              </div>
+              <p class="text-slate-400 text-sm">
+                Only matters for npm publishing. Docker doesn't read this.
+              </p>
+            </div>
+
+            <div class="bg-slate-900/50 p-4 rounded-lg">
+              <h4 class="font-medium text-slate-300 mb-3">Docker image name</h4>
+              <div class="code-block p-3 mb-3">
+                <code class="text-sm text-purple-300"
+                  >docker build -t express-demo .</code
+                >
+              </div>
+              <p class="text-slate-400 text-sm">
+                Can be anything! Doesn't need to match package.json name.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <span
+                  class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-400"
+                  >express-demo</span
+                >
+                <span
+                  class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-400"
+                  >amit-app</span
+                >
+                <span
+                  class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-400"
+                  >mango-banana</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Working with Containers -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-amber-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-terminal text-amber-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">
+            Working with Containers
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              View Files Inside Container
+            </h3>
+
+            <div class="space-y-3">
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300">docker ps</code>
+                <div class="text-slate-500 text-xs mt-1">
+                  List running containers
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300"
+                  >docker exec -it &lt;container_id&gt; sh</code
+                >
+                <div class="text-slate-500 text-xs mt-1">
+                  Enter container shell (alpine uses sh, not bash)
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300">cd /index</code>
+                <div class="text-slate-500 text-xs mt-1">
+                  Navigate to app directory (from WORKDIR)
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300">ls</code>
+                <div class="text-slate-500 text-xs mt-1">
+                  List files in container
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-green-300">cat index.js</code>
+                <div class="text-slate-500 text-xs mt-1">
+                  View your Express app file
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-semibold text-slate-300 mb-4">
+              Container Management
+            </h3>
+
+            <div class="space-y-3">
+              <div class="code-block p-3">
+                <code class="text-sm text-cyan-300">docker ps -a</code>
+                <div class="text-slate-500 text-xs mt-1">
+                  List all containers (including stopped)
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-cyan-300"
+                  >docker stop &lt;container&gt;</code
+                >
+                <div class="text-slate-500 text-xs mt-1">
+                  Stop a running container
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-cyan-300"
+                  >docker start &lt;container&gt;</code
+                >
+                <div class="text-slate-500 text-xs mt-1">
+                  Start a stopped container
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-cyan-300"
+                  >docker rm &lt;container&gt;</code
+                >
+                <div class="text-slate-500 text-xs mt-1">
+                  Remove a container
+                </div>
+              </div>
+
+              <div class="code-block p-3">
+                <code class="text-sm text-cyan-300"
+                  >docker logs &lt;container&gt;</code
+                >
+                <div class="text-slate-500 text-xs mt-1">
+                  View container logs
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Common Pitfalls -->
+      <section class="section-card p-6 mb-8">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-exclamation-circle text-red-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">
+            Common Pitfalls & Solutions
+          </h2>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-5">
+            <h4 class="font-semibold text-red-300 mb-3 flex items-center">
+              <i class="fas fa-times-circle mr-2"></i> Pitfall 1: Missing Start
+              Script
+            </h4>
+            <p class="text-slate-400 text-sm mb-3">
+              Dockerfile runs <code>npm start</code> but package.json doesn't
+              define it.
+            </p>
+            <div class="code-block p-3 bg-slate-800/50">
+              <div class="text-green-400 text-sm">
+                ✅ Solution: Add <code>"start": "node index.js"</code> to
+                package.json scripts
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-5">
+            <h4 class="font-semibold text-amber-300 mb-3 flex items-center">
+              <i class="fas fa-exclamation-triangle mr-2"></i> Pitfall 2:
+              Express v5 Beta
+            </h4>
+            <p class="text-slate-400 text-sm mb-3">
+              Package.json uses Express 5 which is still in beta.
+            </p>
+            <div class="code-block p-3 bg-slate-800/50">
+              <div class="text-green-400 text-sm">
+                ✅ Solution: Use Express 4 for production:
+                <code>"express": "^4.18.2"</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-5">
+            <h4 class="font-semibold text-blue-300 mb-3 flex items-center">
+              <i class="fas fa-question-circle mr-2"></i> Pitfall 3: Name
+              Confusion
+            </h4>
+            <p class="text-slate-400 text-sm mb-3">
+              Thinking Docker image name must match package.json name.
+            </p>
+            <div class="code-block p-3 bg-slate-800/50">
+              <div class="text-green-400 text-sm">
+                ✅ Solution: They're independent! Docker image can have any
+                name.
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700 rounded-lg p-5">
+            <h4 class="font-semibold text-purple-300 mb-3 flex items-center">
+              <i class="fas fa-code mr-2"></i> Pitfall 4: File Name Mismatch
+            </h4>
+            <p class="text-slate-400 text-sm mb-3">
+              Renaming index.js but forgetting to update package.json start
+              script.
+            </p>
+            <div class="code-block p-3 bg-slate-800/50">
+              <div class="text-green-400 text-sm">
+                ✅ Solution: Keep start script filename in sync with your main
+                file
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Best Practices -->
+      <section class="section-card p-6">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-10 h-10 rounded-full bg-emerald-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-star text-emerald-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-slate-200">Best Practices</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <div
+              class="bg-emerald-900/20 border border-emerald-700/30 rounded-lg p-4"
+            >
+              <h4 class="font-medium text-emerald-300 mb-2">
+                Use .dockerignore
+              </h4>
+              <p class="text-slate-400 text-sm">
+                Create a .dockerignore file to exclude node_modules, logs, and
+                other unnecessary files from the Docker build context.
+              </p>
+              <div class="code-block p-3 mt-2">
+                <code class="text-xs text-green-300"
+                  >node_modules npm-debug.log .git .env *.md</code
+                >
+              </div>
+            </div>
+
+            <div
+              class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-4"
+            >
+              <h4 class="font-medium text-blue-300 mb-2">Standard WORKDIR</h4>
+              <p class="text-slate-400 text-sm">
+                Use <code>WORKDIR /app</code> instead of <code>/index</code> for
+                better standardization across projects.
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div
+              class="bg-purple-900/20 border border-purple-700/30 rounded-lg p-4"
+            >
+              <h4 class="font-medium text-purple-300 mb-2">
+                Alternative CMD Syntax
+              </h4>
+              <p class="text-slate-400 text-sm">
+                Use <code>CMD ["node", "index.js"]</code> instead of
+                <code>CMD ["npm", "start"]</code> to bypass package.json
+                dependency.
+              </p>
+            </div>
+
+            <div
+              class="bg-amber-900/20 border border-amber-700/30 rounded-lg p-4"
+            >
+              <h4 class="font-medium text-amber-300 mb-2">
+                Multi-stage Builds
+              </h4>
+              <p class="text-slate-400 text-sm">
+                For production, consider multi-stage builds to reduce final
+                image size:
+              </p>
+              <div class="code-block p-3 mt-2">
+                <code class="text-xs text-green-300"
+                  ># Build stage FROM node:18-alpine AS builder WORKDIR /app
+                  COPY package*.json . RUN npm ci --only=production # Final
+                  stage FROM node:18-alpine COPY --from=builder
+                  /app/node_modules ./node_modules COPY . . CMD ["node",
+                  "index.js"]</code
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="mt-12 pt-8 border-t border-slate-800">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <p class="text-slate-500 text-sm">
+              <i class="fab fa-docker mr-1"></i> Docker + Node.js Express
+              Project Guide
+            </p>
+            <p class="text-slate-600 text-xs mt-1">
+              Based on real troubleshooting experience • All concepts validated
+            </p>
+          </div>
+          <div class="flex space-x-4">
+            <span class="text-slate-500">
+              <i class="fab fa-docker text-xl"></i>
+            </span>
+            <span class="text-slate-500">
+              <i class="fab fa-node-js text-xl"></i>
+            </span>
+            <span class="text-slate-500">
+              <i class="fab fa-js-square text-xl"></i>
+            </span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy code functionality
+      function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        const textToCopy = codeElement.textContent;
+
+        // Create a temporary textarea
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        document.body.appendChild(textarea);
+
+        // Select and copy text
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // For mobile devices
+
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            // Visual feedback
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+            button.classList.remove('bg-blue-600');
+            button.classList.add('bg-green-600');
+
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+              button.classList.remove('bg-green-600');
+              button.classList.add('bg-blue-600');
+            }, 2000);
+          }
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+        }
+
+        // Clean up
+        document.body.removeChild(textarea);
+      }
+
+      // Add subtle animation to section cards on scroll
+      document.addEventListener('DOMContentLoaded', function () {
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px',
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.style.opacity = '1';
+              entry.target.style.transform = 'translateY(0)';
+            }
+          });
+        }, observerOptions);
+
+        // Observe all section cards
+        document.querySelectorAll('.section-card').forEach((card) => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+          observer.observe(card);
+        });
+      });
+    </script>
+  </body>
+</html>

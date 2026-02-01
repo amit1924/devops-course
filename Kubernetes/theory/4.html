@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Pods Master Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .pod-diagram {
+        border: 2px solid var(--neon-blue);
+        background: rgba(0, 243, 255, 0.05);
+        border-radius: 15px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .container-box {
+        border: 2px solid;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .container-box:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+      }
+
+      .shared-resource {
+        background: rgba(185, 103, 255, 0.2);
+        border: 2px dashed var(--neon-purple);
+        border-radius: 8px;
+        padding: 10px;
+        margin: 5px 0;
+      }
+
+      .lifecycle-phase {
+        position: relative;
+        padding-left: 40px;
+        margin: 15px 0;
+      }
+
+      .phase-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+
+      .tab-button {
+        background: rgba(26, 26, 58, 0.8);
+        border: 1px solid var(--neon-blue);
+        transition: all 0.3s ease;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .pattern-card {
+        border: 2px solid;
+        border-image: linear-gradient(
+            45deg,
+            var(--neon-green),
+            var(--neon-blue)
+          )
+          1;
+        background: rgba(17, 17, 42, 0.8);
+        transition: transform 0.3s ease;
+      }
+
+      .pattern-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 243, 255, 0.2);
+      }
+
+      .scheduling-node {
+        border: 2px solid var(--neon-purple);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+        background: rgba(185, 103, 255, 0.1);
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .arrow-flow {
+        position: relative;
+        padding-left: 40px;
+      }
+
+      .arrow-flow::before {
+        content: '→';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        color: var(--neon-blue);
+        font-size: 1.5rem;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen overflow-x-hidden">
+    <!-- Header -->
+    <header
+      class="top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-12 h-12 rounded-xl bg-green-900/30 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-cube text-2xl neon-text-green"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-blue">
+                Kubernetes Pods Deep Dive
+              </h1>
+              <p class="text-gray-300">
+                The Universal Wrapper - Complete Guide
+              </p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button
+              onclick="switchTab('basics')"
+              id="basicsTab"
+              class="tab-button active px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-cube mr-2"></i>Pod Basics
+            </button>
+            <button
+              onclick="switchTab('multi')"
+              id="multiTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-layer-group mr-2"></i>Multi-Container
+            </button>
+            <button
+              onclick="switchTab('scheduling')"
+              id="schedulingTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-project-diagram mr-2"></i>Scheduling
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Basics Tab -->
+      <div id="basicsContent" class="tab-content">
+        <!-- Pod Abstraction -->
+        <div class="pod-diagram p-6 mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🥡 1️⃣ Pods = The Universal Wrapper
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                Abstraction Layer
+              </h3>
+              <p class="mb-4">
+                Kubernetes doesn't care what's inside your Pod. It only sees
+                "Pod" as a unit.
+              </p>
+
+              <div class="space-y-3 mb-6">
+                <div class="flex items-center bg-black/40 p-3 rounded-lg">
+                  <i class="fab fa-docker text-blue-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Container</p>
+                    <p class="text-sm text-gray-400">
+                      Express app, database, cache
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center bg-black/40 p-3 rounded-lg">
+                  <i class="fas fa-server text-green-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">VM (KubeVirt)</p>
+                    <p class="text-sm text-gray-400">
+                      Legacy apps, Windows workloads
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center bg-black/40 p-3 rounded-lg">
+                  <i class="fas fa-bolt text-yellow-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Serverless (Knative)</p>
+                    <p class="text-sm text-gray-400">Event-driven functions</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center bg-black/40 p-3 rounded-lg">
+                  <i class="fas fa-code text-purple-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Wasm App</p>
+                    <p class="text-sm text-gray-400">WebAssembly workloads</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="bg-black/60 p-6 rounded-xl mb-4">
+                <h4 class="text-lg font-bold neon-text-purple mb-3">
+                  🎯 Why Abstraction Matters
+                </h4>
+                <p class="text-gray-300 mb-3">
+                  Without Pod abstraction, Kubernetes would need:
+                </p>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span
+                      >Different logic for containers vs VMs vs serverless</span
+                    >
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span>Complex API for each workload type</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span>Separate scheduling for different technologies</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-green-900/20 p-4 rounded-xl">
+                <h4 class="text-lg font-bold neon-text-green mb-2">
+                  ✅ With Pod Abstraction
+                </h4>
+                <p class="text-sm">
+                  <i class="fas fa-check-circle mr-2"></i>
+                  <strong
+                    >Everything → wrapped in Pod → treated uniformly</strong
+                  >
+                </p>
+                <p class="text-sm mt-2">Clean, elegant system design</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pod Features -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🧱 2️⃣ Pods Add Features to Workloads
+          </h2>
+
+          <div class="grid md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-black/40 p-4 rounded-xl text-center">
+              <div
+                class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mx-auto mb-3"
+              >
+                <i class="fas fa-microchip"></i>
+              </div>
+              <p class="font-bold">Resource Control</p>
+              <p class="text-xs text-gray-400">CPU/memory limits</p>
+            </div>
+
+            <div class="bg-black/40 p-4 rounded-xl text-center">
+              <div
+                class="w-12 h-12 rounded-full bg-green-900/50 flex items-center justify-center mx-auto mb-3"
+              >
+                <i class="fas fa-heartbeat"></i>
+              </div>
+              <p class="font-bold">Health Checking</p>
+              <p class="text-xs text-gray-400">Readiness/liveness probes</p>
+            </div>
+
+            <div class="bg-black/40 p-4 rounded-xl text-center">
+              <div
+                class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center mx-auto mb-3"
+              >
+                <i class="fas fa-redo"></i>
+              </div>
+              <p class="font-bold">Restart Rules</p>
+              <p class="text-xs text-gray-400">Always/OnFailure/Never</p>
+            </div>
+
+            <div class="bg-black/40 p-4 rounded-xl text-center">
+              <div
+                class="w-12 h-12 rounded-full bg-orange-900/50 flex items-center justify-center mx-auto mb-3"
+              >
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <p class="font-bold">Security Controls</p>
+              <p class="text-xs text-gray-400">Security contexts</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resource Sharing -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🧠 3️⃣ Pods Enable Resource Sharing
+          </h2>
+
+          <div class="pod-diagram p-6 mb-6">
+            <div class="text-center mb-6">
+              <div class="inline-block bg-blue-900/30 px-4 py-2 rounded-lg">
+                <h3 class="text-xl font-bold neon-text-blue">
+                  🟢 Express + Sidecar Example
+                </h3>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <!-- Container 1 -->
+              <div
+                class="container-box"
+                style="border-color: var(--neon-green)"
+              >
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fab fa-node-js"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-lg">Container 1: Express App</h4>
+                    <p class="text-sm text-gray-400">Port 3000</p>
+                  </div>
+                </div>
+                <ul class="text-sm space-y-2">
+                  <li>
+                    <i class="fas fa-globe text-blue-400 mr-2"></i>Serves web
+                    traffic
+                  </li>
+                  <li>
+                    <i class="fas fa-file text-green-400 mr-2"></i>Reads files
+                    from shared volume
+                  </li>
+                  <li>
+                    <i class="fas fa-network-wired text-purple-400 mr-2"></i
+                    >Listens on Pod IP
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Container 2 -->
+              <div
+                class="container-box"
+                style="border-color: var(--neon-orange)"
+              >
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-10 h-10 rounded-full bg-orange-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fab fa-git-alt"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-lg">Container 2: Git Sync</h4>
+                    <p class="text-sm text-gray-400">Sidecar container</p>
+                  </div>
+                </div>
+                <ul class="text-sm space-y-2">
+                  <li>
+                    <i class="fas fa-sync text-orange-400 mr-2"></i>Pulls static
+                    files from repo
+                  </li>
+                  <li>
+                    <i class="fas fa-hdd text-green-400 mr-2"></i>Stores in
+                    shared volume
+                  </li>
+                  <li>
+                    <i class="fas fa-clock text-yellow-400 mr-2"></i>Runs
+                    continuously
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Shared Resources -->
+            <div class="mt-6">
+              <h4 class="text-lg font-bold neon-text-purple mb-3">
+                📌 Shared Resources
+              </h4>
+              <div class="grid md:grid-cols-3 gap-4">
+                <div class="shared-resource">
+                  <div class="flex items-center mb-2">
+                    <i class="fas fa-hdd text-purple-400 mr-2"></i>
+                    <span class="font-bold">Shared Volume</span>
+                  </div>
+                  <p class="text-xs">Both containers mount same volume</p>
+                </div>
+
+                <div class="shared-resource">
+                  <div class="flex items-center mb-2">
+                    <i class="fas fa-network-wired text-blue-400 mr-2"></i>
+                    <span class="font-bold">Network Stack</span>
+                  </div>
+                  <p class="text-xs">Same IP, shared localhost</p>
+                </div>
+
+                <div class="shared-resource">
+                  <div class="flex items-center mb-2">
+                    <i class="fas fa-memory text-green-400 mr-2"></i>
+                    <span class="font-bold">Shared Memory</span>
+                  </div>
+                  <p class="text-xs">IPC between containers</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Important Rule -->
+          <div class="bg-red-900/20 p-4 rounded-xl mb-6">
+            <div class="flex items-center">
+              <i
+                class="fas fa-exclamation-triangle text-2xl text-orange-400 mr-3"
+              ></i>
+              <div>
+                <h4 class="text-xl font-bold neon-text-orange">
+                  📌 Important Rule
+                </h4>
+                <p class="text-gray-300">
+                  All containers in a Pod <strong>ALWAYS</strong> run on the
+                  same node.
+                </p>
+                <p class="text-sm text-gray-400 mt-1">
+                  Memory sharing, volume sharing, network sharing cannot happen
+                  across machines
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Node vs Pod Relationship -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🎯 Pods per Node: Critical Concept
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">Question:</h3>
+              <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                <p class="text-lg font-bold text-center">
+                  "Do multiple Pods need multiple nodes?"
+                </p>
+              </div>
+
+              <div class="bg-red-900/30 p-4 rounded-lg mb-4">
+                <p class="text-center font-bold text-xl">❌ NO</p>
+                <p class="text-center text-sm">Not necessarily</p>
+              </div>
+
+              <p class="mb-4">
+                If a node has enough CPU and memory, it can run:
+              </p>
+              <div class="grid grid-cols-4 gap-2 text-center">
+                <div class="bg-blue-900/30 p-2 rounded">2 Pods</div>
+                <div class="bg-blue-900/30 p-2 rounded">5 Pods</div>
+                <div class="bg-blue-900/30 p-2 rounded">10 Pods</div>
+                <div class="bg-blue-900/30 p-2 rounded">20 Pods</div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                Example Calculation
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <p class="font-bold mb-2">Each Pod requests:</p>
+                  <div class="bg-gray-800 p-3 rounded">
+                    <p>CPU: 200m (0.2 cores)</p>
+                    <p>Memory: 256Mi</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="font-bold mb-2">Node capacity:</p>
+                  <div class="bg-green-900/30 p-3 rounded">
+                    <p>2 CPU cores = 2000m</p>
+                    <p>2Gi memory = 2048Mi</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-blue-900/30 p-3 rounded">
+                    <p class="font-bold">Memory-wise:</p>
+                    <p>2048 / 256 = <strong>8 Pods</strong></p>
+                  </div>
+                  <div class="bg-purple-900/30 p-3 rounded">
+                    <p class="font-bold">CPU-wise:</p>
+                    <p>2000 / 200 = <strong>10 Pods</strong></p>
+                  </div>
+                </div>
+
+                <div class="bg-yellow-900/30 p-3 rounded">
+                  <p class="font-bold">✅ Limiting factor: Memory</p>
+                  <p><strong>8 Pods</strong> can fit on ONE node</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Container Tab -->
+      <div id="multiContent" class="tab-content hidden">
+        <!-- Multi-Container Patterns -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🧩 Multi-Container Pod Patterns
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Sidecar Pattern -->
+            <div class="pattern-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-green-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-motorcycle"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  Sidecar Pattern
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Regular container running alongside main app for entire Pod
+                lifecycle
+              </p>
+
+              <div class="space-y-3">
+                <div class="bg-black/60 p-3 rounded">
+                  <p class="font-bold text-sm">Use Cases:</p>
+                  <ul class="text-xs space-y-1 mt-1">
+                    <li>
+                      <i class="fas fa-shield-alt text-green-400 mr-1"></i>TLS
+                      encryption (Envoy)
+                    </li>
+                    <li>
+                      <i class="fas fa-chart-line text-blue-400 mr-1"></i
+                      >Traffic metrics
+                    </li>
+                    <li>
+                      <i class="fas fa-search text-yellow-400 mr-1"></i>Request
+                      tracing
+                    </li>
+                    <li>
+                      <i class="fas fa-paper-plane text-purple-400 mr-1"></i>Log
+                      shipping
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="code-block p-3 rounded">
+                  <code class="text-sm text-green-300">
+                    spec: containers: - name: express-app
+                    <span class="text-gray-500"># Main container</span> image:
+                    express:v1 - name: envoy-sidecar
+                    <span class="text-gray-500"># Sidecar</span> image:
+                    envoy:latest</code
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Init Container Pattern -->
+            <div class="pattern-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-play-circle"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-blue">
+                  Init Container Pattern
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Special containers that run first, once, must complete before
+                main app starts
+              </p>
+
+              <div class="space-y-3">
+                <div class="bg-black/60 p-3 rounded">
+                  <p class="font-bold text-sm">Use Cases:</p>
+                  <ul class="text-xs space-y-1 mt-1">
+                    <li>
+                      <i class="fas fa-database text-green-400 mr-1"></i>Wait
+                      for database readiness
+                    </li>
+                    <li>
+                      <i class="fab fa-git-alt text-orange-400 mr-1"></i>Clone
+                      Git repository
+                    </li>
+                    <li>
+                      <i class="fas fa-cog text-blue-400 mr-1"></i>Config
+                      preparation
+                    </li>
+                    <li>
+                      <i class="fas fa-key text-yellow-400 mr-1"></i>Secrets
+                      validation
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="code-block p-3 rounded">
+                  <code class="text-sm text-green-300">
+                    spec: initContainers: - name: init-db-check image: busybox
+                    command: ['sh', '-c', 'until nslookup db; do sleep 2; done']
+                    containers: - name: app image: my-app:latest</code
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Ambassador Pattern -->
+            <div class="pattern-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-exchange-alt"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-purple">
+                  Sync + Serve Pattern
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                One container syncs data, another serves it - both share volume
+              </p>
+
+              <div class="space-y-3">
+                <div class="bg-black/60 p-3 rounded">
+                  <p class="font-bold text-sm">Example:</p>
+                  <ul class="text-xs space-y-1 mt-1">
+                    <li>
+                      <i class="fab fa-git-alt text-orange-400 mr-1"></i
+                      >Container 1: Git sync
+                    </li>
+                    <li>
+                      <i class="fas fa-arrow-right text-gray-400 mr-1"></i>Pulls
+                      to shared volume
+                    </li>
+                    <li>
+                      <i class="fab fa-node-js text-green-400 mr-1"></i
+                      >Container 2: Express server
+                    </li>
+                    <li>
+                      <i class="fas fa-arrow-left text-gray-400 mr-1"></i>Serves
+                      from shared volume
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="code-block p-3 rounded">
+                  <code class="text-sm text-green-300">
+                    spec: containers: - name: git-sync image: git-sync:latest
+                    volumeMounts: - name: shared-data mountPath: /data - name:
+                    web-server image: nginx:latest volumeMounts: - name:
+                    shared-data mountPath: /usr/share/nginx/html</code
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidecar vs Init Comparison -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🆚 Sidecar vs Init Container
+          </h2>
+
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+              <thead>
+                <tr class="border-b border-neon-blue/50">
+                  <th class="text-left p-4 neon-text-green">Aspect</th>
+                  <th class="text-left p-4 neon-text-green">
+                    Sidecar Container
+                  </th>
+                  <th class="text-left p-4 neon-text-green">Init Container</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-800">
+                  <td class="p-4 font-bold">Execution Time</td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-infinity text-green-400 mr-2"></i>
+                      <span>Runs alongside main container</span>
+                    </div>
+                  </td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-play text-blue-400 mr-2"></i>
+                      <span>Runs first, before main container</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="border-b border-gray-800">
+                  <td class="p-4 font-bold">Lifecycle</td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-redo text-green-400 mr-2"></i>
+                      <span>Entire Pod lifecycle</span>
+                    </div>
+                  </td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-check-circle text-blue-400 mr-2"></i>
+                      <span>Once, must complete successfully</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr class="border-b border-gray-800">
+                  <td class="p-4 font-bold">Purpose</td>
+                  <td class="p-4">
+                    <div class="text-sm">
+                      <p>Adds ongoing functionality</p>
+                      <p class="text-gray-400">Logging, monitoring, proxying</p>
+                    </div>
+                  </td>
+                  <td class="p-4">
+                    <div class="text-sm">
+                      <p>Setup/initialization</p>
+                      <p class="text-gray-400">
+                        DB checks, config prep, repo cloning
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="p-4 font-bold">Restart Policy</td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-redo text-green-400 mr-2"></i>
+                      <span>Follows Pod restart policy</span>
+                    </div>
+                  </td>
+                  <td class="p-4">
+                    <div class="flex items-center">
+                      <i class="fas fa-ban text-red-400 mr-2"></i>
+                      <span>No restart - runs to completion</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pod YAML Breakdown -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            📦 Pod Manifest Breakdown
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                Pod YAML Structure
+              </h3>
+              <div class="code-block p-4 rounded-lg overflow-x-auto">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: v1              <span class="text-gray-500"># API version</span>
+<span class="text-blue-300">kind</span>: Pod                 <span class="text-gray-500"># Object type</span>
+<span class="text-blue-300">metadata</span>:                <span class="text-gray-500"># Identity + labels</span>
+  <span class="text-blue-300">name</span>: hello-pod
+  <span class="text-blue-300">labels</span>:
+    <span class="text-blue-300">zone</span>: prod
+    <span class="text-blue-300">version</span>: v1
+<span class="text-blue-300">spec</span>:                    <span class="text-gray-500"># Desired state</span>
+  <span class="text-blue-300">containers</span>:
+  - <span class="text-blue-300">name</span>: hello-ctr
+    <span class="text-blue-300">image</span>: nigelpoulton/k8sbook:1.0
+    <span class="text-blue-300">ports</span>:
+    - <span class="text-blue-300">containerPort</span>: 8080
+    <span class="text-blue-300">resources</span>:
+      <span class="text-blue-300">limits</span>:
+        <span class="text-blue-300">memory</span>: 128Mi
+        <span class="text-blue-300">cpu</span>: 0.5</pre>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                Field Explanations
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <p class="font-bold neon-text-green">kind</p>
+                  <p class="text-sm text-gray-400">What object? → Pod</p>
+                </div>
+
+                <div>
+                  <p class="font-bold neon-text-green">apiVersion</p>
+                  <p class="text-sm text-gray-400">
+                    Which Kubernetes API version to use → v1
+                  </p>
+                </div>
+
+                <div>
+                  <p class="font-bold neon-text-green">metadata</p>
+                  <p class="text-sm text-gray-400">
+                    Identity + labels (important for Services, Selectors)
+                  </p>
+                </div>
+
+                <div>
+                  <p class="font-bold neon-text-green">spec</p>
+                  <p class="text-sm text-gray-400">
+                    The desired state - containers, ports, resources, volumes
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-blue-900/20 p-4 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                  <strong>"Empathy as code":</strong> YAML describes
+                  requirements clearly for team members
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheduling Tab -->
+      <div id="schedulingContent" class="tab-content hidden">
+        <!-- Advanced Scheduling -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🧠 4️⃣ Advanced Scheduling
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Node Selector -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-blue-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-tag"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-blue">
+                  🏷 nodeSelector
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Simple node filtering based on labels
+              </p>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+<span class="text-gray-500"># Label a node</span>
+$ kubectl label nodes node1 env=production
+
+<span class="text-gray-500"># Pod YAML</span>
+spec:
+  nodeSelector:
+    env: production</pre>
+              </div>
+              <p class="text-sm text-gray-400">
+                Scheduler will ONLY place Pod on nodes with this label
+              </p>
+            </div>
+
+            <!-- Affinity/Anti-Affinity -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-green-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-magnet"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  🔥 Affinity & Anti-Affinity
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">Smart attraction/repulsion rules</p>
+
+              <div class="space-y-3">
+                <div class="bg-green-900/20 p-3 rounded">
+                  <p class="font-bold text-sm">Affinity = Attract</p>
+                  <p class="text-xs">"Place Pods together"</p>
+                </div>
+
+                <div class="bg-red-900/20 p-3 rounded">
+                  <p class="font-bold text-sm">Anti-Affinity = Repel</p>
+                  <p class="text-xs">"Spread Pods apart"</p>
+                </div>
+
+                <div class="code-block p-3 rounded">
+                  <code class="text-sm text-green-300">
+                    <span class="text-gray-500"
+                      ># Don't place Express Pods on same node</span
+                    >
+                    podAntiAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution: -
+                    labelSelector: matchLabels: app: express topologyKey:
+                    kubernetes.io/hostname</code
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Topology Spread -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-globe-americas"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-purple">
+                  🌍 Topology Spread
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Even distribution across zones/nodes
+              </p>
+
+              <div class="space-y-3">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="bg-blue-900/30 p-2 rounded">us-east-1a</div>
+                  <div class="bg-blue-900/30 p-2 rounded">us-east-1b</div>
+                  <div class="bg-blue-900/30 p-2 rounded">us-east-1c</div>
+                </div>
+
+                <p class="text-sm">
+                  Ensures Pods spread evenly across availability zones
+                </p>
+
+                <div class="bg-purple-900/20 p-3 rounded">
+                  <p class="text-sm">
+                    <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                    Increases: High availability, Fault tolerance
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resource Management -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-orange mb-6">
+            💾 Resource Requests & Limits (CRITICAL)
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                🧠 Resource Request
+              </h3>
+              <p class="mb-4">
+                Tells scheduler: "I need at least this much CPU & memory"
+              </p>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+resources:
+  requests:
+    cpu: "200m"     <span class="text-gray-500"># 0.2 CPU cores</span>
+    memory: "256Mi"  <span class="text-gray-500"># 256 Megabytes</span></pre>
+              </div>
+
+              <div class="bg-green-900/20 p-4 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-info-circle text-green-400 mr-2"></i>
+                  Scheduler only places Pod on nodes that can satisfy this
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-red mb-4">
+                🚨 Resource Limit
+              </h3>
+              <p class="mb-4">Maximum allowed usage before action is taken</p>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+resources:
+  limits:
+    cpu: "500m"     <span class="text-gray-500"># Max 0.5 CPU cores</span>
+    memory: "512Mi"  <span class="text-gray-500"># Max 512 MB</span></pre>
+              </div>
+
+              <div class="bg-red-900/20 p-4 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                  If container exceeds:
+                </p>
+                <ul class="text-sm mt-2 space-y-1">
+                  <li>CPU → throttled</li>
+                  <li>Memory → OOMKilled</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Why Important -->
+          <div class="bg-red-900/20 p-6 rounded-xl mb-8">
+            <div class="flex items-center mb-4">
+              <i
+                class="fas fa-exclamation-triangle text-2xl text-orange-400 mr-3"
+              ></i>
+              <h3 class="text-2xl font-bold neon-text-orange">
+                Why This Is Important
+              </h3>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="mb-3">If you don't specify requests:</p>
+                <ul class="space-y-2">
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span>Scheduler guesses nothing</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span>Might pack too many Pods on one node</span>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                    <span>Can cause crashes and instability</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p class="mb-3">Production rule:</p>
+                <div class="bg-green-900/30 p-4 rounded-lg">
+                  <p class="text-center font-bold text-lg">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    ALWAYS define requests and limits
+                  </p>
+                </div>
+
+                <div class="mt-4 bg-blue-900/30 p-3 rounded">
+                  <p class="text-sm">
+                    <i class="fas fa-brain text-blue-400 mr-2"></i>
+                    <strong>Engineering Insight:</strong> Without limits, a
+                    memory leak can consume entire node memory
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pod Lifecycle -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🧬 Pod Lifecycle & Deployment Flow
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Lifecycle Phases -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-purple mb-4">
+                Pod Lifecycle Phases
+              </h3>
+
+              <div class="space-y-4">
+                <div class="lifecycle-phase">
+                  <div class="phase-indicator" style="background: #fbbf24">
+                    <span>🟡</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold">Pending</h4>
+                    <p class="text-sm text-gray-400">
+                      Scheduler is finding a suitable node
+                    </p>
+                  </div>
+                </div>
+
+                <div class="lifecycle-phase">
+                  <div class="phase-indicator" style="background: #10b981">
+                    <span>🟢</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold">Running</h4>
+                    <p class="text-sm text-gray-400">
+                      All containers started and running
+                    </p>
+                  </div>
+                </div>
+
+                <div class="lifecycle-phase">
+                  <div class="phase-indicator" style="background: #3b82f6">
+                    <span>🔵</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold">Succeeded</h4>
+                    <p class="text-sm text-gray-400">
+                      Short job completed successfully
+                    </p>
+                  </div>
+                </div>
+
+                <div class="lifecycle-phase">
+                  <div class="phase-indicator" style="background: #ef4444">
+                    <span>🔴</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold">Failed</h4>
+                    <p class="text-sm text-gray-400">Something went wrong</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-skull text-red-400 mr-2"></i>
+                  <strong>Pods Are Mortal:</strong> When a Pod dies, it's gone
+                  forever. New Pod = new UID, new IP
+                </p>
+              </div>
+            </div>
+
+            <!-- Deployment Flow -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Deployment Flow
+              </h3>
+
+              <div class="space-y-4">
+                <div class="arrow-flow">
+                  <p class="font-bold">1. Apply YAML</p>
+                  <p class="text-sm text-gray-400">kubectl apply -f pod.yml</p>
+                </div>
+
+                <div class="arrow-flow">
+                  <p class="font-bold">2. API Server</p>
+                  <p class="text-sm text-gray-400">Authenticates + validates</p>
+                </div>
+
+                <div class="arrow-flow">
+                  <p class="font-bold">3. etcd Storage</p>
+                  <p class="text-sm text-gray-400">Stores desired state</p>
+                </div>
+
+                <div class="arrow-flow">
+                  <p class="font-bold">4. Scheduler</p>
+                  <p class="text-sm text-gray-400">Finds suitable node</p>
+                </div>
+
+                <div class="arrow-flow">
+                  <p class="font-bold">5. kubelet</p>
+                  <p class="text-sm text-gray-400">
+                    Starts container via runtime
+                  </p>
+                </div>
+
+                <div class="arrow-flow">
+                  <p class="font-bold">6. Running</p>
+                  <p class="text-sm text-gray-400">Pod becomes Running</p>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-red-900/20 p-4 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-ban text-red-400 mr-2"></i>
+                  <strong>If no node fits → Pod stays Pending</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Restart Policies -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🔁 Restart Policies Explained
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6">
+            <!-- Always -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="text-center mb-4">
+                <div class="inline-block bg-green-900/30 px-4 py-2 rounded-lg">
+                  <h3 class="text-lg font-bold">🟢 Always</h3>
+                </div>
+              </div>
+              <p class="text-center mb-4">(Default for most apps)</p>
+
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-redo text-green-400 mr-2"></i>
+                  <span>If container crashes → restart</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-server text-green-400 mr-2"></i>
+                  <span>For long-running apps</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fab fa-node-js text-green-400 mr-2"></i>
+                  <span>Express, web servers, databases</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- OnFailure -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="text-center mb-4">
+                <div class="inline-block bg-yellow-900/30 px-4 py-2 rounded-lg">
+                  <h3 class="text-lg font-bold">🟡 OnFailure</h3>
+                </div>
+              </div>
+              <p class="text-center mb-4">Restart only on failure</p>
+
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                  <span>If job completes → don't restart</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                  <span>If job crashes → restart</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-tasks text-yellow-400 mr-2"></i>
+                  <span>Batch jobs, one-time tasks</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Never -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="text-center mb-4">
+                <div class="inline-block bg-red-900/30 px-4 py-2 rounded-lg">
+                  <h3 class="text-lg font-bold">🔴 Never</h3>
+                </div>
+              </div>
+              <p class="text-center mb-4">Fire-and-forget</p>
+
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-ban text-red-400 mr-2"></i>
+                  <span>No restart under any condition</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                  <span>Debug containers</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-trash-alt text-gray-400 mr-2"></i>
+                  <span>Disposable workloads</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Important Clarification -->
+          <div class="mt-6 bg-blue-900/20 p-6 rounded-xl">
+            <div class="flex items-center mb-4">
+              <i
+                class="fas fa-exclamation-circle text-2xl text-blue-400 mr-3"
+              ></i>
+              <h3 class="text-xl font-bold neon-text-blue">
+                Important Clarification
+              </h3>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="font-bold mb-2">Container Restart:</p>
+                <p class="text-sm text-gray-400">
+                  kubelet restarts container inside same Pod
+                </p>
+                <div class="bg-gray-800 p-3 rounded mt-2">
+                  <p class="text-sm">restartPolicy controls this</p>
+                </div>
+              </div>
+
+              <div>
+                <p class="font-bold mb-2">Pod Replacement:</p>
+                <p class="text-sm text-gray-400">
+                  If node crashes, controller creates NEW Pod on another node
+                </p>
+                <div class="bg-gray-800 p-3 rounded mt-2">
+                  <p class="text-sm">This is NOT restart, it's replacement</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-neon-blue/30 pt-8 pb-6">
+      <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-8">
+          <div>
+            <h4 class="font-bold neon-text-purple mb-4">Key Takeaways</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-center">
+                <i class="fas fa-cube text-blue-400 mr-2"></i>
+                <span>Pods = Universal wrapper</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-share-alt text-green-400 mr-2"></i>
+                <span>Containers in Pod share resources</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-skull text-red-400 mr-2"></i>
+                <span>Pods are mortal & immutable</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-blue mb-4">Patterns</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-center">
+                <i class="fas fa-motorcycle text-green-400 mr-2"></i>
+                <span>Sidecar</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-play-circle text-blue-400 mr-2"></i>
+                <span>Init Container</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-exchange-alt text-purple-400 mr-2"></i>
+                <span>Sync + Serve</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-green mb-4">Scheduling</h4>
+            <div class="space-y-2 text-sm">
+              <div class="bg-black/50 px-2 py-1 rounded">nodeSelector</div>
+              <div class="bg-black/50 px-2 py-1 rounded">
+                Affinity/Anti-Affinity
+              </div>
+              <div class="bg-black/50 px-2 py-1 rounded">
+                Resource Requests/Limits
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-orange mb-4">⚠️ Production Rules</h4>
+            <div class="bg-red-900/20 p-3 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                ALWAYS set resource limits
+              </p>
+              <p class="text-sm mt-2">
+                <i class="fas fa-project-diagram text-blue-400 mr-2"></i>
+                Use anti-affinity for HA
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+          <p class="text-gray-500 text-sm">
+            🎯 <strong>Golden Mental Model:</strong> Pod = shared execution
+            sandbox | Between Pods = communicate via network | Pods are
+            foundation of everything in Kubernetes
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach((content) => {
+          content.classList.add('hidden');
+        });
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + 'Content').classList.remove('hidden');
+
+        // Add active class to clicked tab button
+        document.getElementById(tabName + 'Tab').classList.add('active');
+      }
+
+      // Interactive Pod Diagram
+      document.addEventListener('DOMContentLoaded', function () {
+        // Make container boxes interactive
+        const containers = document.querySelectorAll('.container-box');
+        containers.forEach((container) => {
+          container.addEventListener('click', function () {
+            const borderColor = this.style.borderColor;
+            this.style.boxShadow = `0 0 25px ${borderColor}`;
+            setTimeout(() => {
+              this.style.boxShadow = '';
+            }, 1000);
+          });
+        });
+
+        // Simulate resource sharing
+        const sharedResources = document.querySelectorAll('.shared-resource');
+        setInterval(() => {
+          sharedResources.forEach((resource) => {
+            resource.style.borderStyle =
+              resource.style.borderStyle === 'dashed' ? 'solid' : 'dashed';
+          });
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

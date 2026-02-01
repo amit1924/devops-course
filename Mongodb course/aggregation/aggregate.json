@@ -1,0 +1,39 @@
+[
+    {
+        "_id": 1,
+        "userId": 101,
+        "total": 900,
+        "items": [
+            {
+                "product": "Phone",
+                "price": 800
+            },
+            {
+                "product": "Cover",
+                "price": 100
+            }
+        ]
+    },
+    {
+        "_id": 2,
+        "userId": 102,
+        "total": 1500,
+        "items": [
+            {
+                "product": "Laptop",
+                "price": 1500
+            }
+        ]
+    },
+    {
+        "_id": 3,
+        "userId": 101,
+        "total": 500,
+        "items": [
+            {
+                "product": "Earphones",
+                "price": 500
+            }
+        ]
+    }
+]

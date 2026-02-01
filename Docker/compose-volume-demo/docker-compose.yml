@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    container_name: api-server
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongo-db
+    networks:
+      - devnet
+    volumes:
+      - .:/app # 👉 Live Code Editing
+      - /app/node_modules # 👉 Protect node_modules
+
+  mongo-db:
+    image: mongo
+    container_name: mongo-db
+    ports:
+      - '27017:27017'
+    networks:
+      - devnet
+    volumes:
+      - mongoData:/data/db # 👉 Real Persistent DB Storage
+
+networks:
+  devnet:
+
+volumes:
+  mongoData:

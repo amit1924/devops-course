@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux Permissions & Users - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              neon: {
+                cyan: '#00f3ff',
+                pink: '#ff00ff',
+                green: '#00ff9d',
+                purple: '#9d00ff',
+                blue: '#0066ff',
+                yellow: '#ffea00',
+                orange: '#ff6b00',
+                red: '#ff0055',
+              },
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s infinite',
+              glow: 'glow 1.5s ease-in-out infinite alternate',
+              float: 'float 3s ease-in-out infinite',
+            },
+            keyframes: {
+              'pulse-glow': {
+                '0%, 100%': { opacity: 1 },
+                '50%': { opacity: 0.7 },
+              },
+              glow: {
+                from: {
+                  textShadow:
+                    '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f3ff, 0 0 20px #00f3ff',
+                },
+                to: {
+                  textShadow:
+                    '0 0 10px #fff, 0 0 20px #00ff9d, 0 0 30px #00ff9d, 0 0 40px #00ff9d',
+                },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #0a0a0f 0%, #0f172a 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .neon-border {
+        border: 1px solid rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1),
+          inset 0 0 10px rgba(0, 243, 255, 0.05);
+      }
+
+      .neon-card {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(157, 0, 255, 0.2);
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.1);
+      }
+
+      .security-card {
+        background: rgba(255, 0, 85, 0.05);
+        border: 1px solid rgba(255, 0, 85, 0.2);
+        box-shadow: 0 0 15px rgba(255, 0, 85, 0.1);
+      }
+
+      .command-output {
+        background: rgba(0, 0, 0, 0.3);
+        border-left: 3px solid #00ff9d;
+        font-family: 'Courier New', monospace;
+      }
+
+      .permission-visual {
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+      }
+
+      .glowing-text {
+        text-shadow: 0 0 5px currentColor;
+      }
+
+      .file-system-icon {
+        color: #00f3ff;
+        filter: drop-shadow(0 0 3px #00f3ff);
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 0, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 0, 255, 0.5);
+      }
+
+      .highlight {
+        background: rgba(0, 255, 157, 0.1);
+        border-radius: 4px;
+        padding: 2px 4px;
+      }
+
+      .danger-zone {
+        background: rgba(255, 0, 85, 0.1);
+        border: 1px solid rgba(255, 0, 85, 0.3);
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="mb-10 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-glow">
+          <i class="fas fa-shield-alt text-neon-orange mr-3 animate-float"></i>
+          <span class="text-neon-orange glowing-text">Linux Permissions</span>
+          <span class="text-neon-cyan glowing-text">& Users</span>
+        </h1>
+        <p class="text-xl text-gray-300">
+          Complete Security & System Administration Guide
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-4">
+          <span
+            class="px-4 py-2 bg-neon-purple/20 text-neon-purple rounded-full text-sm"
+          >
+            <i class="fas fa-user-shield mr-2"></i>User Management
+          </span>
+          <span
+            class="px-4 py-2 bg-neon-red/20 text-neon-red rounded-full text-sm"
+          >
+            <i class="fas fa-lock mr-2"></i>Permissions & Security
+          </span>
+          <span
+            class="px-4 py-2 bg-neon-green/20 text-neon-green rounded-full text-sm"
+          >
+            <i class="fas fa-file-alt mr-2"></i>/etc/passwd & /etc/shadow
+          </span>
+          <span
+            class="px-4 py-2 bg-neon-blue/20 text-neon-blue rounded-full text-sm"
+          >
+            <i class="fas fa-terminal mr-2"></i>Practical Examples
+          </span>
+        </div>
+      </header>
+
+      <!-- Quick Navigation -->
+      <nav class="mb-10">
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a
+            href="#file-stats"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-cyan/10 transition"
+          >
+            <i class="fas fa-chart-bar mr-2 text-neon-cyan"></i>File Statistics
+          </a>
+          <a
+            href="#permissions"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-orange/10 transition"
+          >
+            <i class="fas fa-key mr-2 text-neon-orange"></i>Permissions Deep
+            Dive
+          </a>
+          <a
+            href="#user-management"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-purple/10 transition"
+          >
+            <i class="fas fa-users mr-2 text-neon-purple"></i>User Management
+          </a>
+          <a
+            href="#passwd-shadow"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-red/10 transition"
+          >
+            <i class="fas fa-database mr-2 text-neon-red"></i>/etc/passwd vs
+            /etc/shadow
+          </a>
+          <a
+            href="#commands"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-green/10 transition"
+          >
+            <i class="fas fa-terminal mr-2 text-neon-green"></i>Utility Commands
+          </a>
+        </div>
+      </nav>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column: File Stats & Commands -->
+        <div class="lg:col-span-2 space-y-8">
+          <!-- File Statistics Commands -->
+          <section id="file-stats" class="neon-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-cyan border-b border-neon-cyan/30 pb-3"
+            >
+              <i class="fas fa-chart-bar mr-3"></i>File Statistics & Analysis
+            </h2>
+
+            <div class="space-y-6">
+              <!-- wc command -->
+              <div class="command-block">
+                <div class="flex items-center mb-2">
+                  <span
+                    class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                    >New</span
+                  >
+                  <h3 class="ml-3 text-xl font-semibold">wc - Word Count</h3>
+                </div>
+                <p class="text-gray-300 mb-3">
+                  Counts lines, words, and characters in files.
+                </p>
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> wc -l /etc/passwd<br />
+                  <span class="text-gray-400">50 /etc/passwd</span>
+                </div>
+                <div class="bg-black/40 p-3 rounded text-sm">
+                  <strong>wc Options:</strong><br />
+                  • <span class="text-neon-cyan">-l</span> - Count lines only<br />
+                  • <span class="text-neon-cyan">-w</span> - Count words only<br />
+                  • <span class="text-neon-cyan">-c</span> - Count characters
+                  only<br />
+                  • <span class="text-neon-cyan">-m</span> - Count characters
+                  (multi-byte)<br />
+                  <br />
+                  <strong>Output Interpretation:</strong><br />
+                  <span class="text-neon-green">"50 /etc/passwd"</span> means 50
+                  lines in the file<br />
+                  Each line = 1 user account on the system
+                </div>
+              </div>
+
+              <!-- cut command -->
+              <div class="command-block">
+                <div class="flex items-center mb-2">
+                  <span
+                    class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                    >New</span
+                  >
+                  <h3 class="ml-3 text-xl font-semibold">
+                    cut - Extract Sections
+                  </h3>
+                </div>
+                <p class="text-gray-300 mb-3">
+                  Cuts out selected portions from each line of files.
+                </p>
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> cut -d: -f1,7
+                  /etc/passwd<br />
+                  <span class="text-gray-400">
+                    root:/bin/bash<br />
+                    daemon:/usr/sbin/nologin<br />
+                    bin:/usr/sbin/nologin<br />
+                    sys:/usr/sbin/nologin<br />
+                    sync:/bin/sync<br />
+                    games:/usr/sbin/nologin<br />
+                    man:/usr/sbin/nologin<br />
+                    ...<br />
+                    amit:/bin/bash<br />
+                    amish:/bin/sh
+                  </span>
+                </div>
+                <div class="bg-black/40 p-3 rounded text-sm">
+                  <strong>cut Options Explained:</strong><br />
+                  • <span class="text-neon-cyan">-d:</span> - Use
+                  <span class="highlight">:</span> as delimiter (field
+                  separator)<br />
+                  • <span class="text-neon-cyan">-f1,7</span> - Select fields 1
+                  and 7<br />
+                  <br />
+                  <strong>/etc/passwd Fields:</strong><br />
+                  Field 1: Username<br />
+                  Field 2: Password placeholder (x means password in
+                  /etc/shadow)<br />
+                  Field 3: UID (User ID)<br />
+                  Field 4: GID (Group ID)<br />
+                  Field 5: GECOS (User info/comment)<br />
+                  Field 6: Home directory<br />
+                  Field 7: Shell
+                </div>
+              </div>
+
+              <!-- stat command -->
+              <div class="command-block">
+                <div class="flex items-center mb-2">
+                  <span
+                    class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                    >New</span
+                  >
+                  <h3 class="ml-3 text-xl font-semibold">stat - File Status</h3>
+                </div>
+                <p class="text-gray-300 mb-3">
+                  Displays detailed file/directory information including
+                  permissions, timestamps, and inode data.
+                </p>
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> stat /home/amish<br />
+                  <span class="text-gray-400">
+                    File: /home/amish<br />
+                    Size: 4096 Blocks: 8 IO Block: 4096 directory<br />
+                    Device: 259,2 Inode: 8569613 Links: 4<br />
+                    <span class="text-neon-orange"
+                      >Access: (0750/drwxr-x---)</span
+                    >
+                    <span class="text-neon-cyan">Uid: ( 1001/ amish)</span>
+                    <span class="text-neon-purple">Gid: ( 1001/ amish)</span
+                    ><br />
+                    Access: 2025-12-22 14:41:03.031618109 +0530<br />
+                    Modify: 2025-12-22 14:33:09.753629192 +0530<br />
+                    Change: 2025-12-22 14:33:09.753629192 +0530<br />
+                    Birth: 2025-12-22 14:33:09.743629167 +0530
+                  </span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="bg-black/40 p-3 rounded text-sm">
+                    <strong>Timestamps:</strong><br />
+                    • <span class="text-neon-cyan">Access</span> - Last file
+                    access (read)<br />
+                    • <span class="text-neon-cyan">Modify</span> - Last content
+                    modification<br />
+                    • <span class="text-neon-cyan">Change</span> - Last metadata
+                    change<br />
+                    • <span class="text-neon-cyan">Birth</span> - File creation
+                    time
+                  </div>
+                  <div class="bg-black/40 p-3 rounded text-sm">
+                    <strong>File System Info:</strong><br />
+                    • <span class="text-neon-cyan">Inode</span> - Unique file
+                    identifier<br />
+                    • <span class="text-neon-cyan">Links</span> - Number of hard
+                    links<br />
+                    • <span class="text-neon-cyan">Blocks</span> - Disk blocks
+                    used<br />
+                    • <span class="text-neon-cyan">Device</span> - Device
+                    major/minor numbers
+                  </div>
+                </div>
+              </div>
+
+              <!-- locate & grep -->
+              <div class="command-block">
+                <div class="flex items-center mb-2">
+                  <span
+                    class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                    >New</span
+                  >
+                  <h3 class="ml-3 text-xl font-semibold">
+                    locate & grep - Searching
+                  </h3>
+                </div>
+                <p class="text-gray-300 mb-3">
+                  Fast file searching and text pattern matching.
+                </p>
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> locate passwd<br />
+                  <span class="text-gray-400">
+                    /etc/passwd<br />
+                    /etc/passwd-<br />
+                    /etc/cron.daily/passwd<br />
+                    /usr/bin/passwd<br />
+                    /usr/share/bash-completion/completions/passwd </span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> grep amish
+                  /etc/passwd<br />
+                  <span class="text-gray-400"
+                    >amish:x:1001:1001::/home/amish:/bin/sh</span
+                  >
+                </div>
+                <div class="bg-black/40 p-3 rounded text-sm">
+                  <strong>locate vs find:</strong><br />
+                  • <span class="text-neon-cyan">locate</span> - Uses pre-built
+                  database (faster)<br />
+                  • <span class="text-neon-cyan">find</span> - Searches
+                  filesystem in real-time (more current)<br />
+                  <br />
+                  <strong>Update locate database:</strong><br />
+                  <span class="text-neon-green">$</span> sudo updatedb
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Permissions Deep Dive -->
+          <section id="permissions" class="neon-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-orange border-b border-neon-orange/30 pb-3"
+            >
+              <i class="fas fa-key mr-3"></i>Linux Permissions Deep Dive
+            </h2>
+
+            <!-- Permission Visualization -->
+            <div class="mb-8 p-6 bg-black/30 rounded-xl">
+              <h3 class="text-xl font-bold mb-4 text-neon-cyan">
+                <i class="fas fa-eye mr-2"></i>Understanding Permission Strings
+              </h3>
+
+              <div
+                class="permission-visual text-center text-2xl mb-6 p-4 bg-black/50 rounded"
+              >
+                <span class="text-neon-pink">-</span>
+                <span class="text-neon-green">r</span
+                ><span class="text-neon-green">w</span
+                ><span class="text-neon-green">x</span>
+                <span class="text-neon-yellow">r</span
+                ><span class="text-neon-yellow">-</span
+                ><span class="text-neon-yellow">x</span>
+                <span class="text-neon-purple">r</span
+                ><span class="text-neon-purple">-</span
+                ><span class="text-neon-purple">-</span>
+                <span class="text-gray-400 text-sm ml-4">= -rwxr-xr--</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center p-3 bg-neon-pink/10 rounded">
+                  <div class="text-neon-pink font-bold text-lg">1st Char</div>
+                  <div class="text-sm">File Type</div>
+                  <div class="mt-2">
+                    <div><span class="text-neon-pink">-</span> = File</div>
+                    <div><span class="text-neon-pink">d</span> = Directory</div>
+                    <div><span class="text-neon-pink">l</span> = Link</div>
+                  </div>
+                </div>
+
+                <div class="text-center p-3 bg-neon-green/10 rounded">
+                  <div class="text-neon-green font-bold text-lg">
+                    User (Owner)
+                  </div>
+                  <div class="text-sm">rwx = Read, Write, Execute</div>
+                  <div class="mt-2 text-xl">
+                    <span class="text-neon-green">✓</span
+                    ><span class="text-neon-green">✓</span
+                    ><span class="text-neon-green">✓</span>
+                  </div>
+                </div>
+
+                <div class="text-center p-3 bg-neon-yellow/10 rounded">
+                  <div class="text-neon-yellow font-bold text-lg">Group</div>
+                  <div class="text-sm">r-x = Read, Execute (No Write)</div>
+                  <div class="mt-2 text-xl">
+                    <span class="text-neon-yellow">✓</span
+                    ><span class="text-gray-500">✗</span
+                    ><span class="text-neon-yellow">✓</span>
+                  </div>
+                </div>
+
+                <div class="text-center p-3 bg-neon-purple/10 rounded">
+                  <div class="text-neon-purple font-bold text-lg">Others</div>
+                  <div class="text-sm">r-- = Read Only</div>
+                  <div class="mt-2 text-xl">
+                    <span class="text-neon-purple">✓</span
+                    ><span class="text-gray-500">✗</span
+                    ><span class="text-gray-500">✗</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- chmod Practical Examples -->
+            <div class="space-y-6">
+              <h3 class="text-xl font-bold mb-4 text-neon-green">
+                <i class="fas fa-cogs mr-2"></i>chmod - Changing Permissions
+              </h3>
+
+              <div class="command-block">
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> chmod +u-x script.sh
+                  <span class="text-gray-500"># Incorrect syntax!</span><br />
+                  <span class="text-neon-green">$</span> ./script.sh<br />
+                  <span class="text-neon-red"
+                    >zsh: permission denied: ./script.sh</span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> chmod +x script.sh
+                  <span class="text-gray-500"
+                    ># Correct syntax - add execute</span
+                  ><br />
+                  <span class="text-neon-green">$</span> ./script.sh<br />
+                  <span class="text-gray-400">
+                    hello world<br />
+                    Hello, Alice!<br />
+                    Number: 1<br />
+                    Number: 2<br />
+                    ...<br />
+                    Enter your favorite color:
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div class="bg-black/40 p-3 rounded">
+                    <strong class="text-neon-cyan">Symbolic Method</strong
+                    ><br />
+                    <code class="text-sm">chmod [ugoa][+-=][rwx] file</code
+                    ><br /><br />
+                    • <span class="text-neon-cyan">u</span> = user (owner)<br />
+                    • <span class="text-neon-cyan">g</span> = group<br />
+                    • <span class="text-neon-cyan">o</span> = others<br />
+                    • <span class="text-neon-cyan">a</span> = all (default)<br />
+                    • <span class="text-neon-cyan">+</span> = add permission<br />
+                    • <span class="text-neon-cyan">-</span> = remove
+                    permission<br />
+                    • <span class="text-neon-cyan">=</span> = set exact
+                    permission<br /><br />
+                    <span class="text-neon-green">Examples:</span><br />
+                    chmod u+x file<br />
+                    chmod g-w file<br />
+                    chmod o=r file<br />
+                    chmod a+x file
+                  </div>
+
+                  <div class="bg-black/40 p-3 rounded">
+                    <strong class="text-neon-purple"
+                      >Numeric (Octal) Method</strong
+                    ><br />
+                    <code class="text-sm">chmod XXX file</code><br /><br />
+                    • <span class="text-neon-purple">4</span> = Read (r)<br />
+                    • <span class="text-neon-purple">2</span> = Write (w)<br />
+                    • <span class="text-neon-purple">1</span> = Execute (x)<br /><br />
+                    <span class="text-neon-green">Calculate:</span><br />
+                    7 = 4+2+1 = rwx<br />
+                    6 = 4+2 = rw-<br />
+                    5 = 4+1 = r-x<br />
+                    4 = 4 = r--<br />
+                    0 = ---<br /><br />
+                    <span class="text-neon-green">Examples:</span><br />
+                    chmod 755 file<br />
+                    chmod 644 file<br />
+                    chmod 700 file
+                  </div>
+                </div>
+              </div>
+
+              <!-- Folder vs File Permissions -->
+              <div
+                class="mt-6 p-4 bg-gradient-to-r from-neon-blue/10 to-neon-purple/10 rounded-lg"
+              >
+                <h4 class="font-bold text-neon-blue mb-3">
+                  <i class="fas fa-folder mr-2"></i>Folder vs File Permissions
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <strong class="text-neon-cyan">On Files:</strong><br />
+                    • <span class="highlight">r</span> = Read file contents<br />
+                    • <span class="highlight">w</span> = Modify/delete file<br />
+                    • <span class="highlight">x</span> = Execute as program
+                  </div>
+                  <div>
+                    <strong class="text-neon-pink">On Folders:</strong><br />
+                    • <span class="highlight">r</span> = List folder contents
+                    (ls)<br />
+                    • <span class="highlight">w</span> = Create/delete files in
+                    folder<br />
+                    • <span class="highlight">x</span> = Enter folder (cd)
+                  </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-300">
+                  <strong>Important:</strong> To access a folder, you need
+                  <span class="highlight">x</span> permission!<br />
+                  A folder with <span class="highlight">r--</span> permission is
+                  useless - you can see file names but not access them.
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column: User Management & Security -->
+        <div class="space-y-8">
+          <!-- User Management -->
+          <section id="user-management" class="neon-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-purple border-b border-neon-purple/30 pb-3"
+            >
+              <i class="fas fa-users mr-3"></i>User Management
+            </h2>
+
+            <div class="space-y-6">
+              <!-- useradd & usermod -->
+              <div class="command-block">
+                <h3 class="text-xl font-semibold mb-3 text-neon-cyan">
+                  Creating & Modifying Users
+                </h3>
+
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> sudo useradd amish<br />
+                  <span class="text-neon-green">$</span> passwd amish<br />
+                  <span class="text-neon-red"
+                    >passwd: You may not view or modify password information for
+                    amish.</span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> sudo passwd amish<br />
+                  <span class="text-gray-400"
+                    >New password:<br />Retype new password:<br />passwd:
+                    password updated successfully</span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> sudo usermod -aG sudo
+                  amish<br />
+                  <span class="text-neon-green">$</span> groups amish<br />
+                  <span class="text-gray-400">amish : amish sudo</span>
+                </div>
+
+                <div class="bg-black/40 p-3 rounded text-sm">
+                  <strong>Common User Commands:</strong><br />
+                  • <span class="text-neon-cyan">useradd</span> - Create new
+                  user<br />
+                  • <span class="text-neon-cyan">usermod</span> - Modify
+                  existing user<br />
+                  • <span class="text-neon-cyan">userdel</span> - Delete user<br />
+                  • <span class="text-neon-cyan">passwd</span> - Change
+                  password<br />
+                  • <span class="text-neon-cyan">groups</span> - Show user's
+                  groups<br /><br />
+                  <strong>Important Flags:</strong><br />
+                  • <span class="highlight">-aG</span> = Append to Group (don't
+                  remove from others)<br />
+                  • <span class="highlight">-m</span> = Create home directory
+                  (with useradd)<br />
+                  • <span class="highlight">-s</span> = Set shell (e.g.,
+                  /bin/bash)
+                </div>
+              </div>
+
+              <!-- Home Directory Setup -->
+              <div class="command-block">
+                <h3 class="text-xl font-semibold mb-3 text-neon-green">
+                  Home Directory Management
+                </h3>
+
+                <div class="command-output p-4 rounded mb-3">
+                  <span class="text-neon-green">$</span> ls -ld /home/amish<br />
+                  <span class="text-neon-red"
+                    >"/home/amish": No such file or directory (os error 2)</span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> sudo mkdir
+                  /home/amish<br />
+                  <span class="text-neon-green">$</span> sudo chown amish:amish
+                  /home/amish<br />
+                  <span class="text-neon-green">$</span> ls -ld /home/amish<br />
+                  <span class="text-gray-400"
+                    >drwxr-xr-x - amish 22 Dec 14:58 /home/amish</span
+                  ><br /><br />
+                  <span class="text-neon-green">$</span> ls -ld /home/amish<br />
+                  <span class="text-gray-400"
+                    >drwxr-x--- - amish 22 Dec 14:33 /home/amish</span
+                  >
+                </div>
+
+                <div class="bg-black/40 p-3 rounded text-sm">
+                  <strong>Ownership Commands:</strong><br />
+                  • <span class="text-neon-cyan">chown</span> - Change file
+                  owner<br />
+                  • <span class="text-neon-cyan">chgrp</span> - Change file
+                  group<br /><br />
+                  <strong>Syntax:</strong><br />
+                  chown <span class="highlight">user:group</span> file<br />
+                  chown <span class="highlight">user</span> file<br />
+                  chown <span class="highlight">:group</span> file<br /><br />
+                  <strong>Default Home Permissions:</strong><br />
+                  750 (drwxr-x---) = Owner full, group enter, others nothing
+                </div>
+              </div>
+
+              <!-- Quick Reference -->
+              <div
+                class="p-4 bg-gradient-to-r from-neon-green/10 to-neon-cyan/10 rounded-lg"
+              >
+                <h4 class="font-bold text-neon-yellow mb-3">
+                  <i class="fas fa-brain mr-2"></i>Quick Memory Trick
+                </h4>
+                <table class="w-full text-sm">
+                  <tr class="border-b border-gray-700">
+                    <td class="py-2">
+                      <span class="text-neon-cyan">Action</span>
+                    </td>
+                    <td class="py-2">
+                      <span class="text-neon-green">Command</span>
+                    </td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2">Create user</td>
+                    <td class="py-2"><code>adduser username</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2">Give sudo</td>
+                    <td class="py-2"><code>usermod -aG sudo username</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2">Switch user</td>
+                    <td class="py-2"><code>su - username</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2">Delete user</td>
+                    <td class="py-2"><code>userdel username</code></td>
+                  </tr>
+                  <tr>
+                    <td class="py-2">Delete user + home</td>
+                    <td class="py-2"><code>userdel -r username</code></td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Danger Zone -->
+              <div class="danger-zone p-4 mt-4">
+                <h4 class="font-bold text-neon-red mb-2">
+                  <i class="fas fa-skull-crossbones mr-2"></i>Danger Zone - User
+                  Deletion
+                </h4>
+                <div class="command-output p-4 rounded mb-2">
+                  <span class="text-neon-green">$</span> sudo userdel -r
+                  amish<br />
+                  <span class="text-neon-green">$</span> sudo rm -rf
+                  /home/amish<br />
+                </div>
+                <p class="text-sm text-gray-300">
+                  <strong>Warning:</strong>
+                  <span class="text-neon-red">userdel -r</span> deletes user AND
+                  home directory!<br />
+                  <span class="text-neon-red">rm -rf</span> is irreversible
+                  deletion.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- /etc/passwd vs /etc/shadow -->
+          <section id="passwd-shadow" class="security-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-red border-b border-neon-red/30 pb-3"
+            >
+              <i class="fas fa-database mr-3"></i>/etc/passwd vs /etc/shadow
+            </h2>
+
+            <div class="space-y-6">
+              <!-- Comparison Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-neon-red/30">
+                      <th class="text-left py-3 text-neon-cyan">Aspect</th>
+                      <th class="text-left py-3 text-neon-green">
+                        /etc/passwd
+                      </th>
+                      <th class="text-left py-3 text-neon-purple">
+                        /etc/shadow
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-3">Purpose</td>
+                      <td class="py-3">User account information</td>
+                      <td class="py-3">Secure password storage</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-3">Readable by</td>
+                      <td class="py-3">Everyone (644)</td>
+                      <td class="py-3">Root only (600)</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-3">Contains</td>
+                      <td class="py-3">Username, UID, GID, Shell, Home</td>
+                      <td class="py-3">Encrypted password, expiry info</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-3">Password Field</td>
+                      <td class="py-3">
+                        <span class="text-neon-red">x</span> (placeholder)
+                      </td>
+                      <td class="py-3">Encrypted hash</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-3">Permissions</td>
+                      <td class="py-3">-rw-r--r-- (644)</td>
+                      <td class="py-3">-rw------- (600)</td>
+                    </tr>
+                    <tr>
+                      <td class="py-3">Security</td>
+                      <td class="py-3">Low (world-readable)</td>
+                      <td class="py-3">High (root-only)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- /etc/passwd Example -->
+              <div class="command-block">
+                <h4 class="font-bold text-neon-green mb-2">
+                  /etc/passwd Entry
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> grep amish
+                  /etc/passwd<br />
+                  <span class="text-gray-400"
+                    >amish:x:1001:1001::/home/amish:/bin/sh</span
+                  >
+                </div>
+                <div class="mt-2 grid grid-cols-7 gap-1 text-xs">
+                  <div class="bg-neon-green/20 p-1 text-center">amish</div>
+                  <div class="bg-neon-red/20 p-1 text-center">x</div>
+                  <div class="bg-neon-blue/20 p-1 text-center">1001</div>
+                  <div class="bg-neon-purple/20 p-1 text-center">1001</div>
+                  <div class="bg-gray-800 p-1 text-center">(empty)</div>
+                  <div class="bg-neon-yellow/20 p-1 text-center">
+                    /home/amish
+                  </div>
+                  <div class="bg-neon-cyan/20 p-1 text-center">/bin/sh</div>
+                </div>
+                <div class="mt-2 grid grid-cols-7 gap-1 text-xs">
+                  <div class="p-1 text-center">1. Username</div>
+                  <div class="p-1 text-center">2. Password</div>
+                  <div class="p-1 text-center">3. UID</div>
+                  <div class="p-1 text-center">4. GID</div>
+                  <div class="p-1 text-center">5. GECOS</div>
+                  <div class="p-1 text-center">6. Home</div>
+                  <div class="p-1 text-center">7. Shell</div>
+                </div>
+              </div>
+
+              <!-- /etc/shadow Example -->
+              <div class="command-block">
+                <h4 class="font-bold text-neon-purple mb-2">
+                  /etc/shadow Entry
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> sudo grep amish
+                  /etc/shadow<br />
+                  <span class="text-gray-400"
+                    >amish:$y$j9T$9c8z...longhash...Qa/:19439:0:99999:7:::</span
+                  >
+                </div>
+                <div class="mt-2 text-xs">
+                  <div class="grid grid-cols-8 gap-1">
+                    <div class="bg-neon-green/20 p-1">amish</div>
+                    <div class="bg-neon-red/20 p-1 col-span-2">
+                      $y$j9T$9c8z...Qa/
+                    </div>
+                    <div class="bg-neon-blue/20 p-1">19439</div>
+                    <div class="bg-neon-purple/20 p-1">0</div>
+                    <div class="bg-neon-yellow/20 p-1">99999</div>
+                    <div class="bg-neon-cyan/20 p-1">7</div>
+                    <div class="bg-gray-800 p-1"></div>
+                  </div>
+                  <div class="grid grid-cols-8 gap-1 mt-1">
+                    <div class="p-1 text-center">Username</div>
+                    <div class="p-1 text-center col-span-2">Password Hash</div>
+                    <div class="p-1 text-center">Last Changed</div>
+                    <div class="p-1 text-center">Min Days</div>
+                    <div class="p-1 text-center">Max Days</div>
+                    <div class="p-1 text-center">Warn Days</div>
+                    <div class="p-1 text-center">Inactive</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security Explanation -->
+              <div class="bg-black/40 p-4 rounded">
+                <h4 class="font-bold text-neon-orange mb-2">
+                  <i class="fas fa-shield-alt mr-2"></i>Why Two Files?
+                </h4>
+                <p class="text-sm text-gray-300">
+                  <strong>Historical Context:</strong> In early UNIX,
+                  /etc/passwd contained encrypted passwords.<br />
+                  <strong>Problem:</strong> Anyone could read /etc/passwd and
+                  try to crack passwords.<br />
+                  <strong>Solution:</strong> Move passwords to /etc/shadow
+                  (root-only access).<br />
+                  <strong>Result:</strong> /etc/passwd now has 'x' indicating
+                  password is in /etc/shadow.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Utility Commands Reference -->
+          <section id="commands" class="neon-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-green border-b border-neon-green/30 pb-3"
+            >
+              <i class="fas fa-terminal mr-3"></i>Utility Commands Quick
+              Reference
+            </h2>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 gap-3">
+                <div class="flex items-center">
+                  <div
+                    class="bg-neon-green/20 text-neon-green p-2 rounded mr-3"
+                  >
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">grep</div>
+                    <div class="text-sm text-gray-400">
+                      Search text patterns in files
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div class="bg-neon-blue/20 text-neon-blue p-2 rounded mr-3">
+                    <i class="fas fa-cut"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">cut</div>
+                    <div class="text-sm text-gray-400">
+                      Extract columns from text
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="bg-neon-purple/20 text-neon-purple p-2 rounded mr-3"
+                  >
+                    <i class="fas fa-sort-amount-up"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">wc</div>
+                    <div class="text-sm text-gray-400">
+                      Count lines, words, characters
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="bg-neon-orange/20 text-neon-orange p-2 rounded mr-3"
+                  >
+                    <i class="fas fa-chart-bar"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">stat</div>
+                    <div class="text-sm text-gray-400">
+                      Display file statistics
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div class="bg-neon-red/20 text-neon-red p-2 rounded mr-3">
+                    <i class="fas fa-key"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">chmod</div>
+                    <div class="text-sm text-gray-400">
+                      Change file permissions
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div class="bg-neon-cyan/20 text-neon-cyan p-2 rounded mr-3">
+                    <i class="fas fa-crown"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold">chown</div>
+                    <div class="text-sm text-gray-400">
+                      Change file owner/group
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Permission Number Cheatsheet -->
+              <div
+                class="mt-4 p-4 bg-gradient-to-r from-neon-purple/10 to-neon-pink/10 rounded"
+              >
+                <h4 class="font-bold text-neon-pink mb-2">
+                  Common Permission Numbers
+                </h4>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <div><code>777</code> - Read+Write+Execute for all</div>
+                  <div><code>755</code> - Owner full, others read+execute</div>
+                  <div><code>750</code> - Owner full, group execute</div>
+                  <div><code>700</code> - Owner only</div>
+                  <div><code>644</code> - Owner read/write, others read</div>
+                  <div><code>600</code> - Owner read/write only</div>
+                  <div><code>400</code> - Read only (owner)</div>
+                  <div><code>555</code> - Read+execute for all</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Practice Exercises -->
+      <section class="neon-card p-6 rounded-2xl mt-8 col-span-1 lg:col-span-3">
+        <h2
+          class="text-2xl font-bold mb-6 text-neon-yellow border-b border-neon-yellow/30 pb-3"
+        >
+          <i class="fas fa-dumbbell mr-3"></i>Practice Exercises
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="p-4 bg-black/30 rounded-lg">
+            <h4 class="font-bold text-neon-green mb-3">
+              Exercise 1: User Analysis
+            </h4>
+            <ol class="list-decimal pl-5 space-y-2 text-sm">
+              <li>Count how many users have /bin/bash as shell</li>
+              <li>List all users with UID above 1000</li>
+              <li>Find which users have no password (!! in shadow)</li>
+              <li>Check when each user last changed password</li>
+            </ol>
+            <div class="mt-3 p-2 bg-black/50 rounded text-xs">
+              <span class="text-neon-cyan">Hint:</span> Use cut, grep, wc
+              together
+            </div>
+          </div>
+
+          <div class="p-4 bg-black/30 rounded-lg">
+            <h4 class="font-bold text-neon-cyan mb-3">
+              Exercise 2: Permission Testing
+            </h4>
+            <ol class="list-decimal pl-5 space-y-2 text-sm">
+              <li>Create a script that needs execute permission</li>
+              <li>Try running it without permission</li>
+              <li>Add execute permission using symbolic method</li>
+              <li>Remove write permission from group</li>
+              <li>Set permissions to 751 using numeric method</li>
+            </ol>
+            <div class="mt-3 p-2 bg-black/50 rounded text-xs">
+              <span class="text-neon-cyan">Hint:</span> Use chmod u+x and chmod
+              751
+            </div>
+          </div>
+
+          <div class="p-4 bg-black/30 rounded-lg">
+            <h4 class="font-bold text-neon-purple mb-3">
+              Exercise 3: User Management
+            </h4>
+            <ol class="list-decimal pl-5 space-y-2 text-sm">
+              <li>Create a test user "demo" with home directory</li>
+              <li>Set password for demo user</li>
+              <li>Add demo user to "sudo" group</li>
+              <li>Change demo's shell to /bin/bash</li>
+              <li>Clean up: delete demo user and home</li>
+            </ol>
+            <div class="mt-3 p-2 bg-black/50 rounded text-xs">
+              <span class="text-neon-cyan">Hint:</span> Use useradd -m and
+              usermod -aG
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="mt-12 pt-8 border-t border-gray-800 text-center">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <h3 class="text-neon-cyan font-bold">Linux Security Mastery</h3>
+            <p class="text-sm text-gray-400">
+              Permissions, Users, and System Administration
+            </p>
+          </div>
+          <div class="flex space-x-6">
+            <div class="text-center">
+              <div class="text-neon-green text-2xl font-bold">7</div>
+              <div class="text-xs">Key Commands</div>
+            </div>
+            <div class="text-center">
+              <div class="text-neon-pink text-2xl font-bold">2</div>
+              <div class="text-xs">Critical Files</div>
+            </div>
+            <div class="text-center">
+              <div class="text-neon-yellow text-2xl font-bold">3</div>
+              <div class="text-xs">Permission Types</div>
+            </div>
+          </div>
+        </div>
+        <p class="mt-6 text-sm text-gray-500">
+          Remember: With great power (sudo) comes great responsibility!
+        </p>
+        <div class="mt-4 flex justify-center space-x-4 text-xs">
+          <span class="px-3 py-1 bg-neon-red/10 text-neon-red rounded"
+            >Security</span
+          >
+          <span class="px-3 py-1 bg-neon-blue/10 text-neon-blue rounded"
+            >Administration</span
+          >
+          <span class="px-3 py-1 bg-neon-green/10 text-neon-green rounded"
+            >Permissions</span
+          >
+          <span class="px-3 py-1 bg-neon-purple/10 text-neon-purple rounded"
+            >Users</span
+          >
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Interactive permission calculator
+      document.addEventListener('DOMContentLoaded', function () {
+        // Add copy functionality
+        document.querySelectorAll('.command-output').forEach((output) => {
+          output.addEventListener('click', function () {
+            const text = this.innerText.replace(/\$ /g, '').trim();
+            navigator.clipboard.writeText(text).then(() => {
+              const originalHTML = this.innerHTML;
+              this.innerHTML = '<span class="text-neon-green">✓ Copied!</span>';
+              setTimeout(() => {
+                this.innerHTML = originalHTML;
+              }, 1500);
+            });
+          });
+          output.style.cursor = 'pointer';
+          output.title = 'Click to copy';
+        });
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+          anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+              window.scrollTo({
+                top: targetElement.offsetTop - 20,
+                behavior: 'smooth',
+              });
+            }
+          });
+        });
+
+        // Highlight current section
+        window.addEventListener('scroll', function () {
+          const sections = document.querySelectorAll('section[id]');
+          const navLinks = document.querySelectorAll('nav a');
+
+          let currentSection = '';
+          sections.forEach((section) => {
+            const sectionTop = section.offsetTop - 100;
+            const sectionHeight = section.clientHeight;
+            if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+              currentSection = section.getAttribute('id');
+            }
+          });
+
+          navLinks.forEach((link) => {
+            link.classList.remove('bg-neon-cyan/20', 'text-neon-cyan');
+            if (link.getAttribute('href') === `#${currentSection}`) {
+              link.classList.add('bg-neon-cyan/20', 'text-neon-cyan');
+            }
+          });
+        });
+
+        // Interactive permission toggles
+        const permissionBits = document.querySelectorAll(
+          '.permission-visual span',
+        );
+        if (permissionBits.length > 0) {
+          permissionBits.forEach((bit, index) => {
+            if (index > 0 && index < 10) {
+              // Only rwx characters
+              bit.addEventListener('click', function () {
+                const current = this.textContent;
+                this.textContent =
+                  current === '-'
+                    ? index < 4
+                      ? 'r'
+                      : index < 7
+                      ? 'w'
+                      : 'x'
+                    : '-';
+
+                // Update color based on state
+                if (this.textContent === '-') {
+                  this.classList.remove(
+                    'text-neon-green',
+                    'text-neon-yellow',
+                    'text-neon-purple',
+                  );
+                  this.classList.add('text-gray-500');
+                } else {
+                  this.classList.remove('text-gray-500');
+                  if (index < 4) this.classList.add('text-neon-green');
+                  else if (index < 7) this.classList.add('text-neon-yellow');
+                  else this.classList.add('text-neon-purple');
+                }
+              });
+              bit.style.cursor = 'pointer';
+              bit.title = 'Click to toggle permission';
+            }
+          });
+        }
+
+        // Add keyboard shortcuts info
+        document.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.key === 'h') {
+            alert(
+              '📋 Linux Security Cheatsheet\n\n' +
+                'Ctrl+C = Cancel command\n' +
+                'Ctrl+D = Exit shell\n' +
+                'Ctrl+L = Clear screen\n' +
+                'Ctrl+R = Search history\n' +
+                'Tab = Auto-complete\n' +
+                '↑/↓ = Command history',
+            );
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

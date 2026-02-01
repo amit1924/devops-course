@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nmap Scanning Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0a0e17;
+        color: #e0e0e0;
+      }
+
+      .code-font {
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .neon-border {
+        border: 1px solid #00d9ff;
+        box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+      }
+
+      .neon-text {
+        color: #00d9ff;
+        text-shadow: 0 0 5px rgba(0, 217, 255, 0.7);
+      }
+
+      .neon-pink {
+        color: #ff00ff;
+        text-shadow: 0 0 5px rgba(255, 0, 255, 0.7);
+      }
+
+      .neon-green {
+        color: #00ff9d;
+        text-shadow: 0 0 5px rgba(0, 255, 157, 0.7);
+      }
+
+      .neon-yellow {
+        color: #ffff00;
+        text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+      }
+
+      .dark-card {
+        background-color: #111827;
+        border-radius: 0.75rem;
+      }
+
+      .copy-btn:hover {
+        background-color: rgba(0, 217, 255, 0.1);
+      }
+
+      .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-track {
+        background: #1a202c;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: #00d9ff;
+        border-radius: 4px;
+      }
+
+      .command-block {
+        background-color: #1a202c;
+        border-left: 4px solid #00d9ff;
+      }
+
+      .note-highlight {
+        background-color: rgba(0, 217, 255, 0.1);
+        border-left: 4px solid #ff00ff;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: #1a202c;
+        color: #e0e0e0;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        border: 1px solid #00d9ff;
+        font-size: 0.875rem;
+      }
+
+      .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto mb-8">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center"
+      >
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold neon-text">
+            <i class="fas fa-network-wired mr-3"></i>Nmap Scanning Notes
+          </h1>
+          <p class="text-gray-400 mt-2">Lesson 5 — Your First Scan</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-2">
+          <div
+            class="px-3 py-1 bg-purple-900/30 rounded-full text-sm border border-purple-700"
+          >
+            <i class="fas fa-shield-alt mr-1"></i> Ethical Hacking
+          </div>
+          <div
+            class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+          >
+            <i class="fas fa-terminal mr-1"></i> Network Security
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 p-4 dark-card neon-border rounded-xl">
+        <p class="flex items-start">
+          <i class="fas fa-info-circle text-cyan-400 mt-1 mr-3 text-lg"></i>
+          <span
+            >Replace
+            <code class="code-font bg-gray-900 px-2 py-1 rounded"
+              >targetIP</code
+            >
+            with ANY device IP YOU OWN like: your phone, your laptop, your
+            router local IP like
+            <code class="code-font bg-gray-900 px-2 py-1 rounded"
+              >192.168.1.1</code
+            ></span
+          >
+        </p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto">
+      <!-- Section 1: Check if device is alive -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center mr-3 border border-cyan-700"
+          >
+            <span class="font-bold text-cyan-400">1</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Check if a device is alive
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Command Card -->
+          <div class="dark-card p-5 rounded-xl neon-border">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-broadcast-tower mr-2"></i>Ping Scan (No ports
+                yet)
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sn 192.168.1.1')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg" id="cmd1"
+                >nmap -sn 192.168.1.1</code
+              >
+            </div>
+            <p class="text-gray-300 mb-3">
+              This is called a
+              <span class="font-semibold text-cyan-400">Ping Scan</span> - it
+              only checks if hosts are online without scanning ports.
+            </p>
+
+            <div class="mt-5 p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-2 flex items-center">
+                <i class="fas fa-desktop mr-2 text-green-400"></i> Example
+                Output
+              </h4>
+              <div
+                class="code-font text-sm text-gray-300 bg-black p-3 rounded overflow-x-auto scrollbar-custom"
+              >
+                <span class="text-green-400">Starting Nmap 7.94SVN</span> (
+                https://nmap.org ) at 2025-12-26 10:56 IST<br />
+                Nmap scan report for amit (192.168.29.133)<br />
+                <span class="text-green-400">Host is up</span> (0.00010s
+                latency).<br />
+                Nmap done: 1 IP address (1 host up) scanned in 9.58 seconds
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Card -->
+          <div class="dark-card p-5 rounded-xl border border-purple-800">
+            <h3 class="text-xl font-semibold neon-pink mb-4">
+              <i class="fas fa-lightbulb mr-2"></i>Key Points
+            </h3>
+            <ul class="space-y-3">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+                <span
+                  >Use
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >-sn</code
+                  >
+                  flag for host discovery only</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+                <span>No port scanning happens with this command</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+                <span
+                  >Ideal for checking which devices are online on your
+                  network</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"
+                ></i>
+                <span
+                  >Some firewalls may block ping requests, making hosts appear
+                  offline</span
+                >
+              </li>
+            </ul>
+
+            <div class="mt-6 p-4 note-highlight rounded-lg">
+              <p class="flex items-start">
+                <i class="fas fa-terminal text-cyan-400 mt-1 mr-3"></i>
+                <span
+                  >You can also scan a range:
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >nmap -sn 192.168.1.1-50</code
+                  ></span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Port Scanning -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700"
+          >
+            <span class="font-bold text-purple-400">2</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Port Scanning</h2>
+        </div>
+
+        <!-- Port Scan Command -->
+        <div class="dark-card p-5 rounded-xl neon-border mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold neon-yellow">
+              <i class="fas fa-door-open mr-2"></i>Basic Port Scan
+            </h3>
+            <button
+              class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap 192.168.29.133')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <div class="command-block p-4 rounded-lg mb-4">
+            <code class="code-font text-lg" id="cmd2">nmap 192.168.29.133</code>
+          </div>
+
+          <div class="mt-5 p-4 bg-gray-900/50 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-2 flex items-center">
+              <i class="fas fa-desktop mr-2 text-green-400"></i> Example Output
+            </h4>
+            <div
+              class="code-font text-sm text-gray-300 bg-black p-3 rounded overflow-x-auto scrollbar-custom"
+            >
+              <span class="text-green-400">Starting Nmap 7.94SVN</span> (
+              https://nmap.org ) at 2025-12-26 10:57 IST<br />
+              Nmap scan report for amit (192.168.29.133)<br />
+              <span class="text-green-400">Host is up</span> (0.00012s
+              latency).<br />
+              Not shown: 999 closed tcp ports (conn-refused)<br />
+              <span class="text-yellow-400">PORT STATE SERVICE</span><br />
+              <span class="text-cyan-400">80/tcp open http</span><br />
+              Nmap done: 1 IP address (1 host up) scanned in 0.07 seconds
+            </div>
+          </div>
+        </div>
+
+        <!-- Service Version Detection -->
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold neon-yellow">
+              <i class="fas fa-search-plus mr-2"></i>Service Version Detection
+            </h3>
+            <button
+              class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap -sV 192.168.1.1')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <div class="command-block p-4 rounded-lg mb-4">
+            <code class="code-font text-lg" id="cmd3"
+              >nmap -sV 192.168.1.1</code
+            >
+          </div>
+          <p class="text-gray-300 mb-3">
+            <span class="font-semibold text-cyan-400">-sV</span> = show service
+            + version (example: Apache, SSH version)
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-2">
+                Nmap Command Structure
+              </h4>
+              <p class="text-gray-300 mb-2">
+                <code class="code-font text-cyan-400"
+                  >nmap [HOW to scan] [EXTRA details] [WHO to scan]</code
+                >
+              </p>
+              <div class="code-font text-sm mt-3">
+                <p class="mb-1"><span class="text-cyan-400">Example:</span></p>
+                <p class="mb-1"><code>nmap -sV -p 80 192.168.1.1</code></p>
+                <p class="mt-3">
+                  <span class="text-green-400">-sV</span> = HOW (scan with
+                  service detection)
+                </p>
+                <p>
+                  <span class="text-green-400">-p 80</span> = EXTRA setting
+                  (scan port 80 only)
+                </p>
+                <p>
+                  <span class="text-green-400">192.168.1.1</span> = WHO to scan
+                </p>
+              </div>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-2">Scanning Ranges</h4>
+              <div class="space-y-3">
+                <div>
+                  <p class="text-gray-300 mb-1">Range of IPs:</p>
+                  <div class="flex justify-between items-center">
+                    <code class="code-font bg-black p-2 rounded w-full mr-2"
+                      >nmap 192.168.1.1-50</code
+                    >
+                    <button
+                      class="copy-btn px-3 py-2 rounded border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                      onclick="copyToClipboard('nmap 192.168.1.1-50')"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-gray-300 mb-1">Full Network:</p>
+                  <div class="flex justify-between items-center">
+                    <code class="code-font bg-black p-2 rounded w-full mr-2"
+                      >nmap 192.168.1.0/24</code
+                    >
+                    <button
+                      class="copy-btn px-3 py-2 rounded border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                      onclick="copyToClipboard('nmap 192.168.1.0/24')"
+                    >
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                  <p class="text-gray-400 text-sm mt-1">
+                    Means 192.168.1.1 → 192.168.1.255
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Host Discovery Techniques -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mr-3 border border-green-700"
+          >
+            <span class="font-bold text-green-400">3</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Host Discovery Techniques
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- List Scan -->
+          <div class="dark-card p-5 rounded-xl border border-cyan-800">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-lg font-semibold neon-yellow">
+                <i class="fas fa-list mr-2"></i>List Scan
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sL 192.168.1.0/24')"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap -sL 192.168.1.0/24</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Only shows list. Doesn't actually scan or touch hosts.
+            </p>
+          </div>
+
+          <!-- Ping Scan -->
+          <div class="dark-card p-5 rounded-xl border border-cyan-800">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-lg font-semibold neon-yellow">
+                <i class="fas fa-wifi mr-2"></i>Ping Scan (Most Used)
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sn 192.168.1.0/24')"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap -sn 192.168.1.0/24</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Don't scan ports, just check who is alive.
+            </p>
+            <div class="mt-2">
+              <span
+                class="inline-block px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs mr-2"
+                >Host up 👍</span
+              >
+              <span
+                class="inline-block px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs"
+                >Host down ❌</span
+              >
+            </div>
+          </div>
+
+          <!-- Force Scan -->
+          <div class="dark-card p-5 rounded-xl border border-cyan-800">
+            <div class="flex justify-between items-start mb-3">
+              <h3 class="text-lg font-semibold neon-yellow">
+                <i class="fas fa-shield-alt mr-2"></i>Force Treat as Alive
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -Pn 192.168.1.1')"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+            </div>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap -Pn 192.168.1.1</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Useful when target blocks ping requests. Tells Nmap to treat host
+              as alive and scan ports anyway.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Port Scanning Basics -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700"
+          >
+            <span class="font-bold text-yellow-400">4</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Port Scanning Basics</h2>
+          <div
+            class="ml-4 px-3 py-1 bg-yellow-900/30 rounded-full text-sm border border-yellow-700"
+          >
+            <i class="fas fa-door-closed mr-1"></i> NOW we actually check
+            services
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Default Scan -->
+          <div class="dark-card p-5 rounded-xl border border-purple-800">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-play-circle text-green-400 mr-2"></i>Default
+              Simple Scan
+            </h4>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap 192.168.1.1</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Scans the 1000 most common TCP ports.
+            </p>
+          </div>
+
+          <!-- Port Range -->
+          <div class="dark-card p-5 rounded-xl border border-purple-800">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-arrows-alt-h text-cyan-400 mr-2"></i>Port Range
+              Scan
+            </h4>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap -p 1-1000 192.168.1.1</code>
+            </div>
+            <p class="text-gray-300 text-sm">Scan ports 1 through 1000.</p>
+          </div>
+
+          <!-- All Ports -->
+          <div class="dark-card p-5 rounded-xl border border-purple-800">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-infinity text-purple-400 mr-2"></i>All Ports Scan
+            </h4>
+            <div class="command-block p-3 rounded-lg mb-3">
+              <code class="code-font">nmap -p- 192.168.1.1</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Scan all 65535 ports. Can be slow!
+            </p>
+          </div>
+        </div>
+
+        <!-- Fast Scan -->
+        <div class="mt-6 dark-card p-5 rounded-xl neon-border">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold neon-yellow">
+              <i class="fas fa-bolt mr-2"></i>Fast Scan (Top Common Ports)
+            </h3>
+            <button
+              class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap -F 192.168.29.133')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <div class="command-block p-4 rounded-lg">
+            <code class="code-font text-lg" id="cmd4"
+              >nmap -F 192.168.29.133</code
+            >
+          </div>
+          <p class="text-gray-300 mt-3">
+            Scans only the top 100 most common ports instead of the default
+            1000. Much faster!
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 5: Scan Techniques -->
+      <section>
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center mr-3 border border-red-700"
+          >
+            <span class="font-bold text-red-400">5</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Scan Techniques (HOW to scan)
+          </h2>
+          <div
+            class="ml-4 px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700"
+          >
+            <i class="fas fa-exclamation-triangle mr-1"></i> Most Important
+          </div>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border mb-6">
+          <p
+            class="text-gray-300 mb-6 italic border-l-4 border-cyan-500 pl-4 py-2"
+          >
+            <i class="fas fa-comment-dots text-cyan-400 mr-2"></i>
+            "Don't panic 😄 we'll keep it simple. Most important one in real
+            world."
+          </p>
+
+          <!-- SYN Scan -->
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-user-secret mr-2"></i>SYN Scan (Stealth Scan)
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('sudo nmap -sS 192.168.29.133')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg" id="cmd5"
+                >sudo nmap -sS 192.168.29.133</code
+              >
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span
+                class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                >fast</span
+              >
+              <span
+                class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                >stealthy</span
+              >
+              <span
+                class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                >MOST used</span
+              >
+              <span
+                class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700"
+                >requires sudo/root</span
+              >
+            </div>
+            <p class="text-gray-300">
+              This is called a
+              <span class="font-bold text-cyan-400">SYN scan</span> - it sends
+              SYN packets and analyzes responses without completing the TCP
+              handshake.
+            </p>
+          </div>
+
+          <!-- TCP Connect Scan -->
+          <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-user mr-2"></i>TCP Connect Scan (Non-root)
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sT 192.168.29.133')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg" id="cmd6"
+                >nmap -sT 192.168.29.133</code
+              >
+            </div>
+            <p class="text-gray-300">
+              <span class="font-bold text-cyan-400">-sT</span> = TCP Connect
+              Scan. Doesn't need root privileges but is slightly noisier. Works
+              great for learning and when you don't have sudo access.
+            </p>
+          </div>
+
+          <!-- UDP Scan -->
+          <div>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-tachometer-alt mr-2"></i>UDP Scan
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sU 192.168.1.1')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg" id="cmd7"
+                >nmap -sU 192.168.1.1</code
+              >
+            </div>
+            <div class="flex items-center mb-3">
+              <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+              <p class="text-gray-300">
+                UDP scan is slow but important for discovering UDP services like
+                DNS, DHCP, SNMP, etc.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer Note -->
+      <div class="mt-12 p-5 dark-card rounded-xl border border-green-800">
+        <div class="flex items-center">
+          <i class="fas fa-graduation-cap text-green-400 text-2xl mr-4"></i>
+          <div>
+            <h3 class="text-xl font-bold neon-green mb-2">
+              Ready for the Next Lesson?
+            </h3>
+            <p class="text-gray-300">
+              When you have more notes to add, just ask me to make notes for the
+              next content. I'll add it in the same format without rewriting the
+              entire page!
+            </p>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="max-w-6xl mx-auto">
+      <!-- Section 1: Find who is online -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center mr-3 border border-cyan-700"
+          >
+            <i class="fas fa-search text-cyan-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Network Discovery Scans</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Find who is online -->
+          <div class="dark-card p-5 rounded-xl neon-border">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-wifi mr-2"></i>Find Who is Online
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sn 192.168.1.0/24')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg">nmap -sn 192.168.1.0/24</code>
+            </div>
+            <p class="text-gray-300">
+              Discovers all active hosts in the network without port scanning.
+            </p>
+          </div>
+
+          <!-- Detailed scan -->
+          <div class="dark-card p-5 rounded-xl neon-border">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-semibold neon-yellow">
+                <i class="fas fa-file-alt mr-2"></i>Detailed Scan
+              </h3>
+              <button
+                class="copy-btn px-3 py-1 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -sV 192.168.1.1')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg">nmap -sV 192.168.1.1</code>
+            </div>
+            <p class="text-gray-300">
+              Service version detection for discovered ports.
+            </p>
+          </div>
+        </div>
+
+        <!-- Full super scan -->
+        <div class="mt-6 dark-card p-5 rounded-xl border border-purple-800">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold neon-pink">
+              <i class="fas fa-rocket mr-2"></i>Full Super Scan (Aggressive)
+            </h3>
+            <button
+              class="copy-btn px-3 py-1 rounded-lg border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition"
+              onclick="copyToClipboard('nmap -A 192.168.1.1')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy
+            </button>
+          </div>
+          <div class="command-block p-4 rounded-lg mb-4">
+            <code class="code-font text-lg">nmap -A 192.168.1.1</code>
+          </div>
+          <p class="text-gray-300 mb-3">This includes:</p>
+          <ul class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <li class="flex items-center">
+              <i class="fas fa-desktop text-green-400 mr-2"></i> OS detection
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-search text-cyan-400 mr-2"></i> Version detection
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-code text-yellow-400 mr-2"></i> Scripts
+            </li>
+            <li class="flex items-center">
+              <i class="fas fa-route text-purple-400 mr-2"></i> Traceroute
+            </li>
+          </ul>
+        </div>
+
+        <!-- Resolve all IPs -->
+        <div class="mt-6 p-4 dark-card rounded-xl note-highlight">
+          <div class="flex items-start">
+            <i
+              class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3 text-lg"
+            ></i>
+            <div>
+              <p class="font-semibold text-gray-300 mb-1">
+                Hostname with Multiple IPs
+              </p>
+              <p class="text-gray-300 mb-2">
+                If hostname has MANY IPs → Nmap scans ONLY the first one
+              </p>
+              <p class="text-gray-300 mb-3">👉 To scan ALL resolved IPs:</p>
+              <div class="flex justify-between items-center">
+                <code class="code-font bg-gray-900 p-2 rounded w-full mr-2"
+                  >nmap --resolve-all scanme.nmap.org</code
+                >
+                <button
+                  class="copy-btn px-3 py-2 rounded border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                  onclick="copyToClipboard('nmap --resolve-all scanme.nmap.org')"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: CIDR Network Scanning -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700"
+          >
+            <span class="font-bold text-yellow-400">2</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Scanning a Whole Network (CIDR)
+          </h2>
+          <div
+            class="ml-4 px-3 py-1 bg-yellow-900/30 rounded-full text-sm border border-yellow-700"
+          >
+            <i class="fas fa-bolt mr-1"></i> Powerful
+          </div>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border mb-6">
+          <p class="text-gray-300 mb-6">
+            Format:
+            <code class="code-font bg-gray-900 px-2 py-1 rounded"
+              >IP / numberOfBits</code
+            >
+          </p>
+
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold neon-yellow mb-3">
+              <i class="fas fa-star text-yellow-400 mr-2"></i>Example:
+            </h3>
+            <div class="command-block p-4 rounded-lg">
+              <code class="code-font text-lg">192.168.10.0/24</code>
+            </div>
+            <p class="text-gray-300 mt-3">
+              This scans:
+              <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                >192.168.10.0 → 192.168.10.255</code
+              >
+            </p>
+            <p class="text-gray-300">Meaning → 256 devices</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-bold text-gray-300 mb-3">Common CIDR Values</h4>
+              <ul class="space-y-2">
+                <li class="flex items-center">
+                  <span class="w-10 text-cyan-400 font-bold">/24</span>
+                  <span class="text-gray-300">most common home network</span>
+                </li>
+                <li class="flex items-center">
+                  <span class="w-10 text-cyan-400 font-bold">/32</span>
+                  <span class="text-gray-300">only ONE IP</span>
+                </li>
+                <li class="flex items-center">
+                  <span class="w-10 text-red-400 font-bold">/0</span>
+                  <span class="text-gray-300"
+                    >whole internet (DON'T do this 😆)</span
+                  >
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-3">CIDR Quick Reference</h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-cyan-800">
+                      <th class="text-left py-2 text-cyan-400">CIDR</th>
+                      <th class="text-left py-2 text-cyan-400">Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 font-bold code-font">/32</td>
+                      <td class="py-2 text-gray-300">only 1 device</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 font-bold code-font">/24</td>
+                      <td class="py-2 text-gray-300">256 devices</td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 font-bold code-font">/16</td>
+                      <td class="py-2 text-gray-300">65,536 devices</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 font-bold code-font text-red-400">/0</td>
+                      <td class="py-2 text-gray-300">
+                        whole Internet (crazy 😅)
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Octet Range Scanning -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mr-3 border border-green-700"
+          >
+            <span class="font-bold text-green-400">3</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Octet Range Scanning</h2>
+          <div
+            class="ml-4 px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700"
+          >
+            <i class="fas fa-sliders-h mr-1"></i> More Control
+          </div>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">
+              Format:
+              <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                >192.168.[RANGE].[RANGE]</code
+              >
+            </p>
+            <p
+              class="text-gray-300 italic border-l-4 border-cyan-500 pl-4 py-2"
+            >
+              <i class="fas fa-lightbulb text-cyan-400 mr-2"></i>
+              CIDR = straight block | Octet ranges = custom pick 😎
+            </p>
+          </div>
+
+          <!-- Example 1 -->
+          <div class="mb-8 p-4 bg-gray-900/30 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>Example 1:
+              Skip .0 and .255
+            </h4>
+            <div class="command-block p-4 rounded-lg mb-3">
+              <code class="code-font text-lg">192.168.0-255.1-254</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Good when avoiding broadcast/network addresses.
+            </p>
+          </div>
+
+          <!-- Example 2 -->
+          <div class="mb-8 p-4 bg-gray-900/30 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>Example 2:
+              Pick Specific Subnets
+            </h4>
+            <div class="command-block p-4 rounded-lg mb-3">
+              <code class="code-font text-lg">192.168.3-5,7.1</code>
+            </div>
+            <p class="text-gray-300 text-sm mb-2">This scans:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div class="code-font bg-black p-2 rounded text-center">
+                192.168.3.1
+              </div>
+              <div class="code-font bg-black p-2 rounded text-center">
+                192.168.4.1
+              </div>
+              <div class="code-font bg-black p-2 rounded text-center">
+                192.168.5.1
+              </div>
+              <div class="code-font bg-black p-2 rounded text-center">
+                192.168.7.1
+              </div>
+            </div>
+          </div>
+
+          <!-- Wild Example -->
+          <div class="p-4 bg-gray-900/30 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-bomb text-red-400 mr-2"></i>Wild Super Example
+            </h4>
+            <div class="command-block p-4 rounded-lg mb-3">
+              <code class="code-font text-lg">0-255.0-255.13.37</code>
+            </div>
+            <p class="text-gray-300 text-sm">
+              Scans the whole internet but ONLY IPs ending with:
+              <code class="code-font bg-gray-900 px-2 py-1 rounded">13.37</code>
+            </p>
+            <p class="text-gray-300 text-sm italic">
+              (used for research sometimes)
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: IPv6 Scanning -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700"
+          >
+            <span class="font-bold text-purple-400">4</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">IPv6 Scanning</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl border border-purple-800">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">Works same as IPv4 but ONLY:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 class="font-bold text-green-400 mb-2 flex items-center">
+                  <i class="fas fa-check mr-2"></i>Supported Formats
+                </h4>
+                <ul class="space-y-2">
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300">Full address</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300">Hostname</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300">CIDR</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-bold text-red-400 mb-2 flex items-center">
+                  <i class="fas fa-times mr-2"></i>Not Supported
+                </h4>
+                <ul class="space-y-2">
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i>
+                    <span class="text-gray-300"
+                      >Octet ranges don't work yet</span
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone ID -->
+          <div class="p-4 bg-gray-900/50 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-3 flex items-center">
+              <i class="fas fa-network-wired text-cyan-400 mr-2"></i>Zone ID in
+              IPv6 Local Networks
+            </h4>
+            <p class="text-gray-300 mb-3">
+              If IPv6 is local (like fe80::) → must include interface
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p class="text-gray-300 text-sm mb-2">Linux:</p>
+                <div class="command-block p-3 rounded-lg">
+                  <code class="code-font">fe80::abcd:1234%eth0</code>
+                </div>
+              </div>
+              <div>
+                <p class="text-gray-300 text-sm mb-2">Windows:</p>
+                <div class="command-block p-3 rounded-lg">
+                  <code class="code-font">fe80::abcd:1234%1</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Reading From Files -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mr-3 border border-blue-700"
+          >
+            <i class="fas fa-file-import text-blue-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Reading From Files</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">
+              If you have MANY targets → don't type all.
+            </p>
+
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h3 class="text-xl font-semibold neon-yellow mb-2">
+                  Input List from File
+                </h3>
+                <div class="command-block p-4 rounded-lg">
+                  <code class="code-font text-lg">nmap -iL targets.txt</code>
+                </div>
+              </div>
+              <button
+                class="copy-btn px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                onclick="copyToClipboard('nmap -iL targets.txt')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-3">
+                Supports in targets.txt:
+              </h4>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                  >IPs</span
+                >
+                <span
+                  class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                  >hostnames</span
+                >
+                <span
+                  class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                  >CIDR</span
+                >
+                <span
+                  class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                  >IPv6</span
+                >
+                <span
+                  class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+                  >octet ranges</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Random Targets -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center mr-3 border border-red-700"
+          >
+            <i class="fas fa-dice text-red-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Random Targets (Be Careful)
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl border border-red-800">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">For internet research:</p>
+
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg">nmap -iR 10</code>
+            </div>
+            <p class="text-gray-300 mb-4">= scan 10 random IPs</p>
+
+            <div
+              class="p-4 bg-red-900/20 rounded-lg border border-red-800 mb-4"
+            >
+              <p class="text-red-300 flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <span class="font-bold">0 means infinite 😵‍💫</span>
+              </p>
+            </div>
+
+            <div
+              class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-800"
+            >
+              <p class="text-yellow-300 flex items-start">
+                <i class="fas fa-shield-alt mt-1 mr-2"></i>
+                <span
+                  >⚠️ But remember: Unauthorized internet scanning = risky / not
+                  ethical 😇 Use only for learning or permitted labs.</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: Combining Options -->
+      <section>
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-indigo-900/50 flex items-center justify-center mr-3 border border-indigo-700"
+          >
+            <i class="fas fa-cogs text-indigo-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            You Can Combine With Other Options
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <p class="text-gray-300 mb-6">Examples:</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Normal service scan -->
+            <div class="p-4 bg-gray-900/30 rounded-lg border border-cyan-800">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="font-bold text-gray-300">
+                  <i class="fas fa-search text-cyan-400 mr-2"></i>Normal Service
+                  Scan
+                </h4>
+                <button
+                  class="copy-btn px-3 py-1 rounded border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                  onclick="copyToClipboard('nmap -sV -iL targets.txt')"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <div class="command-block p-3 rounded-lg">
+                <code class="code-font">nmap -sV -iL targets.txt</code>
+              </div>
+            </div>
+
+            <!-- Faster scan -->
+            <div class="p-4 bg-gray-900/30 rounded-lg border border-green-800">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="font-bold text-gray-300">
+                  <i class="fas fa-bolt text-green-400 mr-2"></i>Faster Scan
+                </h4>
+                <button
+                  class="copy-btn px-3 py-1 rounded border border-green-700 text-green-400 hover:bg-green-900/30 transition"
+                  onclick="copyToClipboard('nmap -T4 -F -iL targets.txt')"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <div class="command-block p-3 rounded-lg">
+                <code class="code-font">nmap -T4 -F -iL targets.txt</code>
+              </div>
+            </div>
+
+            <!-- Stealth scan -->
+            <div class="p-4 bg-gray-900/30 rounded-lg border border-purple-800">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="font-bold text-gray-300">
+                  <i class="fas fa-user-secret text-purple-400 mr-2"></i>Stealth
+                  SYN Scan
+                </h4>
+                <button
+                  class="copy-btn px-3 py-1 rounded border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition"
+                  onclick="copyToClipboard('sudo nmap -sS -iL targets.txt')"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <div class="command-block p-3 rounded-lg">
+                <code class="code-font">sudo nmap -sS -iL targets.txt</code>
+              </div>
+              <p class="text-gray-400 text-sm mt-2">(needs sudo)</p>
+            </div>
+
+            <!-- Aggressive scan -->
+            <div class="p-4 bg-gray-900/30 rounded-lg border border-red-800">
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="font-bold text-gray-300">
+                  <i class="fas fa-rocket text-red-400 mr-2"></i>Aggressive Scan
+                </h4>
+                <button
+                  class="copy-btn px-3 py-1 rounded border border-red-700 text-red-400 hover:bg-red-900/30 transition"
+                  onclick="copyToClipboard('nmap -A -iL targets.txt')"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <div class="command-block p-3 rounded-lg">
+                <code class="code-font">nmap -A -iL targets.txt</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-5 right-5 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg border border-cyan-700 transition-transform transform translate-y-20 z-50 max-w-sm hidden"
+    >
+      <div class="flex items-center">
+        <i class="fas fa-check-circle text-green-400 text-xl mr-3"></i>
+        <span id="toast-message">Command copied to clipboard!</span>
+      </div>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast('Command copied to clipboard!');
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy command');
+          });
+      }
+
+      // Show toast notification
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        toast.classList.remove('translate-y-20');
+        toast.classList.add('translate-y-0');
+
+        setTimeout(() => {
+          toast.classList.remove('translate-y-0');
+          toast.classList.add('translate-y-20');
+          setTimeout(() => {
+            toast.classList.add('hidden');
+          }, 300);
+        }, 3000);
+      }
+
+      // Add copy buttons to all command blocks
+      document.addEventListener('DOMContentLoaded', function () {
+        // This would dynamically add copy buttons if needed
+        console.log('Nmap Notes page loaded successfully!');
+      });
+    </script>
+  </body>
+</html>

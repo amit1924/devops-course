@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux Command Cheatsheet - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              neon: {
+                cyan: '#00f3ff',
+                pink: '#ff00ff',
+                green: '#00ff9d',
+                purple: '#9d00ff',
+                blue: '#0066ff',
+                yellow: '#ffea00',
+              },
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s infinite',
+              glow: 'glow 1.5s ease-in-out infinite alternate',
+            },
+            keyframes: {
+              'pulse-glow': {
+                '0%, 100%': { opacity: 1 },
+                '50%': { opacity: 0.7 },
+              },
+              glow: {
+                from: {
+                  textShadow:
+                    '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f3ff, 0 0 20px #00f3ff',
+                },
+                to: {
+                  textShadow:
+                    '0 0 10px #fff, 0 0 20px #00ff9d, 0 0 30px #00ff9d, 0 0 40px #00ff9d',
+                },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #0a0a0f 0%, #0f172a 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .neon-border {
+        border: 1px solid rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1),
+          inset 0 0 10px rgba(0, 243, 255, 0.05);
+      }
+
+      .neon-card {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(157, 0, 255, 0.2);
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.1);
+      }
+
+      .command-output {
+        background: rgba(0, 0, 0, 0.3);
+        border-left: 3px solid #00ff9d;
+        font-family: 'Courier New', monospace;
+      }
+
+      .glowing-text {
+        text-shadow: 0 0 5px currentColor;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 243, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 243, 255, 0.5);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="mb-10 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-glow">
+          <i class="fas fa-terminal text-neon-cyan mr-3"></i>
+          <span class="text-neon-cyan glowing-text">Linux Command</span>
+          <span class="text-neon-pink glowing-text">Cheatsheet</span>
+        </h1>
+        <p class="text-xl text-gray-300">
+          Complete guide with theory, examples, and outputs
+        </p>
+        <div class="mt-6 flex justify-center space-x-4">
+          <span
+            class="px-4 py-2 bg-neon-purple/20 text-neon-purple rounded-full text-sm"
+          >
+            <i class="fas fa-calendar mr-2"></i>2025-12-22
+          </span>
+          <span
+            class="px-4 py-2 bg-neon-green/20 text-neon-green rounded-full text-sm"
+          >
+            <i class="fas fa-hashtag mr-2"></i>104-280 Commands
+          </span>
+          <span
+            class="px-4 py-2 bg-neon-blue/20 text-neon-blue rounded-full text-sm"
+          >
+            <i class="fas fa-user mr-2"></i>Amit
+          </span>
+        </div>
+      </header>
+
+      <!-- Navigation -->
+      <nav class="mb-10">
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a
+            href="#system-info"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-cyan/10 transition"
+          >
+            <i class="fas fa-desktop mr-2 text-neon-cyan"></i>System Info
+          </a>
+          <a
+            href="#file-ops"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-pink/10 transition"
+          >
+            <i class="fas fa-folder mr-2 text-neon-pink"></i>File Operations
+          </a>
+          <a
+            href="#navigation"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-green/10 transition"
+          >
+            <i class="fas fa-directions mr-2 text-neon-green"></i>Navigation
+          </a>
+          <a
+            href="#viewing"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-purple/10 transition"
+          >
+            <i class="fas fa-eye mr-2 text-neon-purple"></i>Viewing Files
+          </a>
+          <a
+            href="#permissions"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-blue/10 transition"
+          >
+            <i class="fas fa-shield-alt mr-2 text-neon-blue"></i>Permissions &
+            Sudo
+          </a>
+          <a
+            href="#searching"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-yellow/10 transition"
+          >
+            <i class="fas fa-search mr-2 text-neon-yellow"></i>Searching
+          </a>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- System Information Commands -->
+        <section id="system-info" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-cyan border-b border-neon-cyan/30 pb-3"
+          >
+            <i class="fas fa-desktop mr-3"></i>System Information
+          </h2>
+
+          <div class="space-y-6">
+            <!-- uname command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >104</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">uname</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays basic system information (kernel name).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> uname<br />
+                <span class="text-gray-400">Linux</span>
+              </div>
+            </div>
+
+            <!-- uname -a command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >105</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">uname -a</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Shows <strong>all</strong> system information: kernel name,
+                version, release, machine hardware, and OS.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> uname -a<br />
+                <span class="text-gray-400"
+                  >Linux ubuntu 5.15.0-76-generic #83-Ubuntu SMP Thu Jun 15
+                  19:16:32 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux</span
+                >
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Output Breakdown:</strong><br />
+                • <span class="text-neon-cyan">Linux</span> - Kernel name<br />
+                • <span class="text-neon-cyan">ubuntu</span> - Network node
+                hostname<br />
+                • <span class="text-neon-cyan">5.15.0-76-generic</span> - Kernel
+                release<br />
+                • <span class="text-neon-cyan">x86_64</span> - Machine hardware
+                name
+              </div>
+            </div>
+
+            <!-- whoami command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >112</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">whoami</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays current logged-in username.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> whoami<br />
+                <span class="text-gray-400">amit</span>
+              </div>
+            </div>
+
+            <!-- date command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >120</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">date</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Shows current system date and time.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> date<br />
+                <span class="text-gray-400">Mon Dec 22 12:39:45 UTC 2025</span>
+              </div>
+            </div>
+
+            <!-- uptime command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >121</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">uptime</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Shows how long the system has been running, load averages, and
+                logged-in users.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> uptime<br />
+                <span class="text-gray-400"
+                  >12:39:51 up 2 days, 3:15, 1 user, load average: 0.08, 0.03,
+                  0.01</span
+                >
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Load Average (1min, 5min, 15min):</strong><br />
+                • <span class="text-neon-green">Below 1.0</span> = System
+                idle<br />
+                • <span class="text-neon-yellow">Around 1.0</span> = System
+                fully utilized<br />
+                • <span class="text-neon-pink">Above 1.0</span> = Processes
+                waiting for CPU
+              </div>
+            </div>
+
+            <!-- ifconfig command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >118</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">ifconfig</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays network interface configuration (legacy command, use
+                <code class="text-neon-pink">ip addr</code> on modern systems).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> ifconfig<br />
+                <span class="text-gray-400">
+                  eth0: flags=4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt; mtu
+                  1500<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;inet 192.168.1.105 netmask
+                  255.255.255.0 broadcast 192.168.1.255<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;inet6 fe80::20c:29ff:fe12:3456
+                  prefixlen 64 scopeid 0x20&lt;link&gt;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;ether 00:0c:29:12:34:56 txqueuelen
+                  1000 (Ethernet)
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- File Operations -->
+        <section id="file-ops" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-pink border-b border-neon-pink/30 pb-3"
+          >
+            <i class="fas fa-folder mr-3"></i>File Operations
+          </h2>
+
+          <div class="space-y-6">
+            <!-- touch command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >214</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">touch</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Creates empty files or updates timestamps of existing files.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> touch a.txt<br />
+                <span class="text-neon-green">$</span> touch b.txt file1.txt
+                file2.txt<br />
+                <span class="text-gray-400"># Creates empty files</span>
+              </div>
+            </div>
+
+            <!-- cat command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >218</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">cat</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Concatenates and displays file contents. Short for
+                "concatenate".
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> cat a.txt<br />
+                <span class="text-gray-400">Amit</span><br /><br />
+                <span class="text-neon-green">$</span> cat file1.txt file2.txt >
+                combined.txt<br />
+                <span class="text-gray-400"># Combines multiple files</span>
+              </div>
+            </div>
+
+            <!-- echo command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >126-134</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">echo</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays text or variables to terminal or redirects to files.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> echo "hi"<br />
+                <span class="text-gray-400">hi</span><br /><br />
+                <span class="text-neon-green">$</span> echo "Amit" > a.txt
+                <span class="text-gray-400"># Overwrites file</span><br />
+                <span class="text-neon-green">$</span> echo "More text" >> a.txt
+                <span class="text-gray-400"># Appends to file</span><br />
+                <span class="text-neon-green">$</span> name="Amit"<br />
+                <span class="text-neon-green">$</span> echo $name<br />
+                <span class="text-gray-400">Amit</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Redirection Operators:</strong><br />
+                • <span class="text-neon-cyan">></span> - Overwrites file
+                (creates if doesn't exist)<br />
+                • <span class="text-neon-cyan">>></span> - Appends to file<br />
+                • <span class="text-neon-cyan">2></span> - Redirects stderr
+                (error output)<br />
+                • <span class="text-neon-cyan">&></span> - Redirects both stdout
+                and stderr
+              </div>
+            </div>
+
+            <!-- mkdir command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >207</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">mkdir</h3>
+              </div>
+              <p class="text-gray-300 mb-3">Creates new directories.</p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> mkdir test<br />
+                <span class="text-neon-green">$</span> mkdir -p
+                parent/child/grandchild
+                <span class="text-gray-400"># Creates nested directories</span
+                ><br />
+                <span class="text-neon-green">$</span> mkdir dir1 dir2 dir3
+                <span class="text-gray-400"># Multiple directories</span>
+              </div>
+            </div>
+
+            <!-- cp command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >229</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">cp</h3>
+              </div>
+              <p class="text-gray-300 mb-3">Copies files and directories.</p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> cp a.txt b.txt
+                <span class="text-gray-400"># Copy file</span><br />
+                <span class="text-neon-green">$</span> cp a.txt test1/
+                <span class="text-gray-400"># Copy to directory</span><br />
+                <span class="text-neon-green">$</span> cp -r source_dir/
+                dest_dir/ <span class="text-gray-400"># Recursive copy</span
+                ><br />
+                <span class="text-neon-green">$</span> cp -v file* backup/
+                <span class="text-gray-400"># Verbose copy</span>
+              </div>
+            </div>
+
+            <!-- mv command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >235-245</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">mv</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Moves or renames files and directories.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> mv a.txt c.txt
+                <span class="text-gray-400"># Rename file</span><br />
+                <span class="text-neon-green">$</span> mv c.txt ../
+                <span class="text-gray-400"># Move to parent directory</span
+                ><br />
+                <span class="text-neon-green">$</span> mv file.txt
+                /new/location/
+                <span class="text-gray-400"># Move to absolute path</span><br />
+                <span class="text-neon-green">$</span> mv c.txt test1/
+                <span class="text-gray-400"># Move into directory</span>
+              </div>
+            </div>
+
+            <!-- tee command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-pink/20 text-neon-pink px-3 py-1 rounded text-sm font-mono"
+                  >184</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">tee</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Reads from stdin and writes to both stdout and files.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> echo "Hello" | tee
+                output.txt<br />
+                <span class="text-gray-400"
+                  >Hello
+                  <span class="text-neon-green"
+                    ># Also saved to output.txt</span
+                  ></span
+                ><br /><br />
+                <span class="text-neon-green">$</span> ls -la | tee
+                listing.txt<br />
+                <span class="text-neon-green">$</span> command | tee -a log.txt
+                <span class="text-gray-400"># Append mode</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Navigation Commands -->
+        <section id="navigation" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-green border-b border-neon-green/30 pb-3"
+          >
+            <i class="fas fa-directions mr-3"></i>Navigation & Directories
+          </h2>
+
+          <div class="space-y-6">
+            <!-- pwd command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-green/20 text-neon-green px-3 py-1 rounded text-sm font-mono"
+                  >116, 143, 145, 197, 265</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">pwd</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Print Working Directory - shows current directory path.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> pwd<br />
+                <span class="text-gray-400">/home/amit/Desktop/test</span>
+              </div>
+            </div>
+
+            <!-- cd command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-green/20 text-neon-green px-3 py-1 rounded text-sm font-mono"
+                  >140-148, 162-180, 195, 204-209, 234, 241, 247, 255,
+                  271-274</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">cd</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Change Directory - navigates between directories.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> cd ..
+                <span class="text-gray-400"># Go to parent directory</span
+                ><br />
+                <span class="text-neon-green">$</span> cd ./
+                <span class="text-gray-400"
+                  ># Stay in current directory (no effect)</span
+                ><br />
+                <span class="text-neon-green">$</span> cd ~
+                <span class="text-gray-400"># Go to home directory</span><br />
+                <span class="text-neon-green">$</span> cd Desktop
+                <span class="text-gray-400"># Go to Desktop folder</span><br />
+                <span class="text-neon-green">$</span> cd GK
+                <span class="text-gray-400"># Go to GK folder</span><br />
+                <span class="text-neon-green">$</span> cd ../..
+                <span class="text-gray-400"># Go up two levels</span><br />
+                <span class="text-neon-green">$</span> cd Desktop/GK
+                <span class="text-gray-400"># Go to specific path</span><br />
+                <span class="text-neon-green">$</span> cd -
+                <span class="text-gray-400"># Go to previous directory</span
+                ><br />
+                <span class="text-neon-green">$</span> cd /var/log
+                <span class="text-gray-400"># Absolute path</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Special Directory Symbols:</strong><br />
+                • <span class="text-neon-cyan">.</span> - Current directory<br />
+                • <span class="text-neon-cyan">..</span> - Parent directory<br />
+                • <span class="text-neon-cyan">~</span> - Home directory<br />
+                • <span class="text-neon-cyan">-</span> - Previous directory<br />
+                • <span class="text-neon-cyan">/</span> - Root directory
+              </div>
+            </div>
+
+            <!-- ls command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-green/20 text-neon-green px-3 py-1 rounded text-sm font-mono"
+                  >138, 150-183, 186, 199, 209-210, 212, 215, 228, 232, 236,
+                  238, 240, 242, 250</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">ls</h3>
+              </div>
+              <p class="text-gray-300 mb-3">Lists directory contents.</p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> ls<br />
+                <span class="text-gray-400"
+                  >Desktop Documents Downloads Music Pictures Videos</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> ls -a
+                <span class="text-gray-400"
+                  ># Show ALL files (including hidden .files)</span
+                ><br />
+                <span class="text-neon-green">$</span> ls -l
+                <span class="text-gray-400"># Long format with details</span
+                ><br />
+                <span class="text-neon-green">$</span> ls -la
+                <span class="text-gray-400"># Long format + all files</span
+                ><br />
+                <span class="text-neon-green">$</span> ls -R
+                <span class="text-gray-400"># Recursive listing</span><br />
+                <span class="text-neon-green">$</span> ls -r
+                <span class="text-gray-400"># Reverse order</span><br />
+                <span class="text-neon-green">$</span> ls -t
+                <span class="text-gray-400"># Sort by modification time</span
+                ><br />
+                <span class="text-neon-green">$</span> ls -S
+                <span class="text-gray-400"># Sort by file size</span><br />
+                <span class="text-neon-green">$</span> ls -1
+                <span class="text-gray-400"># One file per line</span><br />
+                <span class="text-neon-green">$</span> ls -1R
+                <span class="text-gray-400"># One per line + recursive</span
+                ><br />
+                <span class="text-neon-green">$</span> ls Desktop
+                <span class="text-gray-400"># List specific directory</span
+                ><br />
+                <span class="text-neon-green">$</span> ls ..
+                <span class="text-gray-400"># List parent directory</span><br />
+                <span class="text-neon-green">$</span> ls .
+                <span class="text-gray-400"># List current directory</span
+                ><br />
+                <span class="text-neon-green">$</span> ls ~
+                <span class="text-gray-400"># List home directory</span><br />
+                <span class="text-neon-green">$</span> ls .ai_assistant.conf
+                .npmrc <span class="text-gray-400"># List specific files</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>ls -l Output Explained:</strong><br />
+                <span class="text-gray-400"
+                  >drwxr-xr-x 5 amit amit 4096 Dec 22 13:14 test</span
+                ><br />
+                • <span class="text-neon-cyan">d</span> = Directory ( - for
+                file, l for link)<br />
+                • <span class="text-neon-cyan">rwx</span> = Owner permissions
+                (read, write, execute)<br />
+                • <span class="text-neon-cyan">r-x</span> = Group permissions<br />
+                • <span class="text-neon-cyan">r-x</span> = Others
+                permissions<br />
+                • <span class="text-neon-cyan">5</span> = Link count<br />
+                • <span class="text-neon-cyan">amit amit</span> = Owner:Group<br />
+                • <span class="text-neon-cyan">4096</span> = Size in bytes<br />
+                • <span class="text-neon-cyan">Dec 22 13:14</span> =
+                Modification time<br />
+                • <span class="text-neon-cyan">test</span> = File/directory name
+              </div>
+            </div>
+
+            <!-- tree command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-green/20 text-neon-green px-3 py-1 rounded text-sm font-mono"
+                  >188-194, 231, 243, 253</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">tree</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays directory structure in tree format (may need
+                installation).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> sudo apt update<br />
+                <span class="text-neon-green">$</span> sudo apt install tree
+                <span class="text-gray-400"># Install on Ubuntu/Debian</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> tree<br />
+                <span class="text-gray-400">
+                  .<br />
+                  ├── a.txt<br />
+                  ├── b.txt<br />
+                  └── test1<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;└── a.txt<br />
+                  <br />
+                  2 directories, 3 files
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Viewing & Editing Files -->
+        <section id="viewing" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-purple border-b border-neon-purple/30 pb-3"
+          >
+            <i class="fas fa-eye mr-3"></i>Viewing & Editing Files
+          </h2>
+
+          <div class="space-y-6">
+            <!-- head command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-purple/20 text-neon-purple px-3 py-1 rounded text-sm font-mono"
+                  >269, 272, 276-278</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">head</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays first N lines of a file (default: 10 lines).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> head a.txt<br />
+                <span class="text-gray-400">Linux<br />Amit</span><br /><br />
+                <span class="text-neon-green">$</span> head -1 a.txt
+                <span class="text-gray-400"># Show only first line</span><br />
+                <span class="text-gray-400">Linux</span><br /><br />
+                <span class="text-neon-green">$</span> head -n 5 file.txt
+                <span class="text-gray-400"># Show 5 lines</span><br />
+                <span class="text-neon-green">$</span> head -c 100 file.txt
+                <span class="text-gray-400"># Show first 100 bytes</span>
+              </div>
+            </div>
+
+            <!-- tail command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-purple/20 text-neon-purple px-3 py-1 rounded text-sm font-mono"
+                  >278-279</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">tail</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays last N lines of a file (default: 10 lines).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> tail -1 a.txt<br />
+                <span class="text-gray-400">Amit</span><br /><br />
+                <span class="text-neon-green">$</span> tail -f logfile.log
+                <span class="text-gray-400"
+                  ># Follow (watch) file in real-time</span
+                ><br />
+                <span class="text-neon-green">$</span> tail -n 20 file.txt
+                <span class="text-gray-400"># Show last 20 lines</span>
+              </div>
+            </div>
+
+            <!-- man command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-purple/20 text-neon-purple px-3 py-1 rounded text-sm font-mono"
+                  >122, 124</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">man</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays manual pages (documentation) for commands.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> man
+                <span class="text-gray-400"
+                  ># Shows: What manual page do you want?</span
+                ><br />
+                <span class="text-neon-green">$</span> man nano
+                <span class="text-gray-400"># Shows nano editor manual</span
+                ><br />
+                <span class="text-neon-green">$</span> man ls<br />
+                <span class="text-neon-green">$</span> man 5 passwd
+                <span class="text-gray-400"># Section 5 (file formats)</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Manual Sections:</strong><br />
+                1. Executable programs or shell commands<br />
+                2. System calls (functions provided by kernel)<br />
+                3. Library calls (functions within program libraries)<br />
+                4. Special files (usually found in /dev)<br />
+                5. File formats and conventions<br />
+                6. Games<br />
+                7. Miscellaneous<br />
+                8. System administration commands<br />
+                9. Kernel routines [Non standard]
+              </div>
+            </div>
+
+            <!-- code command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-purple/20 text-neon-purple px-3 py-1 rounded text-sm font-mono"
+                  >226, 249</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">code</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Opens Visual Studio Code editor (if installed).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> code ./a.txt
+                <span class="text-gray-400"># Open file in VS Code</span><br />
+                <span class="text-neon-green">$</span> code .
+                <span class="text-gray-400"
+                  ># Open current directory in VS Code</span
+                ><br />
+                <span class="text-neon-green">$</span> code a.txt
+                <span class="text-gray-400"># Open specific file</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Permissions & Sudo -->
+        <section id="permissions" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-blue border-b border-neon-blue/30 pb-3"
+          >
+            <i class="fas fa-shield-alt mr-3"></i>Permissions & Sudo
+          </h2>
+
+          <div class="space-y-6">
+            <!-- sudo command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-blue/20 text-neon-blue px-3 py-1 rounded text-sm font-mono"
+                  >191, 201-202, 258, 261, 263, 267</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">sudo</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Execute command as superuser (root). Short for "SuperUser DO".
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> sudo apt update
+                <span class="text-gray-400"># Update package list</span><br />
+                <span class="text-neon-green">$</span> sudo apt install tree
+                <span class="text-gray-400"># Install package</span><br />
+                <span class="text-neon-green">$</span> sudo -h
+                <span class="text-gray-400"># Show help</span><br />
+                <span class="text-neon-green">$</span> sudo ~
+                <span class="text-gray-400"
+                  ># Execute command in home as root</span
+                ><br />
+                <span class="text-neon-green">$</span> sudo -i
+                <span class="text-gray-400"># Login as root interactively</span
+                ><br />
+                <span class="text-neon-green">$</span> sudo su
+                <span class="text-gray-400"># Switch to root user</span>
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Common sudo patterns:</strong><br />
+                • <span class="text-neon-cyan">sudo !!</span> - Run previous
+                command with sudo<br />
+                • <span class="text-neon-cyan">sudo -u username command</span> -
+                Run as specific user<br />
+                • <span class="text-neon-cyan">sudo -k</span> - Clear cached
+                credentials<br />
+                • <span class="text-neon-cyan">sudo -v</span> - Refresh
+                credentials
+              </div>
+            </div>
+
+            <!-- mount command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-blue/20 text-neon-blue px-3 py-1 rounded text-sm font-mono"
+                  >108-111</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">mount</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays mounted filesystems or mounts filesystems.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> mount<br />
+                <span class="text-gray-400">
+                  /dev/sda1 on / type ext4 (rw,relatime)<br />
+                  tmpfs on /dev/shm type tmpfs (rw,nosuid,nodev)<br />
+                  /dev/sdb1 on /media/usb type vfat (rw,noexec,nosuid,nodev) </span
+                ><br /><br />
+                <span class="text-neon-green">$</span> sudo mount /dev/sdb1 /mnt
+                <span class="text-gray-400"># Manual mount</span><br />
+                <span class="text-neon-green">$</span> sudo umount /mnt
+                <span class="text-gray-400"># Unmount</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Searching & Finding -->
+        <section id="searching" class="neon-card p-6 rounded-2xl">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-yellow border-b border-neon-yellow/30 pb-3"
+          >
+            <i class="fas fa-search mr-3"></i>Searching & Finding
+          </h2>
+
+          <div class="space-y-6">
+            <!-- find command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-yellow/20 text-neon-yellow px-3 py-1 rounded text-sm font-mono"
+                  >279-280</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">find</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Searches for files and directories based on various criteria.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> sudo find / -name
+                transfer-dynamic 2>/dev/null<br />
+                <span class="text-gray-400"
+                  >/usr/local/bin/transfer-dynamic</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> sudo find / -name
+                transfer-dynamic<br />
+                <span class="text-gray-400">
+                  find: '/run/user/1000/doc': Permission denied<br />
+                  find: '/run/user/1000/gvfs': Permission denied<br />
+                  find: '/proc/40599/task/40599/net': Invalid argument<br />
+                  find: '/proc/40599/net': Invalid argument<br />
+                  /usr/local/bin/transfer-dynamic </span
+                ><br /><br />
+                <span class="text-neon-green">$</span> find . -name "*.txt"<br />
+                <span class="text-gray-400">
+                  ./a.txt<br />
+                  ./b.txt<br />
+                  ./test1/a.txt </span
+                ><br /><br />
+                <span class="text-neon-green">$</span> sudo find / -name "*.txt"
+                2>/dev/null<br />
+                <span class="text-gray-400"
+                  ># Search entire system, hide errors</span
+                ><br />
+                <span class="text-neon-green">$</span> find ~ -name "*.txt"<br />
+                <span class="text-gray-400"
+                  ># Search only in home directory</span
+                >
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Common find patterns:</strong><br />
+                •
+                <span class="text-neon-cyan">find . -type f -name "*.txt"</span>
+                - Only files<br />
+                •
+                <span class="text-neon-cyan">find . -type d -name "dir*"</span>
+                - Only directories<br />
+                • <span class="text-neon-cyan">find . -mtime -7</span> -
+                Modified in last 7 days<br />
+                • <span class="text-neon-cyan">find . -size +100M</span> - Files
+                larger than 100MB<br />
+                • <span class="text-neon-cyan">2>/dev/null</span> - Redirects
+                stderr to /dev/null (hides errors)
+              </div>
+            </div>
+
+            <!-- history command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-yellow/20 text-neon-yellow px-3 py-1 rounded text-sm font-mono"
+                  >106</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">history</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Displays command history with line numbers.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> history<br />
+                <span class="text-gray-400">
+                  ...<br />
+                  104 uname<br />
+                  105 uname -a<br />
+                  106 history<br />
+                  107 clear<br />
+                  ... </span
+                ><br /><br />
+                <span class="text-neon-green">$</span> !105
+                <span class="text-gray-400"
+                  ># Execute command #105 from history</span
+                ><br />
+                <span class="text-neon-green">$</span> history -c
+                <span class="text-gray-400"># Clear history</span><br />
+                <span class="text-neon-green">$</span> history | grep "find"
+                <span class="text-gray-400"># Search history</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Miscellaneous -->
+        <section class="neon-card p-6 rounded-2xl col-span-1 lg:col-span-2">
+          <h2
+            class="text-2xl font-bold mb-6 text-neon-cyan border-b border-neon-cyan/30 pb-3"
+          >
+            <i class="fas fa-tools mr-3"></i>Miscellaneous & Important Concepts
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- clear command -->
+            <div class="command-block">
+              <div class="flex items-center mb-2">
+                <span
+                  class="bg-neon-cyan/20 text-neon-cyan px-3 py-1 rounded text-sm font-mono"
+                  >107, 109, 113, 115, 117, 119, 123, 125, 131, 135, 137, 139,
+                  149, 151, 153, 157, 159, 161, 165, 169, 172, 178, 183, 185,
+                  187, 189, 192, 194, 196, 200, 203, 206, 211, 213, 216, 233,
+                  244, 248, 254, 257, 260, 262, 264, 266, 268, 270, 275</span
+                >
+                <h3 class="ml-3 text-xl font-semibold">clear</h3>
+              </div>
+              <p class="text-gray-300 mb-3">
+                Clears terminal screen (shortcut: Ctrl+L).
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> clear<br />
+                <span class="text-gray-400"># Screen is cleared</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> Ctrl+L
+                <span class="text-gray-400"># Keyboard shortcut</span><br />
+                <span class="text-neon-green">$</span> reset
+                <span class="text-gray-400"># More thorough reset</span>
+              </div>
+            </div>
+
+            <!-- Variables & Shell Concepts -->
+            <div class="command-block">
+              <h3 class="text-xl font-semibold mb-3 text-neon-green">
+                Shell Variables
+              </h3>
+              <p class="text-gray-300 mb-3">
+                Variables store data for shell scripts and commands.
+              </p>
+              <div class="command-output p-4 rounded mb-3">
+                <span class="text-neon-green">$</span> echo "hi"<br />
+                <span class="text-gray-400">hi</span><br /><br />
+                <span class="text-neon-green">$</span> echo $date<br />
+                <span class="text-gray-400"
+                  ># Empty if date variable not set</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> date=$(date)
+                <span class="text-gray-400"># Command substitution</span><br />
+                <span class="text-neon-green">$</span> echo date<br />
+                <span class="text-gray-400"
+                  >date
+                  <span class="text-neon-pink"># Literal string</span></span
+                ><br /><br />
+                <span class="text-neon-green">$</span> echo $date<br />
+                <span class="text-gray-400">Mon Dec 22 12:42:15 UTC 2025</span
+                ><br /><br />
+                <span class="text-neon-green">$</span> name="Amit"<br />
+                <span class="text-neon-green">$</span> echo $name<br />
+                <span class="text-gray-400">Amit</span><br /><br />
+                <span class="text-neon-green">$</span> echo "$(uname)"<br />
+                <span class="text-gray-400"
+                  >Linux
+                  <span class="text-neon-pink"
+                    ># Command substitution in string</span
+                  ></span
+                >
+              </div>
+              <div class="bg-black/40 p-3 rounded text-sm">
+                <strong>Variable Rules:</strong><br />
+                • <span class="text-neon-cyan">No spaces</span> around = sign<br />
+                • Use <span class="text-neon-cyan">$</span> to access variable
+                value<br />
+                • Use <span class="text-neon-cyan">$(command)</span> for command
+                substitution<br />
+                • <span class="text-neon-cyan">"$var"</span> preserves spaces,
+                <span class="text-neon-cyan">$var</span> doesn't
+              </div>
+            </div>
+          </div>
+
+          <!-- Best Practices Section -->
+          <div
+            class="mt-8 p-6 rounded-xl bg-gradient-to-r from-neon-purple/10 to-neon-cyan/10 border border-neon-purple/30"
+          >
+            <h3 class="text-xl font-bold mb-4 text-neon-pink">
+              <i class="fas fa-star mr-2"></i>Best Practices & Pro Tips
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-4 bg-black/30 rounded-lg">
+                <h4 class="font-bold text-neon-green mb-2">
+                  <i class="fas fa-lightbulb mr-2"></i>Command Chaining
+                </h4>
+                <ul class="text-sm space-y-1">
+                  <li>
+                    <span class="text-neon-cyan">;</span> - Run sequentially:
+                    <code>cmd1; cmd2</code>
+                  </li>
+                  <li>
+                    <span class="text-neon-cyan">&&</span> - Run if previous
+                    succeeds: <code>cmd1 && cmd2</code>
+                  </li>
+                  <li>
+                    <span class="text-neon-cyan">||</span> - Run if previous
+                    fails: <code>cmd1 || cmd2</code>
+                  </li>
+                  <li>
+                    <span class="text-neon-cyan">|</span> - Pipe output:
+                    <code>cmd1 | cmd2</code>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-black/30 rounded-lg">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  <i class="fas fa-exclamation-triangle mr-2"></i>Dangerous
+                  Commands
+                </h4>
+                <ul class="text-sm space-y-1">
+                  <li>
+                    <code class="text-neon-pink">rm -rf /</code> - Deletes
+                    EVERYTHING!
+                  </li>
+                  <li>
+                    <code class="text-neon-pink">:(){ :|:& };:</code> - Fork
+                    bomb
+                  </li>
+                  <li>
+                    <code class="text-neon-pink">mkfs.ext4 /dev/sda</code> -
+                    Formats drive
+                  </li>
+                  <li>
+                    <code class="text-neon-pink"
+                      >dd if=/dev/zero of=/dev/sda</code
+                    >
+                    - Wipes drive
+                  </li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-black/30 rounded-lg">
+                <h4 class="font-bold text-neon-cyan mb-2">
+                  <i class="fas fa-rocket mr-2"></i>Productivity Tips
+                </h4>
+                <ul class="text-sm space-y-1">
+                  <li>
+                    <span class="text-neon-green">Tab</span> - Auto-complete
+                  </li>
+                  <li>
+                    <span class="text-neon-green">↑/↓</span> - Navigate history
+                  </li>
+                  <li>
+                    <span class="text-neon-green">Ctrl+R</span> - Search history
+                  </li>
+                  <li>
+                    <span class="text-neon-green">Ctrl+C</span> - Cancel command
+                  </li>
+                  <li>
+                    <span class="text-neon-green">Ctrl+D</span> - Exit shell
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer -->
+      <footer
+        class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400"
+      >
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <h3 class="text-neon-cyan font-bold">Linux Command Mastery</h3>
+            <p class="text-sm">
+              Complete cheatsheet with theory and practical examples
+            </p>
+          </div>
+          <div class="flex space-x-4">
+            <a href="#" class="text-neon-pink hover:text-neon-cyan transition">
+              <i class="fab fa-github text-xl"></i>
+            </a>
+            <a href="#" class="text-neon-pink hover:text-neon-cyan transition">
+              <i class="fab fa-linux text-xl"></i>
+            </a>
+            <a href="#" class="text-neon-pink hover:text-neon-cyan transition">
+              <i class="fas fa-terminal text-xl"></i>
+            </a>
+          </div>
+        </div>
+        <p class="mt-6 text-sm">
+          Created from history commands dated 2025-12-22 | Commands 104-280 |
+          User: Amit
+        </p>
+        <p class="text-xs mt-2">Tip: Bookmark this page for quick reference!</p>
+      </footer>
+    </div>
+
+    <script>
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 20,
+              behavior: 'smooth',
+            });
+          }
+        });
+      });
+
+      // Highlight current section in navigation
+      window.addEventListener('scroll', function () {
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('nav a');
+
+        let currentSection = '';
+        sections.forEach((section) => {
+          const sectionTop = section.offsetTop - 100;
+          const sectionHeight = section.clientHeight;
+          if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+            currentSection = section.getAttribute('id');
+          }
+        });
+
+        navLinks.forEach((link) => {
+          link.classList.remove('bg-neon-cyan/20', 'text-neon-cyan');
+          if (link.getAttribute('href') === `#${currentSection}`) {
+            link.classList.add('bg-neon-cyan/20', 'text-neon-cyan');
+          }
+        });
+      });
+
+      // Add copy functionality to code blocks
+      document.querySelectorAll('.command-output').forEach((output) => {
+        output.addEventListener('click', function () {
+          const text = this.innerText.replace(/\$ /g, '').trim();
+          navigator.clipboard.writeText(text).then(() => {
+            const originalHTML = this.innerHTML;
+            this.innerHTML =
+              '<span class="text-neon-green">✓ Copied to clipboard!</span>';
+            setTimeout(() => {
+              this.innerHTML = originalHTML;
+            }, 1500);
+          });
+        });
+        output.style.cursor = 'pointer';
+        output.title = 'Click to copy';
+      });
+
+      // Toggle dark mode (already dark by default)
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'd') {
+          document.body.classList.toggle('dark');
+          document.body.classList.toggle('bg-gray-100');
+          document.body.classList.toggle('text-gray-900');
+        }
+      });
+    </script>
+  </body>
+</html>

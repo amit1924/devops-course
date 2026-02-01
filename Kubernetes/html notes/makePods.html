@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🚀 Deploy Node.js App in Kubernetes Pod - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #00d8ff, #9d4edd, #00d8ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .guide-card {
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .guide-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(157, 78, 221, 0.15);
+        border-color: #9d4edd;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #9d4edd, #c77dff);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 5px 15px rgba(157, 78, 221, 0.3);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-break: break-word;
+        padding-right: 100px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 5px 0;
+        color: #e2e8f0;
+      }
+
+      .terminal-prompt {
+        color: #10b981;
+        font-weight: bold;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .pod-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 2px solid #334155;
+        position: relative;
+      }
+
+      .pod-box {
+        background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        min-width: 200px;
+        animation: pulse 2s infinite;
+        position: relative;
+        z-index: 2;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 0 30px rgba(157, 78, 221, 0.8);
+        }
+      }
+
+      .container-box {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+        text-align: center;
+      }
+
+      .network-flow {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .data-packet {
+        position: absolute;
+        background: #22c55e;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        animation: movePacket 3s linear infinite;
+      }
+
+      @keyframes movePacket {
+        0% {
+          transform: translate(0, 0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(200px, -100px);
+          opacity: 0;
+        }
+      }
+
+      .file-container {
+        background: #0f172a;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        overflow: hidden;
+        margin: 15px 0;
+      }
+
+      .file-header {
+        background: #1e293b;
+        padding: 12px 20px;
+        border-bottom: 1px solid #334155;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .file-content {
+        padding: 20px;
+        overflow-x: auto;
+      }
+
+      .command-line {
+        background: #1e293b;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.1),
+          rgba(37, 99, 235, 0.1)
+        );
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.1),
+          rgba(21, 128, 61, 0.1)
+        );
+        border-left: 4px solid #22c55e;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1),
+          rgba(217, 119, 6, 0.1)
+        );
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .flow-diagram {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+      }
+
+      .flow-step {
+        display: flex;
+        align-items: center;
+        margin: 10px 0;
+        width: 100%;
+      }
+
+      .flow-number {
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 15px;
+        flex-shrink: 0;
+      }
+
+      .flow-content {
+        background: rgba(30, 41, 59, 0.7);
+        padding: 15px;
+        border-radius: 8px;
+        flex-grow: 1;
+      }
+
+      .flow-arrow {
+        margin-left: 15px;
+        color: #9d4edd;
+        font-size: 1.5rem;
+      }
+
+      /* Mobile-specific improvements */
+      @media (max-width: 767px) {
+        .guide-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 8px 0;
+        }
+
+        .code-container {
+          padding: 15px;
+          padding-right: 80px;
+        }
+
+        .code-text {
+          font-size: 0.85rem;
+          padding-right: 70px;
+        }
+
+        .copy-btn {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+
+        .pod-box {
+          min-width: 150px;
+          padding: 15px;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+      .code-function {
+        color: #dcdcaa;
+      }
+      .code-operator {
+        color: #d4d4d4;
+      }
+      .code-property {
+        color: #9cdcfe;
+      }
+
+      /* Animation for success */
+      @keyframes success {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .success-animation {
+        animation: success 2s ease-in-out;
+      }
+
+      /* Browser preview */
+      .browser-preview {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+        border: 2px solid #334155;
+      }
+
+      .browser-header {
+        background: #e2e8f0;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .browser-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .browser-dot.red {
+        background: #ef4444;
+      }
+      .browser-dot.yellow {
+        background: #f59e0b;
+      }
+      .browser-dot.green {
+        background: #10b981;
+      }
+
+      .browser-url {
+        background: #cbd5e1;
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: #0f172a;
+        flex-grow: 1;
+      }
+
+      .browser-content {
+        padding: 40px;
+        text-align: center;
+        color: #0f172a;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      /* Interactive terminal */
+      .interactive-terminal {
+        background: #1a202c;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        min-height: 200px;
+      }
+
+      .terminal-input {
+        background: transparent;
+        border: none;
+        color: #e2e8f0;
+        font-family: 'JetBrains Mono', monospace;
+        width: 100%;
+        font-size: 1rem;
+        outline: none;
+        caret-color: #10b981;
+      }
+
+      .terminal-cursor {
+        display: inline-block;
+        width: 8px;
+        height: 1.2em;
+        background: #10b981;
+        animation: blink 1s infinite;
+        vertical-align: middle;
+        margin-left: 2px;
+      }
+
+      @keyframes blink {
+        0%,
+        50% {
+          opacity: 1;
+        }
+        51%,
+        100% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="guide-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🚀 Deploy Node.js App in Kubernetes Pod
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Complete Hands-On Guide with Real Examples
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30"
+            >
+              <i class="fab fa-node-js mr-2"></i>Node.js App
+            </span>
+            <span
+              class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30"
+            >
+              <i class="fas fa-cube mr-2"></i>Kubernetes Pod
+            </span>
+            <span
+              class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full border border-green-500/30"
+            >
+              <i class="fas fa-code mr-2"></i>Real Deployment
+            </span>
+          </div>
+
+          <div class="pod-visual">
+            <div class="pod-box">
+              <div class="text-2xl mb-2">📦</div>
+              <div class="font-bold">my-node-app Pod</div>
+              <div class="text-sm">Running on Port 3000</div>
+            </div>
+            <div class="container-box">
+              <div class="text-lg">🚀</div>
+              <div>Node.js Container</div>
+              <div class="text-xs">node:18-alpine</div>
+            </div>
+            <div class="network-flow" id="networkFlow"></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- What We'll Build -->
+      <section class="guide-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-rocket mr-3"></i>🎯 What We'll Deploy
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="info-box">
+            <h3 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-server mr-2"></i>Node.js Application
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Simple HTTP server</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Runs on port 3000</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Returns greeting message</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>No external dependencies</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <h3 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-eye mr-2"></i>Expected Output
+            </h3>
+            <div class="browser-preview">
+              <div class="browser-header">
+                <div class="browser-dot red"></div>
+                <div class="browser-dot yellow"></div>
+                <div class="browser-dot green"></div>
+                <div class="browser-url">http://localhost:3000</div>
+              </div>
+              <div class="browser-content">Hello from Kubernetes Pod 🚀</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 1: Start Kubernetes -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-play mr-3"></i>🏁 Step 1 — Start Kubernetes
+            (Minikube)
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="step1">
+              # Start Minikube cluster minikube start # Check cluster status
+              kubectl get nodes
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('step1')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube start
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-cog fa-spin text-blue-400 mr-2"></i>
+              Starting minikube...
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Done! kubectl is now configured
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get nodes
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STATUS&nbsp;&nbsp;ROLES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AGE&nbsp;&nbsp;VERSION
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              minikube&nbsp;&nbsp;Ready&nbsp;&nbsp;&nbsp;&nbsp;control-plane&nbsp;&nbsp;42s&nbsp;&nbsp;v1.28.0
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-check-circle mr-2"></i>✅ READY!
+            </h4>
+            <p class="text-slate-300">
+              If you see a node with status
+              <span class="text-green-400">"Ready"</span>, your Kubernetes
+              cluster is running! 🎉
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Create Pod YAML -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-file-code mr-3"></i>🧩 Step 2 — Create Pod YAML
+            Configuration
+          </h2>
+
+          <p class="text-slate-300 mb-4">
+            Create a file named
+            <code class="text-cyan-300">pod-app.yaml</code> with the following
+            content:
+          </p>
+
+          <div class="file-container">
+            <div class="file-header">
+              <span class="text-blue-300 font-bold">pod-app.yaml</span>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('step2')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+            <div class="file-content">
+              <div class="code-text" id="step2">
+                apiVersion: v1 kind: Pod metadata: name: my-node-app labels:
+                app: node-demo spec: containers: - name: node-container image:
+                node:18-alpine command: ["node"] args: ["-e",
+                "require('http').createServer((req,res)=>res.end('Hello from
+                Kubernetes Pod 🚀')).listen(3000)"] ports: - containerPort: 3000
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="info-box">
+              <h4 class="font-bold text-purple-300 mb-2">
+                <i class="fas fa-tag mr-2"></i>YAML Breakdown
+              </h4>
+              <ul class="space-y-2 text-slate-300 text-sm">
+                <li>
+                  <code class="text-cyan-300">apiVersion: v1</code> - Kubernetes
+                  API version
+                </li>
+                <li>
+                  <code class="text-cyan-300">kind: Pod</code> - Resource type
+                </li>
+                <li>
+                  <code class="text-cyan-300">metadata.name</code> - Pod name
+                </li>
+                <li>
+                  <code class="text-cyan-300">spec.containers</code> - Container
+                  definition
+                </li>
+                <li>
+                  <code class="text-cyan-300">image: node:18-alpine</code> -
+                  Node.js image
+                </li>
+                <li>
+                  <code class="text-cyan-300">containerPort: 3000</code> -
+                  Exposed port
+                </li>
+              </ul>
+            </div>
+
+            <div class="info-box">
+              <h4 class="font-bold text-green-300 mb-2">
+                <i class="fas fa-code mr-2"></i>Node.js Command Explained
+              </h4>
+              <p class="text-slate-300 text-sm">
+                The command creates a simple HTTP server:
+              </p>
+              <div
+                class="code-container mt-2"
+                style="padding: 10px; font-size: 0.8rem"
+              >
+                <div class="code-text">
+                  require('http').createServer((req, res) => { res.end('Hello
+                  from Kubernetes Pod 🚀') }).listen(3000)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="warning-box mt-4">
+            <h4 class="font-bold text-amber-300 mb-2">
+              <i class="fas fa-lightbulb mr-2"></i>Pro Tip: Alternative Method
+            </h4>
+            <p class="text-slate-300">
+              You can also create the Pod directly from command line:
+            </p>
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl run my-node-app --image=node:18-alpine --port=3000 --
+                node -e "require('http').createServer((req,res)=>res.end('Hello
+                from Kubernetes Pod 🚀')).listen(3000)"</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm mt-2">
+              But using YAML is better for reproducibility and version control!
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Create Pod -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-cogs mr-3"></i>🏗️ Step 3 — Create the Pod
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="step3">
+              # Apply the YAML configuration kubectl apply -f pod-app.yaml
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('step3')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              pod-app.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              pod/my-node-app created
+            </div>
+          </div>
+
+          <h3 class="text-lg font-bold text-cyan-300 mb-3 mt-6">
+            <i class="fas fa-search mr-2"></i>Check Pod Status
+          </h3>
+
+          <div class="code-container">
+            <div class="code-text" id="checkPod">
+              # Check all pods kubectl get pods # Watch pods (live updates)
+              kubectl get pods --watch # Get detailed information kubectl get
+              pods -o wide
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('checkPod')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4">
+              my-node-app&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10s
+            </div>
+            <div class="terminal-line ml-4">
+              <div class="flex items-center">
+                <div
+                  class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"
+                ></div>
+                <span class="text-green-400">Pod is Running! 🎉</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="success-box success-animation">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-trophy mr-2"></i>🎉 SUCCESS!
+            </h4>
+            <p class="text-slate-300">
+              If status =
+              <span class="text-green-400 font-bold">"Running"</span> → Your
+              Node.js app is now running in a Kubernetes Pod! 🔥
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Inspect Pod -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-amber-300 mb-4">
+            <i class="fas fa-search mr-3"></i>🔍 Step 4 — Inspect Like a Pro
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl describe pod my-node-app</span
+              >
+              <p class="text-slate-400 text-sm mt-1">
+                Show detailed Pod information
+              </p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">kubectl logs my-node-app</span>
+              <p class="text-slate-400 text-sm mt-1">View Pod logs</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl exec -it my-node-app -- sh</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Open shell inside Pod</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl get events --sort-by='.lastTimestamp'</span
+              >
+              <p class="text-slate-400 text-sm mt-1">View cluster events</p>
+            </div>
+          </div>
+
+          <div class="terminal-output mt-4">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl describe pod
+              my-node-app
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-blue-300">Name:</span> my-node-app
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-blue-300">Namespace:</span> default
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-blue-300">Status:</span> Running
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-blue-300">IP:</span> 10.244.0.5
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-blue-300">Node:</span> minikube/192.168.49.2
+            </div>
+          </div>
+
+          <div class="terminal-output mt-4">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl exec -it
+              my-node-app -- sh
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-green-300">/ #</span> whoami
+            </div>
+            <div class="terminal-line ml-4">root</div>
+            <div class="terminal-line ml-4">
+              <span class="text-green-300">/ #</span> ps aux
+            </div>
+            <div class="terminal-line ml-4">PID USER TIME COMMAND</div>
+            <div class="terminal-line ml-4">
+              1 root 0:00 node -e require('http')...
+            </div>
+            <div class="terminal-line ml-4">
+              <span class="text-green-300">/ #</span> exit
+            </div>
+          </div>
+
+          <div class="info-box mt-4">
+            <h4 class="font-bold text-cyan-300 mb-2">
+              <i class="fas fa-user-ninja mr-2"></i>Feeling like DevOps already?
+              😎🔥
+            </h4>
+            <p class="text-slate-300">
+              You can now inspect running containers, view logs, and even SSH
+              into them! This is real DevOps power.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 5: Access the App -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">5</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-globe mr-3"></i>🌐 Step 5 — Access the Running App
+          </h2>
+
+          <div class="warning-box">
+            <p class="text-slate-300">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              <strong>Important:</strong> Pods are private by default. To access
+              from your local machine, use port forwarding.
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="step5">
+              # Forward local port 3000 to Pod port 3000 kubectl port-forward
+              pod/my-node-app 3000:3000
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('step5')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl port-forward
+              pod/my-node-app 3000:3000
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-exchange-alt text-purple-400 mr-2"></i>
+              Forwarding from 127.0.0.1:3000 -> 3000
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-exchange-alt text-purple-400 mr-2"></i>
+              Forwarding from [::1]:3000 -> 3000
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-link mr-2"></i>
+              Connection established!
+            </div>
+          </div>
+
+          <div class="success-box mt-4">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>Now Access Your App!
+            </h4>
+            <div class="browser-preview">
+              <div class="browser-header">
+                <div class="browser-dot red"></div>
+                <div class="browser-dot yellow"></div>
+                <div class="browser-dot green"></div>
+                <div class="browser-url">http://localhost:3000</div>
+              </div>
+              <div
+                class="browser-content"
+                style="
+                  background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+                  color: white;
+                "
+              >
+                Hello from Kubernetes Pod 🚀
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              Open your browser and visit
+              <a
+                href="http://localhost:3000"
+                target="_blank"
+                class="text-blue-300 hover:text-blue-200 underline"
+                >http://localhost:3000</a
+              >
+            </p>
+          </div>
+
+          <div class="info-box mt-4">
+            <h4 class="font-bold text-purple-300 mb-2">
+              <i class="fas fa-magic mr-2"></i>Alternative: cURL Test
+            </h4>
+            <p class="text-slate-300">
+              You can also test with cURL while port-forwarding is running:
+            </p>
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">curl http://localhost:3000</span>
+            </div>
+            <div class="terminal-output">
+              <div class="terminal-line">Hello from Kubernetes Pod 🚀</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Internal Flow Diagram -->
+      <section class="guide-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-sitemap mr-3"></i>🧠 What Happened Internally (Simple
+          Flow)
+        </h2>
+
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <div class="font-bold text-blue-300">You applied YAML</div>
+              <div class="text-slate-300 text-sm">
+                kubectl apply -f pod-app.yaml
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <div class="font-bold text-purple-300">
+                API Server received request
+              </div>
+              <div class="text-slate-300 text-sm">
+                Validated and processed the YAML
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <div class="font-bold text-green-300">
+                Stored desired state in etcd
+              </div>
+              <div class="text-slate-300 text-sm">
+                "Need to run my-node-app Pod"
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <div class="font-bold text-amber-300">Scheduler chose a node</div>
+              <div class="text-slate-300 text-sm">"Run on minikube node"</div>
+            </div>
+            <div class="flow-arrow">→</div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">5</div>
+            <div class="flow-content">
+              <div class="font-bold text-red-300">
+                Kubelet created container
+              </div>
+              <div class="text-slate-300 text-sm">
+                Pulled image and started container
+              </div>
+            </div>
+            <div class="flow-arrow">→</div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">6</div>
+            <div class="flow-content">
+              <div class="font-bold text-green-400">🎉 Pod running</div>
+              <div class="text-slate-300 text-sm">
+                Node.js app responding on port 3000
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pod-visual mt-6" style="height: 200px">
+          <div class="pod-box" style="animation: none; transform: scale(1)">
+            <div class="text-xl mb-2">📦</div>
+            <div class="font-bold">my-node-app Pod</div>
+            <div class="text-xs">Status: Running</div>
+            <div class="text-xs">IP: 10.244.0.5:3000</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Debugging Section -->
+      <section class="guide-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-red-300 mb-6">
+          <i class="fas fa-bug mr-3"></i>🩹 If Pod Fails — Debug Like a Hero
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="component-card">
+            <h3 class="font-bold text-red-300 mb-3">
+              <i class="fas fa-search mr-2"></i>Check Pod Status
+            </h3>
+            <div class="code-container" style="padding: 15px; margin: 10px 0">
+              <div class="code-text">
+                kubectl get pods kubectl describe pod my-node-app kubectl logs
+                my-node-app
+              </div>
+            </div>
+          </div>
+
+          <div class="component-card">
+            <h3 class="font-bold text-amber-300 mb-3">
+              <i class="fas fa-exclamation-triangle mr-2"></i>Common Issues
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                <span
+                  ><strong>ImagePullBackOff:</strong> Cannot pull image</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                <span
+                  ><strong>CrashLoopBackOff:</strong> Container crashes</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                <span><strong>Pending:</strong> No resources available</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                <span><strong>ErrImagePull:</strong> Invalid image name</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-lg font-bold text-green-300 mb-4">
+            <i class="fas fa-wrench mr-2"></i>Debug Commands
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">kubectl get events</span>
+              <p class="text-slate-400 text-sm mt-1">View cluster events</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl logs my-node-app --previous</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Previous container logs</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl describe pod my-node-app | grep -A 10 Events</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Pod events only</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-box mt-6">
+          <h4 class="font-bold text-amber-300 mb-2">
+            <i class="fas fa-sync-alt mr-2"></i>Delete & Retry
+          </h4>
+          <div class="code-container" style="padding: 15px; margin: 10px 0">
+            <div class="code-text">
+              # Delete the problematic pod kubectl delete pod my-node-app #
+              Recreate from YAML kubectl apply -f pod-app.yaml
+            </div>
+          </div>
+          <p class="text-slate-300 mt-2">
+            Sometimes the simplest solution is to delete and recreate the Pod.
+            Kubernetes will automatically create a new one.
+          </p>
+        </div>
+      </section>
+
+      <!-- Interactive Terminal -->
+      <section class="guide-card p-5 md:p-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-terminal mr-3"></i>💻 Interactive Terminal Practice
+        </h2>
+
+        <div class="interactive-terminal">
+          <div id="terminalOutput"></div>
+          <div class="flex items-center mt-4">
+            <span class="terminal-prompt">$</span>
+            <input
+              type="text"
+              id="terminalInput"
+              class="terminal-input ml-2"
+              placeholder="Type a kubectl command..."
+              autocomplete="off"
+              onkeypress="handleTerminalInput(event)"
+            />
+            <div class="terminal-cursor"></div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-sm text-slate-400">
+          <p>
+            Try these commands: <code class="text-cyan-300">get pods</code>,
+            <code class="text-cyan-300">describe pod</code>,
+            <code class="text-cyan-300">logs</code>,
+            <code class="text-cyan-300">port-forward</code>
+          </p>
+        </div>
+      </section>
+
+      <!-- Next Steps -->
+      <section class="guide-card p-5 md:p-6 mt-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-forward mr-3"></i>🚀 Next Steps: Beyond Basic Pods
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="component-card">
+            <h3 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-layer-group mr-2"></i>Deployments (Recommended)
+            </h3>
+            <p class="text-slate-300 mb-3">
+              Real apps use <strong>Deployments</strong> instead of direct Pods
+              for:
+            </p>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-sync-alt text-green-400 mt-1 mr-2"></i>
+                <span>Auto-healing & restart</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-expand-alt text-green-400 mt-1 mr-2"></i>
+                <span>Easy scaling (replicas)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-code-branch text-green-400 mt-1 mr-2"></i>
+                <span>Rolling updates</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="component-card">
+            <h3 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-network-wired mr-2"></i>Services
+            </h3>
+            <p class="text-slate-300 mb-3">
+              Expose Pods to network with <strong>Services</strong>:
+            </p>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-share-alt text-blue-400 mt-1 mr-2"></i>
+                <span>Load balancing</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-globe text-blue-400 mt-1 mr-2"></i>
+                <span>Service discovery</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-plug text-blue-400 mt-1 mr-2"></i>
+                <span>Permanent access (no port-forward)</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-graduation-cap mr-2"></i>🎓 You've Learned:
+          </h4>
+          <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Create Pod YAML configuration</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Deploy Node.js app in container</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Inspect and debug Pods</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Access apps with port-forwarding</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Understand Kubernetes flow</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span>Basic kubectl commands</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-lg">
+            You've successfully deployed a real Node.js app in Kubernetes! 🎉
+          </p>
+          <p class="text-slate-500 text-sm mt-2">
+            From zero to running container in production-like environment!
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full">
+            <i class="fab fa-kubernetes mr-2"></i>Pod Deployed
+          </span>
+          <span class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full">
+            <i class="fab fa-node-js mr-2"></i>Node.js Running
+          </span>
+          <span class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full">
+            <i class="fas fa-check-circle mr-2"></i>Mission Accomplished
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Create network flow animation
+      function createNetworkFlow() {
+        const flowContainer = document.getElementById('networkFlow');
+        flowContainer.innerHTML = '';
+
+        // Create multiple data packets
+        for (let i = 0; i < 5; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'data-packet';
+          packet.style.left = `${20 + i * 40}%`;
+          packet.style.top = `${30 + i * 10}%`;
+          packet.style.animationDelay = `${i * 0.5}s`;
+          packet.style.animationDuration = `${3 + i * 0.5}s`;
+          flowContainer.appendChild(packet);
+        }
+      }
+
+      // Interactive terminal
+      const terminalOutput = document.getElementById('terminalOutput');
+      const terminalInput = document.getElementById('terminalInput');
+
+      const commands = {
+        'get pods': {
+          output: `NAME          READY   STATUS    RESTARTS   AGE
+my-node-app   1/1     Running   0          2m`,
+        },
+        'describe pod': {
+          output: `Name:         my-node-app
+Namespace:    default
+Status:       Running
+IP:           10.244.0.5
+Node:         minikube/192.168.49.2
+Containers:
+  node-container:
+    Image:         node:18-alpine
+    Port:          3000/TCP
+    Ready:         True
+    Restart Count: 0`,
+        },
+        logs: {
+          output: 'Node.js server running on port 3000',
+        },
+        'port-forward': {
+          output:
+            'Forwarding from 127.0.0.1:3000 -> 3000\nForwarding from [::1]:3000 -> 3000',
+        },
+        help: {
+          output:
+            'Available commands: get pods, describe pod, logs, port-forward, help',
+        },
+      };
+
+      function handleTerminalInput(event) {
+        if (event.key === 'Enter') {
+          const command = terminalInput.value.trim().toLowerCase();
+          terminalInput.value = '';
+
+          // Add command to output
+          const commandLine = document.createElement('div');
+          commandLine.className = 'terminal-line';
+          commandLine.innerHTML = `<span class="terminal-prompt">$</span> ${command}`;
+          terminalOutput.appendChild(commandLine);
+
+          // Add output
+          const outputLine = document.createElement('div');
+          outputLine.className = 'terminal-line ml-4';
+
+          if (commands[command]) {
+            outputLine.innerHTML = commands[command].output;
+            outputLine.style.color = '#22c55e';
+          } else if (command === '') {
+            outputLine.innerHTML = '';
+          } else {
+            outputLine.innerHTML = `Command not found: ${command}`;
+            outputLine.style.color = '#ef4444';
+          }
+
+          terminalOutput.appendChild(outputLine);
+
+          // Scroll to bottom
+          terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+      }
+
+      // Initialize when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        createNetworkFlow();
+
+        // Make buttons touch-friendly
+        document.querySelectorAll('.copy-btn, button').forEach((btn) => {
+          btn.classList.add('touch-target');
+        });
+
+        // Focus terminal input
+        terminalInput.focus();
+
+        // Add initial help message
+        const helpLine = document.createElement('div');
+        helpLine.className = 'terminal-line text-slate-400';
+        helpLine.textContent = 'Type "help" for available commands';
+        terminalOutput.appendChild(helpLine);
+
+        // Create more data packets periodically
+        setInterval(createNetworkFlow, 4000);
+      });
+
+      // Add syntax highlighting
+      const style = document.createElement('style');
+      style.textContent = `
+            code { font-family: 'JetBrains Mono', monospace; }
+        `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>

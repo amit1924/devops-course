@@ -1,0 +1,1596 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CI/CD Pipeline with EC2 Mindset Using Docker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --neon-yellow: #ffff00;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px var(--neon-blue);
+      }
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 10px var(--neon-green);
+      }
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 10px var(--neon-purple);
+      }
+      .neon-text-orange {
+        color: var(--neon-orange);
+        text-shadow: 0 0 10px var(--neon-orange);
+      }
+
+      .step-container {
+        background: var(--card-bg);
+        border: 3px solid;
+        border-radius: 20px;
+        padding: 30px;
+        margin: 30px 0;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .step-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(
+          90deg,
+          var(--neon-blue),
+          var(--neon-purple),
+          var(--neon-green)
+        );
+      }
+
+      .step-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 243, 255, 0.2);
+      }
+
+      .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 20px;
+      }
+
+      .command-block {
+        background: #1a1a2e;
+        border: 2px solid var(--neon-green);
+        border-radius: 12px;
+        padding: 25px;
+        font-family: 'Courier New', monospace;
+        margin: 20px 0;
+        box-shadow: 0 0 25px rgba(0, 255, 157, 0.15);
+        position: relative;
+        overflow-x: auto;
+      }
+
+      .command-label {
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background: var(--neon-green);
+        color: black;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border: 2px solid var(--neon-blue);
+        border-radius: 12px;
+        padding: 25px;
+        font-family: 'Courier New', monospace;
+        margin: 20px 0;
+        box-shadow: 0 0 25px rgba(0, 243, 255, 0.15);
+      }
+
+      .cicd-flow {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        margin: 40px 0;
+      }
+
+      .flow-step {
+        background: var(--card-bg);
+        border: 2px solid var(--neon-purple);
+        border-radius: 15px;
+        padding: 20px;
+        width: 90%;
+        max-width: 600px;
+        text-align: center;
+        position: relative;
+      }
+
+      .flow-arrow {
+        font-size: 2rem;
+        color: var(--neon-purple);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .interview-gold {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 0, 0.1),
+          rgba(255, 215, 0, 0.1)
+        );
+        border: 3px solid var(--neon-yellow);
+        border-radius: 20px;
+        padding: 30px;
+        margin: 30px 0;
+        position: relative;
+      }
+
+      .interview-gold::before {
+        content: '💎 INTERVIEW GOLD';
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--neon-yellow);
+        color: black;
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+
+      .tab-button {
+        background: rgba(26, 26, 58, 0.8);
+        border: 2px solid var(--neon-blue);
+        color: var(--neon-blue);
+        padding: 12px 24px;
+        margin: 5px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .concept-box {
+        background: rgba(185, 103, 255, 0.1);
+        border: 2px solid var(--neon-purple);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 15px;
+        overflow: hidden;
+        border: 2px solid var(--neon-blue);
+        margin: 20px 0;
+      }
+
+      .comparison-table th {
+        background: rgba(0, 243, 255, 0.2);
+        padding: 15px;
+        text-align: left;
+        font-weight: bold;
+        border-bottom: 2px solid var(--neon-blue);
+      }
+
+      .comparison-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .keyword {
+        color: #ff6b35;
+      }
+      .string {
+        color: #00ff9d;
+      }
+      .comment {
+        color: #666;
+        font-style: italic;
+      }
+
+      .terminal {
+        background: #1a1a2e;
+        border: 2px solid var(--neon-orange);
+        border-radius: 12px;
+        padding: 20px;
+        font-family: 'Courier New', monospace;
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .terminal::before {
+        content: 'Terminal';
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background: var(--neon-orange);
+        color: black;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+      }
+
+      .learning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 255, 157, 0.1),
+          rgba(0, 200, 100, 0.1)
+        );
+        border: 2px solid var(--neon-green);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 30px 0;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header
+      class="top-0 z-50 bg-black/90 backdrop-blur-lg border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-16 h-16 rounded-full bg-gradient-to-br from-neon-purple to-pink-400 flex items-center justify-center mr-4"
+            >
+              <div
+                class="w-14 h-14 rounded-full bg-black flex items-center justify-center"
+              >
+                <i class="fas fa-sync-alt text-2xl neon-text-blue"></i>
+              </div>
+            </div>
+            <div>
+              <h1 class="text-3xl font-bold neon-text-purple">
+                CI/CD Pipeline with EC2 Mindset Using Docker
+              </h1>
+              <p class="text-gray-300">
+                Automated Deployments Without AWS Complexity
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex flex-wrap justify-center mt-6">
+          <button
+            onclick="showTab('understanding')"
+            id="understandingTab"
+            class="tab-button active"
+          >
+            <i class="fas fa-brain mr-2"></i>Understanding CI/CD
+          </button>
+          <button onclick="showTab('setup')" id="setupTab" class="tab-button">
+            <i class="fas fa-cogs mr-2"></i>Setup & Configuration
+          </button>
+          <button onclick="showTab('cicd')" id="cicdTab" class="tab-button">
+            <i class="fas fa-rocket mr-2"></i>CI/CD Implementation
+          </button>
+          <button
+            onclick="showTab('interview')"
+            id="interviewTab"
+            class="tab-button"
+          >
+            <i class="fas fa-briefcase mr-2"></i>Interview Gold
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Understanding CI/CD Tab -->
+      <div id="understandingContent" class="tab-content">
+        <div class="concept-box">
+          <h2 class="text-2xl font-bold neon-text-purple mb-4 text-center">
+            🚀 First: What CI/CD REALLY Means (No Buzzwords)
+          </h2>
+          <div class="text-center mb-6">
+            <div class="inline-block p-4 bg-black/40 rounded-lg">
+              <p class="text-xl font-bold neon-text-green">
+                CI/CD = "When I change code → server updates automatically"
+              </p>
+            </div>
+          </div>
+
+          <div class="cicd-flow">
+            <div class="flow-step">
+              <div class="text-3xl mb-3">📝</div>
+              <h3 class="text-xl font-bold neon-text-blue">Code Change</h3>
+              <p class="text-gray-300">Developer modifies application code</p>
+            </div>
+
+            <div class="flow-arrow">
+              <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <div class="flow-step">
+              <div class="text-3xl mb-3">⬇️</div>
+              <h3 class="text-xl font-bold neon-text-green">Git Pull</h3>
+              <p class="text-gray-300">
+                Server pulls latest code from repository
+              </p>
+            </div>
+
+            <div class="flow-arrow">
+              <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <div class="flow-step">
+              <div class="text-3xl mb-3">🔄</div>
+              <h3 class="text-xl font-bold neon-text-purple">Restart App</h3>
+              <p class="text-gray-300">Application restarts with new code</p>
+            </div>
+
+            <div class="flow-arrow">
+              <i class="fas fa-arrow-down"></i>
+            </div>
+
+            <div class="flow-step">
+              <div class="text-3xl mb-3">🎯</div>
+              <h3 class="text-xl font-bold neon-text-orange">
+                New Version Live
+              </h3>
+              <p class="text-gray-300">
+                Users immediately see updated application
+              </p>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <div
+              class="inline-block p-4 bg-black/40 rounded-lg border-2 border-neon-green"
+            >
+              <p class="font-bold neon-text-green">
+                That's it. Everything else is tools.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-container" style="border-color: var(--neon-blue)">
+          <h2 class="text-2xl font-bold neon-text-blue mb-6">
+            On EC2 This Is Done With:
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-6 bg-black/30 rounded-lg">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-blue to-cyan-400 flex items-center justify-center mr-4"
+                >
+                  <i class="fab fa-git-alt text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-blue">Git</h3>
+              </div>
+              <p class="text-gray-300">
+                Version control for tracking code changes
+              </p>
+              <div class="command-block mt-4">git pull origin main</div>
+            </div>
+
+            <div class="p-6 bg-black/30 rounded-lg">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-green to-emerald-400 flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-hammer text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">Build</h3>
+              </div>
+              <p class="text-gray-300">
+                Compile/package application (if needed)
+              </p>
+              <div class="command-block mt-4">npm install && npm run build</div>
+            </div>
+
+            <div class="p-6 bg-black/30 rounded-lg">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-purple to-pink-400 flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-redo text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-purple">Restart App</h3>
+              </div>
+              <p class="text-gray-300">Reload application with new code</p>
+              <div class="command-block mt-4">pm2 restart app-name</div>
+            </div>
+
+            <div class="p-6 bg-black/30 rounded-lg">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-neon-orange to-yellow-400 flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-robot text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-orange">Automation</h3>
+              </div>
+              <p class="text-gray-300">
+                Script to trigger all steps automatically
+              </p>
+              <div class="command-block mt-4">./deploy.sh</div>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <p class="text-lg">
+              <span class="neon-text-green"
+                >We'll simulate the same thing locally using Docker</span
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setup & Configuration Tab -->
+      <div id="setupContent" class="tab-content" style="display: none">
+        <!-- Step 1 -->
+        <div class="step-container" style="border-color: var(--neon-green)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-green), #00cc7a);
+              "
+            >
+              1
+            </div>
+            <h2 class="text-2xl font-bold neon-text-green">
+              Start a "Fake EC2" with Docker
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Create Your EC2-Style Server</div>
+            docker run -it --name ec2-app -p 3000:3000 ubuntu bash
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">
+                🔧 Parameter Breakdown:
+              </h4>
+              <ul class="space-y-2">
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2">-it</code>
+                  <span>Interactive terminal (like SSH)</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2"
+                    >--name ec2-app</code
+                  >
+                  <span>Name your server</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2"
+                    >-p 3000:3000</code
+                  >
+                  <span>Maps container port 3000 to host</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2">ubuntu</code>
+                  <span>EC2 OS equivalent</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2">bash</code>
+                  <span>Start with shell (like SSH login)</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">🎯 This Creates:</h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>A fresh Ubuntu server</li>
+                <li>Port 3000 accessible from host</li>
+                <li>Interactive terminal session</li>
+                <li>Isolated environment (like EC2)</li>
+              </ul>
+              <div class="mt-4 p-3 bg-green-900/20 rounded">
+                <p class="neon-text-green">
+                  <i class="fas fa-check-circle mr-2"></i>
+                  Equivalent to launching EC2 instance
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-container" style="border-color: var(--neon-orange)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-orange),
+                  #ff8c00
+                );
+              "
+            >
+              2
+            </div>
+            <h2 class="text-2xl font-bold neon-text-orange">
+              Update Container and Install Software
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Inside Your Server/Container</div>
+            apt update apt install -y git nano nodejs npm
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">
+                📦 What's Installed:
+              </h4>
+              <ul class="space-y-2">
+                <li class="flex items-center">
+                  <i class="fab fa-git-alt text-blue-400 mr-2"></i>
+                  <span><strong>Git</strong> - Version control system</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-edit text-green-400 mr-2"></i>
+                  <span
+                    ><strong>Nano</strong> - Text editor for file
+                    modification</span
+                  >
+                </li>
+                <li class="flex items-center">
+                  <i class="fab fa-node-js text-green-400 mr-2"></i>
+                  <span
+                    ><strong>Node.js</strong> - JavaScript runtime for
+                    apps</span
+                  >
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-box text-orange-400 mr-2"></i>
+                  <span><strong>npm</strong> - Node package manager</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">
+                🧠 Why This Matters:
+              </h4>
+              <p class="mb-3">This is exactly what you'd do on a fresh EC2:</p>
+              <ol class="list-decimal list-inside space-y-2">
+                <li>Update package lists (<code>apt update</code>)</li>
+                <li>Install development tools</li>
+                <li>Set up runtime environment</li>
+                <li>Prepare for application deployment</li>
+              </ol>
+              <div class="mt-4 p-3 bg-blue-900/20 rounded">
+                <p class="neon-text-blue text-sm">
+                  <i class="fas fa-lightbulb mr-2"></i>
+                  Same commands, same mindset as real EC2 setup
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-container" style="border-color: var(--neon-purple)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-purple),
+                  #c34fff
+                );
+              "
+            >
+              3
+            </div>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Create Project Folder and Application
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Create Application Directory</div>
+            mkdir /app cd /app nano index.js
+          </div>
+
+          <div class="code-block mt-6">
+            <div class="text-center mb-4">
+              <span class="bg-black px-3 py-1 rounded text-sm"
+                >/app/index.js</span
+              >
+            </div>
+            <pre><span class="keyword">const</span> express = <span class="string">require</span>(<span class="string">"express"</span>);
+<span class="keyword">const</span> app = express();
+
+app.get(<span class="string">"/"</span>, (req, res) => res.send(<span class="string">"Hello World"</span>));
+app.listen(3000, () => console.log(<span class="string">"App running on port 3000"</span>));</pre>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">
+                🏗️ Application Structure:
+              </h4>
+              <p class="text-sm text-gray-300 mb-2">You've created:</p>
+              <div class="space-y-1">
+                <div class="flex items-center">
+                  <i class="fas fa-folder text-yellow-400 mr-2"></i>
+                  <code>/app</code> - Application root directory
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-file-code text-blue-400 mr-2"></i>
+                  <code>index.js</code> - Main application file
+                </div>
+                <div class="flex items-center">
+                  <i class="fab fa-node-js text-green-400 mr-2"></i>
+                  <span>Express.js web server</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">
+                🎯 Production Thinking:
+              </h4>
+              <p class="text-sm">This mimics real deployment:</p>
+              <ul class="list-disc list-inside text-sm space-y-1 mt-2">
+                <li>Standard directory structure</li>
+                <li>Production-ready web server</li>
+                <li>Port 3000 for serving traffic</li>
+                <li>Simple but scalable foundation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-container" style="border-color: var(--neon-blue)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-blue), #00b7ff);
+              "
+            >
+              4
+            </div>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              Run the Node Application
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Start the Application</div>
+            node index.js
+          </div>
+
+          <div class="terminal mt-6">
+            <div class="text-green-300"># Output:</div>
+            <div class="text-green-300">App running on port 3000</div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">
+                ✅ Application Running:
+              </h4>
+              <p class="mb-3">Your Express server is now:</p>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Listening on port 3000</li>
+                <li>Ready to serve HTTP requests</li>
+                <li>Accessible via browser</li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-orange mb-3">
+                ⚠️ Important Note:
+              </h4>
+              <p class="mb-3">To stop the running process:</p>
+              <div class="command-block">Ctrl+C</div>
+              <p class="text-sm text-gray-300 mt-2">
+                This stops the foreground process (not production-ready)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-container" style="border-color: var(--neon-green)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-green), #00cc7a);
+              "
+            >
+              5
+            </div>
+            <h2 class="text-2xl font-bold neon-text-green">
+              Install PM2 and Run in Background
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Production Process Management</div>
+            npm install -g pm2 # install process manager pm2 start index.js
+            --name ec2-app pm2 status # check running processes pm2 save # save
+            process list for auto-restart
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">🛡️ PM2 Benefits:</h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Keeps app running even after container crash</li>
+                <li>Auto-restarts on failure</li>
+                <li>Process monitoring and logging</li>
+                <li>Load balancing capabilities</li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">🎯 EC2 Mindset:</h4>
+              <p class="mb-3">PM2 mimics EC2 background process behavior:</p>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Daemon/service management</li>
+                <li>Production stability</li>
+                <li>Zero-downtime deployments</li>
+                <li>Process supervision</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="step-container" style="border-color: var(--neon-orange)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-orange),
+                  #ff8c00
+                );
+              "
+            >
+              6
+            </div>
+            <h2 class="text-2xl font-bold neon-text-orange">
+              Initialize Git Repository and Configure User
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Set Up Version Control</div>
+            git init git config --global user.name "Amit Kumar" git config
+            --global user.email "amit@example.com" git add . git commit -m
+            "initial app"
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">✅ What This Does:</h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Initializes Git repository in <code>/app</code></li>
+                <li>Sets global Git user configuration</li>
+                <li>Adds all files to staging area</li>
+                <li>Creates initial commit</li>
+              </ul>
+              <div class="mt-4 p-3 bg-green-900/20 rounded">
+                <p class="neon-text-green text-sm">
+                  <i class="fas fa-check-circle mr-2"></i>
+                  Solves "author identity unknown" error
+                </p>
+              </div>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">
+                🎯 Production Practice:
+              </h4>
+              <p class="mb-3">This is standard practice:</p>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Always configure Git identity</li>
+                <li>Use descriptive commit messages</li>
+                <li>Commit frequently with meaningful changes</li>
+                <li>Maintain clean version history</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 7 -->
+        <div class="step-container" style="border-color: var(--neon-purple)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-purple),
+                  #c34fff
+                );
+              "
+            >
+              7
+            </div>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Create and Mount Bare Git Repository
+            </h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">On Host Machine:</h4>
+              <div class="command-block">
+                mkdir ~/repo.git cd ~/repo.git git init --bare
+              </div>
+              <p class="text-sm text-gray-300 mt-2">
+                Creates a bare repository that acts as remote
+              </p>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">Back in Container:</h4>
+              <div class="command-block">
+                git remote add origin /repo.git git config --global --add
+                safe.directory /repo.git git push -u origin master
+              </div>
+              <p class="text-sm text-gray-300 mt-2">
+                Configures remote and pushes initial code
+              </p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">
+                🔧 Technical Details:
+              </h4>
+              <ul class="space-y-2">
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2">--bare</code>
+                  <span>Repository without working directory</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2">/repo.git</code>
+                  <span>Mounted volume path (like GitHub remote)</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2"
+                    >safe.directory</code
+                  >
+                  <span>Fixes Docker/Git ownership warnings</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="bg-black px-2 py-1 rounded mr-2"
+                    >-u origin master</code
+                  >
+                  <span>Sets upstream branch for future pushes</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-orange mb-3">
+                🎯 Success Indicators:
+              </h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Bare repo created → <code>/repo.git</code></li>
+                <li>Remote added successfully</li>
+                <li>Git permission issues resolved</li>
+                <li>Push is now successful</li>
+              </ul>
+              <div class="mt-4 p-3 bg-orange-900/20 rounded">
+                <p class="neon-text-orange text-sm">
+                  <i class="fas fa-check-circle mr-2"></i>
+                  Mounted bare repo simulates GitHub/GitLab remote
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CI/CD Implementation Tab -->
+      <div id="cicdContent" class="tab-content" style="display: none">
+        <!-- Step 5.2 -->
+        <div class="step-container" style="border-color: var(--neon-green)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-green), #00cc7a);
+              "
+            >
+              5.2
+            </div>
+            <h2 class="text-2xl font-bold neon-text-green">
+              Convert App to Git Project
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Inside Your Container (EC2)</div>
+            docker exec -it ec2-app bash cd /app
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">Initialize Git:</h4>
+              <div class="command-block">git init</div>
+              <p class="text-sm text-gray-300 mt-2">
+                Creates <code>.git</code> directory for version control
+              </p>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">
+                Configure Git (One Time):
+              </h4>
+              <div class="command-block">
+                git config --global user.email "test@example.com" git config
+                --global user.name "dev"
+              </div>
+              <p class="text-sm text-gray-300 mt-2">
+                Sets author information for commits
+              </p>
+            </div>
+          </div>
+
+          <div class="command-block mt-6">
+            <div class="command-label">Commit Initial Code</div>
+            git add . git commit -m "initial app"
+          </div>
+
+          <div class="text-center mt-6">
+            <div
+              class="inline-block p-4 bg-black/40 rounded-lg border-2 border-neon-green"
+            >
+              <p class="font-bold neon-text-green">
+                <i class="fas fa-check-circle mr-2"></i>
+                Your app is now version-controlled with Git
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5.3 -->
+        <div class="step-container" style="border-color: var(--neon-purple)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-purple),
+                  #c34fff
+                );
+              "
+            >
+              5.3
+            </div>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Fake "GitHub Repo" (Local Remote)
+            </h2>
+          </div>
+
+          <div class="concept-box">
+            <h4 class="font-bold neon-text-blue mb-3">🧠 Concept:</h4>
+            <p class="mb-3">
+              We simulate GitHub using a local bare repository:
+            </p>
+            <div class="flex items-center justify-center">
+              <div class="text-center">
+                <code class="bg-black px-4 py-2 rounded-lg">/repo.git</code>
+                <div class="flow-arrow">
+                  <i class="fas fa-arrow-down"></i>
+                </div>
+                <p class="font-bold neon-text-green">= GitHub/GitLab Remote</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-orange mb-3">Exit Container:</h4>
+              <div class="command-block">exit</div>
+              <p class="text-sm text-gray-300 mt-2">
+                Returns to host machine terminal
+              </p>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">
+                Create Repo on Host:
+              </h4>
+              <div class="command-block">
+                mkdir repo.git cd repo.git git init --bare
+              </div>
+              <p class="text-sm text-gray-300 mt-2">
+                Creates bare Git repository (no working directory)
+              </p>
+            </div>
+          </div>
+
+          <div class="command-block mt-6">
+            <div class="command-label">Back to Container and Add Remote</div>
+            docker exec -it ec2-app bash cd /app git remote add origin /repo.git
+            git push origin master
+          </div>
+
+          <div class="text-center mt-6">
+            <div class="inline-block p-6 bg-black/40 rounded-lg">
+              <p class="text-xl font-bold neon-text-purple">
+                Now imagine: <code>/repo.git</code> = GitHub Remote
+              </p>
+              <p class="text-gray-300 mt-2">
+                Same concept, local implementation
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5.4 -->
+        <div class="step-container" style="border-color: var(--neon-blue)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-blue), #00b7ff);
+              "
+            >
+              5.4
+            </div>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              Create Deploy Script (CI/CD Core)
+            </h2>
+          </div>
+
+          <div class="concept-box">
+            <h4 class="font-bold neon-text-green mb-3">
+              🎯 This Script = Real EC2 Deploy Script
+            </h4>
+            <p class="mb-3">This is the heart of your CI/CD pipeline:</p>
+            <div class="cicd-flow">
+              <div class="flow-step">
+                <p class="font-bold">Script runs automatically</p>
+              </div>
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-down"></i>
+              </div>
+              <div class="flow-step">
+                <p class="font-bold">Pulls latest code</p>
+              </div>
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-down"></i>
+              </div>
+              <div class="flow-step">
+                <p class="font-bold">Restarts application</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="text-center mb-4">
+              <span class="bg-black px-3 py-1 rounded text-sm">/deploy.sh</span>
+            </div>
+            <pre>
+#!/bin/bash
+cd /app
+git pull origin master
+pm2 restart index.js</pre
+            >
+          </div>
+
+          <div class="command-block mt-6">
+            <div class="command-label">Make Script Executable</div>
+            chmod +x /deploy.sh
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">
+                🔧 Script Breakdown:
+              </h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li><code>#!/bin/bash</code> - Shebang for bash script</li>
+                <li><code>cd /app</code> - Navigate to app directory</li>
+                <li><code>git pull origin master</code> - Get latest code</li>
+                <li><code>pm2 restart index.js</code> - Restart application</li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-purple mb-3">
+                🎯 Production Reality:
+              </h4>
+              <p class="mb-3">Real EC2 deployments use similar scripts:</p>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Often triggered by webhooks</li>
+                <li>Run automatically on code push</li>
+                <li>Include error handling and logging</li>
+                <li>May include build/test steps</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5.5 -->
+        <div class="step-container" style="border-color: var(--neon-orange)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-orange),
+                  #ff8c00
+                );
+              "
+            >
+              5.5
+            </div>
+            <h2 class="text-2xl font-bold neon-text-orange">
+              Trigger Auto Deploy (Manual First)
+            </h2>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">Run Deploy Script Manually</div>
+            /deploy.sh
+          </div>
+
+          <div class="text-center mt-6">
+            <div
+              class="inline-block p-6 bg-gradient-to-r from-green-900/30 to-emerald-900/30 rounded-lg border-2 border-neon-green"
+            >
+              <div class="text-4xl mb-4">🎯</div>
+              <h3 class="text-2xl font-bold neon-text-green mb-4">
+                Your CI/CD Pipeline Works!
+              </h3>
+              <p class="text-lg">Your app now:</p>
+              <div class="grid md:grid-cols-2 gap-4 mt-4">
+                <div class="p-3 bg-black/40 rounded-lg">
+                  <i class="fas fa-download text-2xl neon-text-blue mb-2"></i>
+                  <p class="font-bold">Pulled new code</p>
+                </div>
+                <div class="p-3 bg-black/40 rounded-lg">
+                  <i class="fas fa-redo text-2xl neon-text-purple mb-2"></i>
+                  <p class="font-bold">Restarted automatically</p>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-blue-900/20 rounded">
+                <p class="font-bold neon-text-blue">
+                  That's CD (Continuous Deployment) in action!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5.6 -->
+        <div class="step-container" style="border-color: var(--neon-purple)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(
+                  135deg,
+                  var(--neon-purple),
+                  #c34fff
+                );
+              "
+            >
+              5.6
+            </div>
+            <h2 class="text-2xl font-bold neon-text-purple">
+              Test CI/CD (Real Proof)
+            </h2>
+          </div>
+
+          <div class="concept-box">
+            <h4 class="font-bold neon-text-green mb-3">
+              🧪 Prove Your Pipeline Works
+            </h4>
+            <p>Make a code change and see it deploy automatically</p>
+          </div>
+
+          <div class="command-block">
+            <div class="command-label">1. Change Code</div>
+            nano index.js
+          </div>
+
+          <div class="code-block mt-4">
+            <div class="text-center mb-2">
+              <span class="bg-black px-2 py-1 rounded text-xs"
+                >Modify Response Text</span
+              >
+            </div>
+            <pre><span class="keyword">res</span>.end(<span class="string">"New version deployed automatically 🚀"</span>);</pre>
+          </div>
+
+          <div class="command-block mt-4">
+            <div class="command-label">2. Commit Changes</div>
+            git add . git commit -m "update message" git push origin master
+          </div>
+
+          <div class="command-block mt-4">
+            <div class="command-label">3. Deploy Changes</div>
+            /deploy.sh
+          </div>
+
+          <div class="text-center mt-6">
+            <div class="inline-block p-6 bg-black/40 rounded-lg">
+              <p class="text-2xl font-bold neon-text-green">
+                🔥 Refresh Browser → Updated Instantly!
+              </p>
+              <p class="text-gray-300 mt-2">
+                Your CI/CD pipeline successfully deployed the change
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5.7 -->
+        <div class="step-container" style="border-color: var(--neon-blue)">
+          <div class="flex items-center mb-6">
+            <div
+              class="step-number"
+              style="
+                background: linear-gradient(135deg, var(--neon-blue), #00b7ff);
+              "
+            >
+              5.7
+            </div>
+            <h2 class="text-2xl font-bold neon-text-blue">
+              This Is EXACTLY How EC2 CI/CD Works
+            </h2>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-6 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-orange mb-4">
+                Real AWS EC2 Setup:
+              </h4>
+              <ul class="space-y-3">
+                <li class="flex items-center">
+                  <i class="fab fa-aws text-orange-400 mr-2"></i>
+                  <span><strong>EC2 Instance</strong> - Virtual server</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-terminal text-green-400 mr-2"></i>
+                  <span><strong>SSH Access</strong> - Remote server login</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fab fa-github text-gray-400 mr-2"></i>
+                  <span><strong>GitHub/GitLab</strong> - Code repository</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-redo text-purple-400 mr-2"></i>
+                  <span><strong>PM2/Systemd</strong> - Process manager</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-file-alt text-blue-400 mr-2"></i>
+                  <span><strong>deploy.sh</strong> - Deployment script</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-6 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-4">Your Docker Setup:</h4>
+              <ul class="space-y-3">
+                <li class="flex items-center">
+                  <i class="fas fa-docker text-blue-400 mr-2"></i>
+                  <span
+                    ><strong>Docker Container</strong> - Virtual server</span
+                  >
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-terminal text-green-400 mr-2"></i>
+                  <span><strong>docker exec</strong> - Container login</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-folder text-yellow-400 mr-2"></i>
+                  <span><strong>/repo.git</strong> - Local repository</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-redo text-purple-400 mr-2"></i>
+                  <span><strong>PM2</strong> - Process manager</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-file-alt text-blue-400 mr-2"></i>
+                  <span><strong>deploy.sh</strong> - Deployment script</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <div
+              class="inline-block p-4 bg-black/40 rounded-lg border-2 border-neon-green"
+            >
+              <p class="text-xl font-bold neon-text-green">
+                Only difference: Docker → AWS server
+              </p>
+              <p class="text-gray-300 mt-2">Concept = 100% identical</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interview Gold Tab -->
+      <div id="interviewContent" class="tab-content" style="display: none">
+        <div class="interview-gold">
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-black mb-4">
+              Interview Gold Statement
+            </h2>
+            <p class="text-lg text-gray-800">
+              Say this confidently in interviews:
+            </p>
+          </div>
+
+          <div class="bg-black/40 p-6 rounded-lg">
+            <blockquote class="italic text-xl text-gray-300 leading-relaxed">
+              "I implemented a CI/CD pipeline using Git and shell scripts, where
+              code changes automatically pull to the server and restart services
+              using PM2. This pipeline handles automated deployments with
+              zero-downtime restarts."
+            </blockquote>
+
+            <div class="mt-6 grid md:grid-cols-2 gap-4">
+              <div class="p-4 bg-green-900/20 rounded-lg">
+                <p class="font-bold neon-text-green">
+                  <i class="fas fa-medal mr-2"></i>
+                  <strong>Mid-level DevOps language</strong>
+                </p>
+                <p class="text-sm text-gray-300 mt-2">
+                  Shows practical, hands-on experience
+                </p>
+              </div>
+
+              <div class="p-4 bg-blue-900/20 rounded-lg">
+                <p class="font-bold neon-text-blue">
+                  <i class="fas fa-briefcase mr-2"></i>
+                  <strong>Professional terminology</strong>
+                </p>
+                <p class="text-sm text-gray-300 mt-2">
+                  Uses industry-standard terms correctly
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="learning-box">
+          <h2 class="text-2xl font-bold neon-text-green mb-6 text-center">
+            Key Learnings from the Process
+          </h2>
+
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Concept</th>
+                <th>Docker/EC2 Analogy</th>
+                <th>Real-World Application</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>EC2 Instance</td>
+                <td>Docker container</td>
+                <td>Isolated server environment</td>
+              </tr>
+              <tr>
+                <td>SSH Login</td>
+                <td>docker exec -it &lt;container&gt; bash</td>
+                <td>Remote server access</td>
+              </tr>
+              <tr>
+                <td>Install Software</td>
+                <td>apt install</td>
+                <td>System package management</td>
+              </tr>
+              <tr>
+                <td>Node App</td>
+                <td>Any deployed application</td>
+                <td>Web service/API backend</td>
+              </tr>
+              <tr>
+                <td>Background Process</td>
+                <td>PM2 daemon</td>
+                <td>Production process management</td>
+              </tr>
+              <tr>
+                <td>Persistent Storage</td>
+                <td>Docker volume (-v)</td>
+                <td>Data persistence across restarts</td>
+              </tr>
+              <tr>
+                <td>Git Repo Management</td>
+                <td>Remote repository mounted via volume</td>
+                <td>Version control with remote sync</td>
+              </tr>
+              <tr>
+                <td>Security Warnings</td>
+                <td>safe.directory in Git</td>
+                <td>Permission and security configuration</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="step-container" style="border-color: var(--neon-purple)">
+          <h2 class="text-2xl font-bold neon-text-purple mb-6 text-center">
+            ✅ What You've Achieved
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-green mb-3">Infrastructure:</h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>A Node.js app running on Docker (EC2 equivalent)</li>
+                <li>Managed by PM2 for production stability</li>
+                <li>Source code versioned with Git</li>
+                <li>Bare repo for remote pushes</li>
+                <li>Safe Git permissions configured</li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-black/30 rounded-lg">
+              <h4 class="font-bold neon-text-blue mb-3">CI/CD Pipeline:</h4>
+              <ul class="list-disc list-inside space-y-2">
+                <li>Automated deployment script</li>
+                <li>Git-based version control</li>
+                <li>Zero-downtime restarts</li>
+                <li>Manual trigger (can be automated)</li>
+                <li>Production-ready workflow</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <div
+              class="inline-block p-6 bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-lg border-2 border-neon-purple"
+            >
+              <p class="text-2xl font-bold neon-text-purple">
+                🎯 You Now Understand REAL CI/CD, Not Just Theory
+              </p>
+              <p class="text-gray-300 mt-2">
+                This knowledge transfers directly to AWS EC2, Kubernetes, or any
+                production environment
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-8">
+          <div class="inline-block bg-black/60 p-6 rounded-lg">
+            <p class="text-3xl font-bold neon-text-green mb-4">
+              💼 Career Impact
+            </p>
+            <p class="text-lg mb-4">You can now confidently discuss:</p>
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="p-3 bg-black/40 rounded-lg">
+                <p class="font-bold neon-text-blue">Server Deployment</p>
+              </div>
+              <div class="p-3 bg-black/40 rounded-lg">
+                <p class="font-bold neon-text-green">CI/CD Pipelines</p>
+              </div>
+              <div class="p-3 bg-black/40 rounded-lg">
+                <p class="font-bold neon-text-purple">Production Automation</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach((tab) => {
+          tab.style.display = 'none';
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab-button').forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab
+        document.getElementById(tabName + 'Content').style.display = 'block';
+
+        // Add active class to clicked tab
+        document.getElementById(tabName + 'Tab').classList.add('active');
+      }
+
+      // Initialize first tab
+      document.addEventListener('DOMContentLoaded', () => {
+        showTab('understanding');
+      });
+    </script>
+  </body>
+</html>

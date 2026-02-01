@@ -1,0 +1,154 @@
+🚀 GOAL
+
+We will:
+
+1️⃣ Start MongoDB in Docker
+2️⃣ Make database persistent (data won’t delete)
+3️⃣ Insert data
+4️⃣ Delete container
+5️⃣ Prove data still exists
+6️⃣ Learn key commands
+
+This is exact real-world DevOps setup 💪
+
+✅ Step-1 — Create a Mongo Volume (Permanent Storage)
+
+This is like Mongo’s hard-disk 🛢️
+
+docker volume create mongoStore
+
+
+Check:
+
+docker volume ls
+
+
+You should see:
+
+mongoStore
+
+✅ Step-2 — RUN MongoDB Container (Proper Setup)
+
+Run MongoDB with volume + port:
+
+docker run -d \
+--name mongo-db \
+-p 27017:27017 \
+-v mongoStore:/data/db \
+mongo
+
+
+Meaning like a teacher:
+
+-d → run in background
+
+--name mongo-db → friendly name
+
+-p 27017:27017 → MongoDB accessible on your PC
+
+-v mongoStore:/data/db → enable persistent storage
+
+mongo → official MongoDB image
+
+Check running:
+
+docker ps
+
+
+You should see Mongo running 🎉
+
+🧪 Step-3 — Enter Mongo & Create Database
+
+Open Mongo shell:
+
+docker exec -it mongo-db mongosh
+
+
+Now inside Mongo 🤖
+
+Switch / create DB:
+
+use amitDB
+
+
+Insert data:
+
+db.users.insertOne({ name: "Amit", skill: "Docker", level: "Pro" })
+
+
+Check data:
+
+db.users.find()
+
+
+You should see your document 😎
+
+Exit:
+
+exit
+
+💀 Step-4 — DESTROY Mongo Container 😈
+
+Let’s test persistence.
+
+Stop:
+
+docker stop mongo-db
+
+
+Delete container:
+
+docker rm mongo-db
+
+
+Normally database would be gone…
+But we have volume power 😎
+
+♻️ Step-5 — Recreate Mongo Again
+
+Run again using SAME volume:
+
+docker run -d \
+--name mongo-db \
+-p 27017:27017 \
+-v mongoStore:/data/db \
+mongo
+
+😈 Step-6 — Check If Data Survived
+
+Enter again:
+
+docker exec -it mongo-db mongosh
+
+
+Run:
+
+use amitDB
+db.users.find()
+
+
+🔥🎉 DATA STILL THERE
+You officially have production-style persistent MongoDB.
+
+🧠 Congratulations — You Learned REAL DevOps Mongo
+
+You now understand:
+
+✔ What a real DB persistent setup is
+✔ How Mongo stores data in Docker
+✔ How to create/use a database properly
+✔ How to test persistence like a pro
+✔ Disaster recovery mindset 😎
+
+🧰 Helpful Commands
+Stop Mongo
+docker stop mongo-db
+
+Start Mongo
+docker start mongo-db
+
+Show Volumes
+docker volume ls
+
+Inspect Mongo Volume (where real files live)
+docker volume inspect mongoStore

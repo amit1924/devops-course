@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🚀 Deploy Custom Docker Images in Kubernetes - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #00d8ff, #9d4edd, #00d8ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .deploy-card {
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .deploy-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(157, 78, 221, 0.15);
+        border-color: #9d4edd;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #9d4edd, #c77dff);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 5px 15px rgba(157, 78, 221, 0.3);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-break: break-word;
+        padding-right: 100px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 5px 0;
+        color: #e2e8f0;
+      }
+
+      .terminal-prompt {
+        color: #10b981;
+        font-weight: bold;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .architecture-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 2px solid #334155;
+        position: relative;
+        min-height: 300px;
+      }
+
+      .minikube-box {
+        background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        position: absolute;
+        left: 10%;
+        z-index: 2;
+        box-shadow: 0 10px 25px rgba(157, 78, 221, 0.3);
+      }
+
+      .docker-box {
+        background: linear-gradient(135deg, #0db7ed, #2496ed);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        position: absolute;
+        right: 10%;
+        z-index: 2;
+        box-shadow: 0 10px 25px rgba(13, 183, 237, 0.3);
+      }
+
+      .k8s-box {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+      }
+
+      .connection-line {
+        position: absolute;
+        background: linear-gradient(90deg, #9d4edd, #0db7ed, #3b82f6);
+        height: 3px;
+        border-radius: 3px;
+        z-index: 1;
+      }
+
+      .flow-arrow {
+        position: absolute;
+        color: #f59e0b;
+        font-size: 1.5rem;
+        z-index: 3;
+        animation: bounce 2s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(10px);
+        }
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.1),
+          rgba(37, 99, 235, 0.1)
+        );
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.1),
+          rgba(21, 128, 61, 0.1)
+        );
+        border-left: 4px solid #22c55e;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1),
+          rgba(217, 119, 6, 0.1)
+        );
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .file-container {
+        background: #0f172a;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        overflow: hidden;
+        margin: 15px 0;
+      }
+
+      .file-header {
+        background: #1e293b;
+        padding: 12px 20px;
+        border-bottom: 1px solid #334155;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .file-content {
+        padding: 20px;
+        overflow-x: auto;
+      }
+
+      .command-line {
+        background: #1e293b;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .comparison-table th {
+        background: rgba(157, 78, 221, 0.3);
+        padding: 15px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 2px solid #334155;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(157, 78, 221, 0.1);
+      }
+
+      .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .component-card {
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+
+      .component-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.2);
+      }
+
+      .browser-preview {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+        border: 2px solid #334155;
+      }
+
+      .browser-header {
+        background: #e2e8f0;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .browser-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .browser-dot.red {
+        background: #ef4444;
+      }
+      .browser-dot.yellow {
+        background: #f59e0b;
+      }
+      .browser-dot.green {
+        background: #10b981;
+      }
+
+      .browser-url {
+        background: #cbd5e1;
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        color: #0f172a;
+        flex-grow: 1;
+      }
+
+      .browser-content {
+        padding: 40px;
+        text-align: center;
+        color: #0f172a;
+        font-size: 1.5rem;
+        font-weight: bold;
+        background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      }
+
+      /* Mobile-specific improvements */
+      @media (max-width: 767px) {
+        .deploy-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 8px 0;
+        }
+
+        .code-container {
+          padding: 15px;
+          padding-right: 80px;
+        }
+
+        .code-text {
+          font-size: 0.85rem;
+          padding-right: 70px;
+        }
+
+        .copy-btn {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+
+        .architecture-visual {
+          flex-direction: column;
+          min-height: 400px;
+        }
+
+        .minikube-box,
+        .docker-box,
+        .k8s-box {
+          position: relative;
+          left: auto;
+          right: auto;
+          margin: 10px 0;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+      .code-function {
+        color: #dcdcaa;
+      }
+      .code-operator {
+        color: #d4d4d4;
+      }
+      .code-property {
+        color: #9cdcfe;
+      }
+
+      /* Animation for success */
+      @keyframes success {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .success-animation {
+        animation: success 2s ease-in-out;
+      }
+
+      /* Image flow animation */
+      .image-flow {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .flow-item {
+        position: absolute;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        animation: moveFlow 4s linear infinite;
+      }
+
+      @keyframes moveFlow {
+        0% {
+          transform: translate(-100px, 0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(calc(100vw + 100px), -100px);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="deploy-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🚀 Deploy Custom Docker Images in Kubernetes
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Complete Guide: Build Inside Minikube → Deploy with Kubernetes
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30"
+            >
+              <i class="fab fa-docker mr-2"></i>Minikube Docker
+            </span>
+            <span
+              class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30"
+            >
+              <i class="fas fa-cube mr-2"></i>Custom Images
+            </span>
+            <span
+              class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full border border-green-500/30"
+            >
+              <i class="fas fa-rocket mr-2"></i>Kubernetes Deploy
+            </span>
+          </div>
+
+          <div class="success-box">
+            <p class="text-slate-300">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              <strong>Perfect! You're inside Minikube's Docker world.</strong>
+              Now let's build and deploy your custom image!
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Understanding the Problem -->
+      <section class="deploy-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-lightbulb mr-3"></i>🧠 Understanding the Problem
+        </h2>
+
+        <div class="architecture-visual">
+          <div class="minikube-box">
+            <div class="text-2xl mb-2">🐳</div>
+            <div class="font-bold">Minikube VM</div>
+            <div class="text-sm">Isolated Environment</div>
+          </div>
+
+          <div class="docker-box">
+            <div class="text-2xl mb-2">📦</div>
+            <div class="font-bold">Your Laptop Docker</div>
+            <div class="text-sm">Local Images</div>
+          </div>
+
+          <div class="k8s-box">
+            <div class="text-2xl mb-2">☸️</div>
+            <div class="font-bold">Kubernetes</div>
+            <div class="text-sm">Needs Images</div>
+          </div>
+
+          <!-- Connection lines -->
+          <div
+            class="connection-line"
+            style="top: 50%; left: 20%; right: 30%"
+          ></div>
+          <div
+            class="connection-line"
+            style="top: 70%; left: 30%; right: 20%"
+          ></div>
+
+          <!-- Flow arrows -->
+          <div class="flow-arrow" style="top: 50%; left: 45%">→</div>
+          <div class="flow-arrow" style="top: 70%; left: 55%">←</div>
+
+          <!-- Image flow -->
+          <div class="image-flow">
+            <div class="flow-item" style="top: 45%; animation-delay: 0s">
+              express-demo:v2
+            </div>
+            <div class="flow-item" style="top: 65%; animation-delay: 1s">
+              📦 Image
+            </div>
+            <div class="flow-item" style="top: 55%; animation-delay: 2s">
+              🚀 Container
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="info-box">
+            <h3 class="font-bold text-red-300 mb-3">
+              <i class="fas fa-times-circle mr-2"></i>The Problem
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-ban text-red-400 mt-1 mr-2"></i>
+                <span>Minikube has its own Docker daemon</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-ban text-red-400 mt-1 mr-2"></i>
+                <span>Your local images aren't visible to Minikube</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-ban text-red-400 mt-1 mr-2"></i>
+                <span>Kubernetes can't find your custom image</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-ban text-red-400 mt-1 mr-2"></i>
+                <span
+                  >Error:
+                  <code class="text-red-300">ImagePullBackOff</code></span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <h3 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>The Solution
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Build image INSIDE Minikube's Docker</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Use Minikube's Docker daemon directly</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Kubernetes can now find and use your image</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span
+                  >Success:
+                  <code class="text-green-300">Running</code> status!</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 1: Build Inside Minikube -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-cogs mr-3"></i>✅ Step 1 — Build Image Inside
+            Minikube Docker
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="step1">
+              # Switch to your project folder cd ~/Desktop/Courses/Docker/basic\
+              project/ # Or your actual project path cd /path/to/your/project #
+              Build image using Minikube's Docker docker build -t
+              express-demo:v2 . # Verify the image is built docker images | grep
+              express-demo
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('step1')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> docker build -t
+              express-demo:v2 .
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-cog fa-spin text-blue-400 mr-2"></i>
+              Sending build context to Docker daemon...
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-cog fa-spin text-blue-400 mr-2"></i>
+              Step 1/5 : FROM node:18-alpine
+            </div>
+            <div class="terminal-line ml-8">
+              ---> Pulling from library/node...
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Successfully built abcdef123456
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Successfully tagged express-demo:v2
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> docker images | grep
+              express-demo
+            </div>
+            <div class="terminal-line ml-4">
+              express-demo&nbsp;&nbsp;v2&nbsp;&nbsp;&nbsp;&nbsp;abcdef123456&nbsp;&nbsp;2
+              minutes ago&nbsp;&nbsp;180MB
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-check-circle mr-2"></i>✅ IMAGE BUILT!
+            </h4>
+            <p class="text-slate-300">
+              Your <code class="text-cyan-300">express-demo:v2</code> image is
+              now available in Minikube's Docker registry. Kubernetes can use
+              it! 🎉
+            </p>
+          </div>
+
+          <div class="warning-box mt-4">
+            <h4 class="font-bold text-amber-300 mb-2">
+              <i class="fas fa-exclamation-triangle mr-2"></i>Important: Verify
+              You're in Minikube Docker
+            </h4>
+            <div class="code-container" style="padding: 15px; margin: 10px 0">
+              <div class="code-text">
+                # Check which Docker you're using docker info | grep -i name #
+                Should show something like: # Name: minikube # If not,
+                reconnect: eval $(minikube docker-env)
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Create Deployment -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-layer-group mr-3"></i>✅ Step 2 — Create Deployment
+            YAML
+          </h2>
+
+          <div class="file-container">
+            <div class="file-header">
+              <span class="text-blue-300 font-bold">express-deploy.yaml</span>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('step2')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+            <div class="file-content">
+              <div class="code-text" id="step2">
+                apiVersion: apps/v1 kind: Deployment metadata: name:
+                express-demo-deploy spec: replicas: 1 selector: matchLabels:
+                app: express-demo template: metadata: labels: app: express-demo
+                spec: containers: - name: express-container image:
+                express-demo:v2 ports: - containerPort: 3000
+              </div>
+            </div>
+          </div>
+
+          <div class="component-grid mt-4">
+            <div class="component-card">
+              <div class="text-lg font-bold text-purple-300 mb-2">
+                apiVersion
+              </div>
+              <p class="text-slate-300 text-sm">apps/v1 for Deployments</p>
+            </div>
+
+            <div class="component-card">
+              <div class="text-lg font-bold text-blue-300 mb-2">kind</div>
+              <p class="text-slate-300 text-sm">Deployment (not Pod!)</p>
+            </div>
+
+            <div class="component-card">
+              <div class="text-lg font-bold text-green-300 mb-2">replicas</div>
+              <p class="text-slate-300 text-sm">How many copies (Pods)</p>
+            </div>
+
+            <div class="component-card">
+              <div class="text-lg font-bold text-amber-300 mb-2">image</div>
+              <p class="text-slate-300 text-sm">Our custom image</p>
+            </div>
+          </div>
+
+          <div class="info-box mt-4">
+            <h4 class="font-bold text-cyan-300 mb-2">
+              <i class="fas fa-play-circle mr-2"></i>Apply the Deployment
+            </h4>
+            <div class="code-container">
+              <div class="code-text" id="applyDeploy">
+                # Create the deployment kubectl apply -f express-deploy.yaml #
+                Check deployment status kubectl get deployments # Check pods
+                created by deployment kubectl get pods
+              </div>
+              <div class="copy-btn-wrapper">
+                <button
+                  class="copy-btn no-select"
+                  onclick="copyCode('applyDeploy')"
+                >
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="terminal-output mt-4">
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span> kubectl apply -f
+                express-deploy.yaml
+              </div>
+              <div class="terminal-line ml-4 terminal-success">
+                deployment.apps/express-demo-deploy created
+              </div>
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span> kubectl get pods
+              </div>
+              <div class="terminal-line ml-4">
+                NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE
+              </div>
+              <div class="terminal-line ml-4 terminal-success">
+                express-demo-deploy-abc123&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10s
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Create Service -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-network-wired mr-3"></i>🌐 Step 3 — Expose with
+            Service
+          </h2>
+
+          <div class="warning-box">
+            <p class="text-slate-300">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              <strong>Why Service?</strong> Pods have private IPs. Service
+              creates a stable gateway to access your app from outside.
+            </p>
+          </div>
+
+          <div class="file-container">
+            <div class="file-header">
+              <span class="text-purple-300 font-bold"
+                >express-service.yaml</span
+              >
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('step3')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+            <div class="file-content">
+              <div class="code-text" id="step3">
+                apiVersion: v1 kind: Service metadata: name: express-service
+                spec: type: NodePort selector: app: express-demo ports: -
+                protocol: TCP port: 3000 targetPort: 3000 nodePort: 32000
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="info-box">
+              <h4 class="font-bold text-blue-300 mb-2">type: NodePort</h4>
+              <p class="text-slate-300 text-sm">
+                Exposes service on each Node's IP at static port
+              </p>
+            </div>
+
+            <div class="info-box">
+              <h4 class="font-bold text-green-300 mb-2">selector</h4>
+              <p class="text-slate-300 text-sm">
+                Matches Pods with label app=express-demo
+              </p>
+            </div>
+
+            <div class="info-box">
+              <h4 class="font-bold text-purple-300 mb-2">nodePort: 32000</h4>
+              <p class="text-slate-300 text-sm">
+                Port to access from browser (30000-32767)
+              </p>
+            </div>
+          </div>
+
+          <div class="code-container mt-4">
+            <div class="code-text" id="applyService">
+              # Create the service kubectl apply -f express-service.yaml # Check
+              service kubectl get services # Or shorthand kubectl get svc
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('applyService')"
+              >
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get svc
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CLUSTER-IP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORT(S)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-service&nbsp;&nbsp;NodePort&nbsp;&nbsp;10.96.123.45&nbsp;&nbsp;&nbsp;3000:32000/TCP&nbsp;&nbsp;5s
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Access the App -->
+      <section class="step-card p-5 md:p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-8">
+          <h2 class="text-xl md:text-2xl font-bold text-amber-300 mb-4">
+            <i class="fas fa-rocket mr-3"></i>🚀 Step 4 — Access Your Deployed
+            App
+          </h2>
+
+          <div class="browser-preview">
+            <div class="browser-header">
+              <div class="browser-dot red"></div>
+              <div class="browser-dot yellow"></div>
+              <div class="browser-dot green"></div>
+              <div class="browser-url">http://localhost:32000</div>
+            </div>
+            <div class="browser-content">
+              🎉 Welcome to Express Demo!<br />
+              Running in Kubernetes Pod
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >minikube service express-service</span
+              >
+              <p class="text-slate-400 text-sm mt-1">
+                Auto-opens in browser (recommended)
+              </p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">curl http://localhost:32000</span>
+              <p class="text-slate-400 text-sm mt-1">Test with curl</p>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube service
+              express-service
+            </div>
+            <div class="terminal-line ml-4">
+              <i class="fas fa-external-link-alt text-blue-400 mr-2"></i>
+              Opening kubernetes service default/express-service in default
+              browser...
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Browser opens with your app! 🎉
+            </div>
+          </div>
+
+          <div class="success-box success-animation mt-4">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-trophy mr-2"></i>🔥🔥🔥 DEPLOYMENT SUCCESS!
+            </h4>
+            <p class="text-slate-300">
+              Your custom
+              <code class="text-cyan-300">express-demo:v2</code> image is now:
+            </p>
+            <ul class="space-y-2 text-slate-300 mt-2">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Built inside Minikube's Docker</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Running in Kubernetes Pod via Deployment</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Exposed through Service on port 32000</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span>Accessible from your browser!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deployment vs Service Explained -->
+      <section class="deploy-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-brain mr-3"></i>🧠 Deployment vs Service — Do I Need
+          Both?
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Purpose</th>
+                <th>Analogy</th>
+                <th>External Access</th>
+                <th>Required?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="font-bold text-blue-300">Deployment</span></td>
+                <td>Creates/manages Pods, handles scaling, rolling updates</td>
+                <td>Factory Manager</td>
+                <td>
+                  <span class="text-red-300">❌ No</span><br /><span
+                    class="text-xs"
+                    >Private IPs only</span
+                  >
+                </td>
+                <td>
+                  <span class="text-green-300">✅ Yes</span><br /><span
+                    class="text-xs"
+                    >For running app</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td><span class="font-bold text-purple-300">Service</span></td>
+                <td>Exposes Pods, load balancing, stable endpoint</td>
+                <td>Reception/Receptionist</td>
+                <td>
+                  <span class="text-green-300">✅ Yes</span><br /><span
+                    class="text-xs"
+                    >Gateway to outside</span
+                  >
+                </td>
+                <td>
+                  <span class="text-green-300">✅ Yes</span><br /><span
+                    class="text-xs"
+                    >For external access</span
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td><span class="font-bold text-green-300">Pod</span></td>
+                <td>Runs containers, smallest unit</td>
+                <td>Worker/Machine</td>
+                <td>
+                  <span class="text-red-300">❌ No</span><br /><span
+                    class="text-xs"
+                    >Ephemeral</span
+                  >
+                </td>
+                <td>
+                  <span class="text-amber-300">⚠️ Indirect</span><br /><span
+                    class="text-xs"
+                    >Created by Deployment</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="info-box">
+            <h3 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-layer-group mr-2"></i>Deployment (Your
+              express-deploy.yaml)
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-cogs text-blue-400 mt-1 mr-2"></i>
+                <span>Creates and manages Pods</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-sync-alt text-blue-400 mt-1 mr-2"></i>
+                <span>Handles replicas (scaling)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-code-branch text-blue-400 mt-1 mr-2"></i>
+                <span>Manages rolling updates</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-heartbeat text-blue-400 mt-1 mr-2"></i>
+                <span>Auto-healing (restarts failed Pods)</span>
+              </li>
+            </ul>
+            <div class="mt-3 p-2 bg-slate-800/50 rounded">
+              <p class="text-slate-400 text-sm">
+                ❗ Pod IPs change if restarted<br />
+                ❗ Not accessible from browser
+              </p>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <h3 class="font-bold text-purple-300 mb-3">
+              <i class="fas fa-network-wired mr-2"></i>Service (Your
+              express-service.yaml)
+            </h3>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-door-open text-purple-400 mt-1 mr-2"></i>
+                <span>Gateway/permanent door to your app</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-balance-scale text-purple-400 mt-1 mr-2"></i>
+                <span>Load balances between Pods</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-shield-alt text-purple-400 mt-1 mr-2"></i>
+                <span>Provides stable virtual IP</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-globe text-purple-400 mt-1 mr-2"></i>
+                <span>Makes app reachable from outside</span>
+              </li>
+            </ul>
+            <div class="mt-3 p-2 bg-slate-800/50 rounded">
+              <p class="text-slate-400 text-sm">
+                ✅ Stable endpoint<br />
+                ✅ External access possible<br />
+                ✅ Required for browser access
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-lightbulb mr-2"></i>💡 Think Like This
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="text-2xl mb-2">📦</div>
+              <div class="font-bold text-green-300">Pod</div>
+              <p class="text-slate-300 text-sm">Runs container</p>
+            </div>
+
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="text-2xl mb-2">🏭</div>
+              <div class="font-bold text-blue-300">Deployment</div>
+              <p class="text-slate-300 text-sm">Manages Pods</p>
+            </div>
+
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="text-2xl mb-2">🚪</div>
+              <div class="font-bold text-purple-300">Service</div>
+              <p class="text-slate-300 text-sm">Exposes Pods</p>
+            </div>
+          </div>
+          <p class="text-slate-300 mt-4 text-center">
+            Together → Real-world Kubernetes deployment! 😎
+          </p>
+        </div>
+      </section>
+
+      <!-- Alternative Methods -->
+      <section class="deploy-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-tools mr-3"></i>🛠️ Alternative Methods & Tips
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="component-card">
+            <h3 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-bolt mr-2"></i>Quick Test (Temporary)
+            </h3>
+            <p class="text-slate-300 mb-3">
+              For quick testing without Service:
+            </p>
+            <div class="code-container" style="padding: 15px; margin: 10px 0">
+              <div class="code-text">
+                kubectl port-forward deployment/express-demo-deploy 3000:3000
+              </div>
+            </div>
+            <p class="text-slate-400 text-sm">
+              Then access:
+              <code class="text-cyan-300">http://localhost:3000</code><br />
+              <span class="text-amber-300"
+                >⚠️ Temporary - stops when you close terminal</span
+              >
+            </p>
+          </div>
+
+          <div class="component-card">
+            <h3 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-docker mr-2"></i>Build Once, Use Everywhere
+            </h3>
+            <p class="text-slate-300 mb-3">
+              Alternative: Use Docker Hub registry:
+            </p>
+            <div class="code-container" style="padding: 15px; margin: 10px 0">
+              <div class="code-text">
+                # Tag for Docker Hub docker tag express-demo:v2
+                username/express-demo:v2 # Push to Docker Hub docker push
+                username/express-demo:v2 # Use in Kubernetes (anywhere!) image:
+                username/express-demo:v2
+              </div>
+            </div>
+            <p class="text-slate-400 text-sm">
+              Works across all clusters, not just Minikube
+            </p>
+          </div>
+        </div>
+
+        <div class="warning-box mt-6">
+          <h4 class="font-bold text-amber-300 mb-3">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Common Issues &
+            Solutions
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-3 bg-slate-800/50 rounded">
+              <div class="font-bold text-red-300 mb-1">ImagePullBackOff</div>
+              <p class="text-slate-300 text-sm">
+                Image not found in Minikube Docker<br />
+                <span class="text-green-300">Fix:</span> Rebuild inside Minikube
+              </p>
+            </div>
+
+            <div class="p-3 bg-slate-800/50 rounded">
+              <div class="font-bold text-red-300 mb-1">CrashLoopBackOff</div>
+              <p class="text-slate-300 text-sm">
+                Container crashing on start<br />
+                <span class="text-green-300">Fix:</span> Check logs with
+                <code>kubectl logs</code>
+              </p>
+            </div>
+
+            <div class="p-3 bg-slate-800/50 rounded">
+              <div class="font-bold text-red-300 mb-1">Port Already in Use</div>
+              <p class="text-slate-300 text-sm">
+                Port 32000 already taken<br />
+                <span class="text-green-300">Fix:</span> Change nodePort to
+                32001
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-box mt-6">
+          <h4 class="font-bold text-cyan-300 mb-3">
+            <i class="fas fa-terminal mr-2"></i>Useful Commands for Management
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl scale deployment/express-demo-deploy --replicas=3</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Scale to 3 Pods</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl rollout status deployment/express-demo-deploy</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Check deployment status</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >kubectl delete -f express-deploy.yaml -f
+                express-service.yaml</span
+              >
+              <p class="text-slate-400 text-sm mt-1">Clean up everything</p>
+            </div>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">kubectl get all</span>
+              <p class="text-slate-400 text-sm mt-1">See all resources</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="deploy-card p-5 md:p-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-clipboard-check mr-3"></i>🎯 Summary & Next Steps
+        </h2>
+
+        <div class="success-box">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-check-circle mr-2"></i>✅ What You've Accomplished
+          </h4>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Built custom image</strong> inside Minikube's Docker
+                environment</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Created Deployment</strong> to manage Pods with
+                auto-healing</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Exposed with Service</strong> for external access via
+                NodePort</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Accessed your app</strong> in browser through
+                Kubernetes</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Understood the difference</strong> between Deployment
+                and Service</span
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">🐳</div>
+            <h4 class="font-bold text-blue-300">Local Docker</h4>
+            <p class="text-slate-300 text-sm">Development & testing</p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">☸️</div>
+            <h4 class="font-bold text-purple-300">Minikube</h4>
+            <p class="text-slate-300 text-sm">Local Kubernetes cluster</p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">🚀</div>
+            <h4 class="font-bold text-green-300">Production</h4>
+            <p class="text-slate-300 text-sm">Ready for cloud deployment</p>
+          </div>
+        </div>
+
+        <div
+          class="mt-6 p-4 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded-lg"
+        >
+          <div class="flex items-center">
+            <div class="text-3xl mr-4">🎓</div>
+            <div>
+              <h4 class="font-bold text-white mb-2">Next Learning Steps</h4>
+              <ul class="space-y-2 text-slate-300">
+                <li class="flex items-start">
+                  <i class="fas fa-arrow-right text-cyan-300 mt-1 mr-2"></i>
+                  <span
+                    ><strong>ConfigMaps & Secrets:</strong> Manage
+                    configuration</span
+                  >
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-arrow-right text-cyan-300 mt-1 mr-2"></i>
+                  <span
+                    ><strong>Ingress:</strong> Better than NodePort for
+                    production</span
+                  >
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-arrow-right text-cyan-300 mt-1 mr-2"></i>
+                  <span
+                    ><strong>Persistent Volumes:</strong> Data that survives Pod
+                    restarts</span
+                  >
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-arrow-right text-cyan-300 mt-1 mr-2"></i>
+                  <span
+                    ><strong>Helm Charts:</strong> Package and deploy entire
+                    apps</span
+                  >
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-lg">
+            You've successfully deployed a custom Docker image in Kubernetes! 🎉
+          </p>
+          <p class="text-slate-500 text-sm mt-2">
+            From Minikube Docker to production-like deployment — you're doing
+            amazing! 👏
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full">
+            <i class="fab fa-docker mr-2"></i>Minikube Docker
+          </span>
+          <span class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full">
+            <i class="fas fa-cube mr-2"></i>Custom Image Deployed
+          </span>
+          <span class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full">
+            <i class="fas fa-check-circle mr-2"></i>Service Exposed
+          </span>
+        </div>
+
+        <div class="mt-6 text-slate-500 text-sm">
+          <p>
+            Remember: Build inside Minikube → Deploy with Kubernetes → Expose
+            with Service = Success! 💚
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Create image flow animation
+      function createImageFlow() {
+        const flowContainer = document.querySelector('.image-flow');
+        if (!flowContainer) return;
+
+        // Clear existing
+        flowContainer.innerHTML = '';
+
+        // Create flow items
+        const items = [
+          'express-demo:v2',
+          '📦 Docker Image',
+          '🚀 Kubernetes',
+          '🌐 Service:32000',
+          '🎉 Browser Access',
+        ];
+
+        items.forEach((item, index) => {
+          const flowItem = document.createElement('div');
+          flowItem.className = 'flow-item';
+          flowItem.textContent = item;
+          flowItem.style.top = `${40 + index * 10}%`;
+          flowItem.style.animationDelay = `${index * 0.8}s`;
+          flowItem.style.animationDuration = `${4 + index * 0.5}s`;
+          flowContainer.appendChild(flowItem);
+        });
+      }
+
+      // Initialize when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        createImageFlow();
+
+        // Make buttons touch-friendly
+        document.querySelectorAll('.copy-btn, button').forEach((btn) => {
+          btn.classList.add('touch-target');
+        });
+
+        // Restart flow animation periodically
+        setInterval(createImageFlow, 8000);
+
+        // Add syntax highlighting
+        const codeElements = document.querySelectorAll('.code-text');
+        codeElements.forEach((element) => {
+          let code = element.innerHTML;
+
+          // Highlight comments
+          code = code.replace(/#.*$/gm, '<span class="code-comment">$&</span>');
+
+          // Highlight Kubernetes keywords
+          const k8sKeywords = [
+            'apiVersion',
+            'kind',
+            'metadata',
+            'spec',
+            'containers',
+            'ports',
+            'type',
+            'selector',
+            'ports',
+            'protocol',
+          ];
+          k8sKeywords.forEach((keyword) => {
+            const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+            code = code.replace(
+              regex,
+              `<span class="code-keyword">${keyword}</span>`,
+            );
+          });
+
+          // Highlight strings
+          code = code.replace(
+            /(["'])(?:(?=(\\?))\2.)*?\1/g,
+            '<span class="code-string">$&</span>',
+          );
+
+          // Highlight numbers
+          code = code.replace(
+            /\b(\d+)\b/g,
+            '<span class="code-number">$1</span>',
+          );
+
+          element.innerHTML = code;
+        });
+      });
+
+      // Add CSS variables
+      const style = document.createElement('style');
+      style.textContent = `
+            :root {
+                scroll-behavior: smooth;
+            }
+            
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .fade-in {
+                animation: fadeIn 0.6s ease-out;
+            }
+        `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Responsive viewport tag -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>Docker Installation Guide - Linux Mint XFCE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+        overflow-x: hidden;
+      }
+
+      .code-block {
+        font-family: 'JetBrains Mono', monospace;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .code-block:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        border-color: #475569;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border: none;
+        transition: all 0.3s ease;
+        min-height: 44px; /* Better touch target */
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        transform: translateY(-2px);
+      }
+
+      .copy-btn:active {
+        transform: translateY(0);
+      }
+
+      .section-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .section-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        border-color: #475569;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      .success-badge {
+        background: rgba(34, 197, 94, 0.2);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+
+      .warning-badge {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+
+      .info-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .neon-border {
+        position: relative;
+      }
+
+      .neon-border::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+        border-radius: 17px;
+        z-index: -1;
+        opacity: 0.5;
+        filter: blur(5px);
+      }
+
+      .command-line {
+        counter-reset: line;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .command-line code {
+        display: block;
+        white-space: pre;
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+
+      .command-line code::before {
+        counter-increment: line;
+        content: counter(line);
+        display: inline-block;
+        width: 2em;
+        margin-right: 1em;
+        color: #64748b;
+        text-align: right;
+        user-select: none;
+      }
+
+      ::selection {
+        background: rgba(59, 130, 246, 0.5);
+        color: white;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      /* Mobile-specific adjustments */
+      @media (max-width: 767px) {
+        .command-line code {
+          font-size: 0.75rem;
+          line-height: 1.4;
+        }
+
+        .section-card {
+          border-radius: 12px;
+          margin-left: -8px;
+          margin-right: -8px;
+          padding: 16px !important;
+        }
+
+        .copy-btn {
+          padding: 12px 18px;
+          font-size: 0.95rem;
+          min-height: 48px;
+        }
+
+        .neon-border::before {
+          display: none; /* Disable on mobile for performance */
+        }
+
+        pre,
+        code {
+          font-size: 0.8rem;
+          line-height: 1.5;
+          word-break: break-word;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Prevent text selection on double tap */
+      .no-select {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Better text rendering */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    </style>
+  </head>
+  <body class="min-h-screen p-3 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <header class="mb-8 md:mb-10">
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"
+        >
+          <div>
+            <h1
+              class="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+            >
+              <i class="fas fa-docker mr-2 md:mr-3"></i>Docker Installation
+              Guide
+            </h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base">
+              Complete setup for Linux Mint XFCE 22.1
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2 md:mt-0">
+            <span class="status-badge success-badge">
+              <i class="fas fa-check-circle mr-2"></i>Tested & Working
+            </span>
+            <span class="status-badge info-badge">
+              <i class="fas fa-linux mr-2"></i>Mint 22.1 XFCE
+            </span>
+          </div>
+        </div>
+
+        <div class="section-card p-4 md:p-6">
+          <div
+            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+          >
+            <div class="w-full">
+              <h2
+                class="text-lg md:text-xl font-bold text-slate-200 mb-3 md:mb-2"
+              >
+                <i class="fas fa-terminal mr-2 text-blue-400"></i>System
+                Information
+              </h2>
+              <div
+                class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 text-sm"
+              >
+                <div class="flex items-center">
+                  <i class="fas fa-desktop w-5 text-slate-500 mr-2"></i>
+                  <span class="text-slate-400">OS:</span>
+                  <span class="ml-2 text-slate-300 truncate"
+                    >Linux Mint 22.1 x86_64</span
+                  >
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-microchip w-5 text-slate-500 mr-2"></i>
+                  <span class="text-slate-400">Kernel:</span>
+                  <span class="ml-2 text-slate-300 truncate"
+                    >6.8.0-90-generic</span
+                  >
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-layer-group w-5 text-slate-500 mr-2"></i>
+                  <span class="text-slate-400">DE:</span>
+                  <span class="ml-2 text-slate-300 truncate">Xfce 4.18</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-code w-5 text-slate-500 mr-2"></i>
+                  <span class="text-slate-400">Shell:</span>
+                  <span class="ml-2 text-slate-300 truncate">zsh 5.9</span>
+                </div>
+              </div>
+            </div>
+            <div
+              class="bg-slate-900 p-3 md:p-4 rounded-lg border border-slate-700 mt-4 md:mt-0 w-full md:w-auto"
+            >
+              <div class="text-xs font-mono text-green-400">
+                <div class="flex items-center">
+                  <i class="fas fa-user mr-2"></i>
+                  <span class="truncate">amit@amit</span>
+                </div>
+                <div class="mt-1 text-xs">
+                  Last Updated:
+                  <span class="text-cyan-400">December 29, 2025</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="space-y-6 md:space-y-8">
+        <!-- Installation Steps -->
+        <section class="section-card p-4 md:p-6">
+          <div class="flex items-center mb-4 md:mb-6">
+            <div
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3 md:mr-4"
+            >
+              <i class="fas fa-download text-blue-400 text-sm md:text-base"></i>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-200">
+              Installation Steps
+            </h2>
+          </div>
+
+          <!-- Step 1 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >1</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Remove Old Docker Versions
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Clean up any existing Docker installations to prevent conflicts.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code1')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code1" class="text-xs md:text-sm text-green-300">sudo apt remove docker docker-engine docker.io containerd runc</code></pre>
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 md:p-4"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-info-circle text-blue-400 mt-1 mr-2 md:mr-3 text-sm md:text-base"
+                ></i>
+                <div>
+                  <h4 class="font-medium text-slate-300 text-sm md:text-base">
+                    Output Note
+                  </h4>
+                  <p class="text-slate-400 text-xs md:text-sm mt-1">
+                    If you see "Package 'docker' is not installed", that's
+                    normal. It means no previous Docker installation was found.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >2</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Update System Packages
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Ensure all system packages are up to date before installation.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code2')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code2" class="text-xs md:text-sm text-green-300">sudo apt update
+
+sudo apt upgrade -y</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >3</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Install Required Dependencies
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Install certificates and tools needed for secure package
+              management.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code3')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code3" class="text-xs md:text-sm text-green-300">sudo apt install -y ca-certificates curl gnupg</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >4</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Add Docker's Official GPG Key
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Add Docker's GPG key to verify package authenticity.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code4')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code4" class="text-xs md:text-sm text-green-300">sudo install -m 0755 -d /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5 - CRITICAL FIX -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-amber-400 text-sm md:text-base"
+                    >5</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Add Docker Repository (Critical Fix)
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge warning-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Important</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Linux Mint 22.1 uses Ubuntu 24.04 (Noble) base. The repository
+              must point to
+              <code class="text-amber-300 text-xs md:text-sm">noble</code> not
+              <code class="text-amber-300 text-xs md:text-sm">xia</code>.
+            </p>
+
+            <div
+              class="bg-amber-900/20 border border-amber-700/30 rounded-lg p-3 md:p-4 mb-3 md:mb-4"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-exclamation-triangle text-amber-400 mt-1 mr-2 md:mr-3 text-sm md:text-base"
+                ></i>
+                <div>
+                  <h4 class="font-medium text-amber-300 text-sm md:text-base">
+                    Critical Issue Fixed
+                  </h4>
+                  <p class="text-slate-300 text-xs md:text-sm mt-1">
+                    Docker doesn't recognize Mint's codename "xia". Use Ubuntu
+                    24.04's codename "noble" instead.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code5')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div class="mb-2 text-slate-300 font-medium text-sm md:text-base">
+                Repository Command:
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code5" class="text-xs md:text-sm text-green-300">echo \
+"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null</code></pre>
+              </div>
+            </div>
+
+            <div class="code-block p-3 md:p-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code5fix')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div class="mb-2 text-slate-300 font-medium text-sm md:text-base">
+                Manual Fix (if needed):
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code5fix" class="text-xs md:text-sm text-green-300">sudo nano /etc/apt/sources.list.d/docker.list
+
+# Change "xia" to "noble" in the file
+# Save with Ctrl+O, exit with Ctrl+X</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >6</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Install Docker Engine
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Install Docker CE and all required components including Docker
+              Compose.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code6')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code6" class="text-xs md:text-sm text-green-300">sudo apt update
+
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 7 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >7</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Start and Enable Docker Service
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Start Docker daemon and enable it to run on system boot.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code7')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code7" class="text-xs md:text-sm text-green-300">sudo systemctl enable docker
+
+sudo systemctl start docker</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 8 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-blue-400 text-sm md:text-base"
+                    >8</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Add User to Docker Group
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Allow your user to run Docker commands without sudo.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code8')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code8" class="text-xs md:text-sm text-green-300">sudo usermod -aG docker $USER</code></pre>
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-3 md:p-4"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-lightbulb text-amber-400 mt-1 mr-2 md:mr-3 text-sm md:text-base"
+                ></i>
+                <div>
+                  <h4 class="font-medium text-slate-300 text-sm md:text-base">
+                    Important Note
+                  </h4>
+                  <p class="text-slate-400 text-xs md:text-sm mt-1">
+                    You need to log out and log back in for group changes to
+                    take effect. Alternatively, run
+                    <code class="text-amber-300 text-xs md:text-sm"
+                      >newgrp docker</code
+                    >
+                    in your current terminal.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 9 -->
+          <div class="mb-6 md:mb-8">
+            <div
+              class="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 mb-3 md:mb-4"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-800 flex items-center justify-center mr-2 md:mr-3"
+                >
+                  <span class="font-bold text-green-400 text-sm md:text-base"
+                    >9</span
+                  >
+                </div>
+                <h3 class="text-lg md:text-xl font-semibold text-slate-300">
+                  Test Docker Installation
+                </h3>
+              </div>
+              <span
+                class="ml-0 md:ml-3 status-badge success-badge text-xs md:text-sm mt-1 md:mt-0"
+                >Completed</span
+              >
+            </div>
+            <p class="text-slate-400 text-sm md:text-base mb-3 md:mb-4">
+              Verify Docker is working correctly with a test container.
+            </p>
+
+            <div class="code-block p-3 md:p-4 mb-3 md:mb-4 relative">
+              <div class="absolute top-2 md:top-3 right-2 md:right-3">
+                <button
+                  onclick="copyCode('code9')"
+                  class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy
+                </button>
+              </div>
+              <div
+                class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+              >
+                <pre><code id="code9" class="text-xs md:text-sm text-green-300">docker run hello-world</code></pre>
+              </div>
+            </div>
+
+            <div
+              class="bg-green-900/20 border border-green-700/30 rounded-lg p-3 md:p-4"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-check-circle text-green-400 mt-1 mr-2 md:mr-3 text-sm md:text-base"
+                ></i>
+                <div>
+                  <h4 class="font-medium text-green-300 text-sm md:text-base">
+                    Success Output
+                  </h4>
+                  <div class="text-slate-300 text-xs md:text-sm mt-1 font-mono">
+                    <div>Hello from Docker!</div>
+                    <div>
+                      This message shows that your installation appears to be
+                      working correctly.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Portainer Installation -->
+        <section class="section-card p-4 md:p-6">
+          <div class="flex items-center mb-4 md:mb-6">
+            <div
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-purple-900/30 flex items-center justify-center mr-3 md:mr-4"
+            >
+              <i
+                class="fas fa-tachometer-alt text-purple-400 text-sm md:text-base"
+              ></i>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-200">
+              Portainer GUI Management
+            </h2>
+          </div>
+
+          <p class="text-slate-400 text-sm md:text-base mb-4 md:mb-6">
+            Portainer provides a web-based GUI for Docker management. This is
+            the recommended interface for Linux Mint users.
+          </p>
+
+          <div class="code-block p-3 md:p-4 mb-4 md:mb-6 relative">
+            <div class="absolute top-2 md:top-3 right-2 md:right-3">
+              <button
+                onclick="copyCode('code10')"
+                class="copy-btn text-white px-3 py-1 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium touch-target"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy
+              </button>
+            </div>
+            <div
+              class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+            >
+              <pre><code id="code10" class="text-xs md:text-sm text-green-300">docker volume create portainer_data
+
+docker run -d -p 9000:9000 --name portainer \
+--restart=always \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v portainer_data:/data \
+portainer/portainer-ce</code></pre>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 md:p-5"
+            >
+              <h4
+                class="font-semibold text-slate-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-globe text-blue-400 mr-2 text-sm"></i> Access
+                Portainer
+              </h4>
+              <p class="text-slate-400 text-xs md:text-sm mb-2 md:mb-3">
+                After installation, access Portainer at:
+              </p>
+              <div
+                class="bg-slate-800 p-2 md:p-3 rounded-lg font-mono text-cyan-300 text-center text-sm md:text-base break-all"
+              >
+                http://localhost:9000
+              </div>
+            </div>
+
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 md:p-5"
+            >
+              <h4
+                class="font-semibold text-slate-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-user-shield text-green-400 mr-2 text-sm"></i>
+                Initial Setup
+              </h4>
+              <ul
+                class="text-slate-400 text-xs md:text-sm space-y-1 md:space-y-2"
+              >
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2 text-xs"></i>
+                  <span>Create admin username</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2 text-xs"></i>
+                  <span>Password must be 12+ characters</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2 text-xs"></i>
+                  <span>Select "Get Started" → "Local Environment"</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section class="section-card p-4 md:p-6">
+          <div class="flex items-center mb-4 md:mb-6">
+            <div
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-900/30 flex items-center justify-center mr-3 md:mr-4"
+            >
+              <i
+                class="fas fa-exclamation-triangle text-red-400 text-sm md:text-base"
+              ></i>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-200">
+              Troubleshooting & Issues Fixed
+            </h2>
+          </div>
+
+          <div class="space-y-4 md:space-y-6">
+            <!-- Issue 1 -->
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 md:p-5"
+            >
+              <h4
+                class="font-semibold text-red-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-bug mr-2 text-sm"></i> Issue 1: MongoDB GPG
+                Error
+              </h4>
+              <p class="text-slate-400 text-xs md:text-sm mb-2 md:mb-3">
+                During
+                <code class="text-amber-300 text-xs md:text-sm"
+                  >sudo apt update</code
+                >, you encountered:
+              </p>
+              <div
+                class="bg-slate-800 p-2 md:p-3 rounded-lg font-mono text-red-300 text-xs md:text-sm mb-2 md:mb-3"
+              >
+                NO_PUBKEY 6A26B1AE64C3C388<br />
+                The repository is not signed.
+              </div>
+              <div class="code-block p-2 md:p-3 relative">
+                <div class="absolute top-1 md:top-2 right-1 md:right-2">
+                  <button
+                    onclick="copyCode('code11')"
+                    class="copy-btn text-white px-2 py-1 md:px-3 md:py-1 rounded text-xs font-medium touch-target"
+                  >
+                    <i class="fas fa-copy mr-1"></i> Copy
+                  </button>
+                </div>
+                <div
+                  class="command-line overflow-x-auto scrollbar-custom pt-8 md:pt-0"
+                >
+                  <pre><code id="code11" class="text-xs text-green-300">sudo rm /etc/apt/sources.list.d/mongodb-org-6.0.list
+
+sudo apt update</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <!-- Issue 2 -->
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 md:p-5"
+            >
+              <h4
+                class="font-semibold text-red-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-bug mr-2 text-sm"></i> Issue 2: Docker Repo 404
+                Error
+              </h4>
+              <p class="text-slate-400 text-xs md:text-sm mb-2 md:mb-3">
+                Docker doesn't recognize Mint codename "xia":
+              </p>
+              <div
+                class="bg-slate-800 p-2 md:p-3 rounded-lg font-mono text-red-300 text-xs md:text-sm mb-2 md:mb-3"
+              >
+                404 Not Found<br />
+                The repository 'https://download.docker.com/linux/ubuntu xia
+                Release' does not have a Release file.
+              </div>
+              <p class="text-slate-300 text-xs md:text-sm">
+                <strong>Solution:</strong> Edit the Docker repository file and
+                change
+                <code class="text-amber-300 text-xs md:text-sm">xia</code> to
+                <code class="text-amber-300 text-xs md:text-sm">noble</code>
+                (Ubuntu 24.04).
+              </p>
+            </div>
+
+            <!-- Issue 3 -->
+            <div
+              class="bg-slate-900/50 border border-slate-700 rounded-lg p-4 md:p-5"
+            >
+              <h4
+                class="font-semibold text-red-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-bug mr-2 text-sm"></i> Issue 3: Permission
+                Denied on Docker Socket
+              </h4>
+              <p class="text-slate-400 text-xs md:text-sm mb-2 md:mb-3">
+                After installation, running Docker gave:
+              </p>
+              <div
+                class="bg-slate-800 p-2 md:p-3 rounded-lg font-mono text-red-300 text-xs md:text-sm mb-2 md:mb-3"
+              >
+                permission denied while trying to connect to the Docker API at
+                unix:///var/run/docker.sock
+              </div>
+              <p class="text-slate-300 text-xs md:text-sm">
+                <strong>Solution:</strong> User wasn't in the Docker group.
+                Fixed with
+                <code class="text-amber-300 text-xs md:text-sm"
+                  >sudo usermod -aG docker $USER</code
+                >
+                and logging out/in.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Docker Commands Reference -->
+        <section class="section-card p-4 md:p-6">
+          <div class="flex items-center mb-4 md:mb-6">
+            <div
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-cyan-900/30 flex items-center justify-center mr-3 md:mr-4"
+            >
+              <i class="fas fa-terminal text-cyan-400 text-sm md:text-base"></i>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-200">
+              Essential Docker Commands
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div>
+              <h4
+                class="font-semibold text-slate-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-cube mr-2 text-sm"></i> Container Management
+              </h4>
+              <div class="space-y-2">
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker ps</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >List running containers</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker ps -a</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >List all containers</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker run -it ubuntu bash</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >Run Ubuntu container</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker stop &lt;container&gt;</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >Stop container</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4
+                class="font-semibold text-slate-300 text-sm md:text-base mb-2 md:mb-3 flex items-center"
+              >
+                <i class="fas fa-database mr-2 text-sm"></i> Image Management
+              </h4>
+              <div class="space-y-2">
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker images</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >List images</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker pull nginx</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >Pull Nginx image</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker rmi &lt;image&gt;</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >Remove image</span
+                  >
+                </div>
+                <div
+                  class="flex flex-col md:flex-row md:justify-between items-start md:items-center bg-slate-800/50 p-2 md:p-3 rounded gap-1"
+                >
+                  <code class="text-xs md:text-sm text-cyan-300 break-all"
+                    >docker --version</code
+                  >
+                  <span class="text-xs text-slate-400 md:text-right"
+                    >Check version</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Verification -->
+        <section class="section-card p-4 md:p-6">
+          <div class="flex items-center mb-4 md:mb-6">
+            <div
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-900/30 flex items-center justify-center mr-3 md:mr-4"
+            >
+              <i
+                class="fas fa-check-circle text-green-400 text-sm md:text-base"
+              ></i>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold text-slate-200">
+              Installation Verification
+            </h2>
+          </div>
+
+          <div
+            class="bg-gradient-to-r from-green-900/20 to-emerald-900/20 border border-green-700/30 rounded-lg p-4 md:p-6"
+          >
+            <div class="flex flex-col md:flex-row items-center justify-between">
+              <div class="w-full md:w-auto">
+                <h3 class="text-lg md:text-xl font-bold text-green-300 mb-2">
+                  ✅ Docker Successfully Installed!
+                </h3>
+                <p class="text-slate-300 text-sm md:text-base">
+                  All components are working correctly on Linux Mint XFCE 22.1.
+                </p>
+                <div class="flex items-center mt-3 md:mt-4">
+                  <i class="fas fa-check text-green-400 mr-2 text-sm"></i>
+                  <span class="text-sm md:text-base"
+                    >Docker Engine:
+                    <code class="text-green-300 text-xs md:text-sm"
+                      >5:29.1.3</code
+                    ></span
+                  >
+                </div>
+                <div class="flex items-center mt-2">
+                  <i class="fas fa-check text-green-400 mr-2 text-sm"></i>
+                  <span class="text-sm md:text-base"
+                    >Docker Compose:
+                    <code class="text-green-300 text-xs md:text-sm"
+                      >5.0.0</code
+                    ></span
+                  >
+                </div>
+                <div class="flex items-center mt-2">
+                  <i class="fas fa-check text-green-400 mr-2 text-sm"></i>
+                  <span class="text-sm md:text-base"
+                    >Portainer: Running on port 9000</span
+                  >
+                </div>
+              </div>
+              <div
+                class="mt-4 md:mt-0 text-center md:text-right w-full md:w-auto"
+              >
+                <div class="text-4xl md:text-5xl mb-2">🐳</div>
+                <div class="text-green-300 font-bold text-sm md:text-base">
+                  Ready for Development!
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer class="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-slate-800">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0 text-center md:text-left">
+            <p class="text-slate-500 text-xs md:text-sm">
+              <i class="fas fa-code mr-1"></i> Docker Installation Guide for
+              Linux Mint XFCE
+            </p>
+            <p class="text-slate-600 text-xs mt-1">
+              Last updated: December 29, 2025 • Installation completed
+              successfully
+            </p>
+          </div>
+          <div class="flex space-x-3 md:space-x-4">
+            <a
+              href="#"
+              class="text-slate-500 hover:text-blue-400 transition no-select"
+              aria-label="Docker"
+            >
+              <i class="fab fa-docker text-lg md:text-xl"></i>
+            </a>
+            <a
+              href="#"
+              class="text-slate-500 hover:text-green-400 transition no-select"
+              aria-label="Linux"
+            >
+              <i class="fab fa-linux text-lg md:text-xl"></i>
+            </a>
+            <a
+              href="#"
+              class="text-slate-500 hover:text-purple-400 transition no-select"
+              aria-label="Terminal"
+            >
+              <i class="fas fa-terminal text-lg md:text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Enhanced copy code functionality with better mobile support
+      function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        const textToCopy = codeElement.textContent;
+
+        // Create a temporary textarea for copying
+        const textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+
+        // Select and copy text
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // For mobile devices
+
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            // Visual feedback
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            const originalBg = button.style.background;
+
+            button.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+            button.style.background =
+              'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+              button.style.background = originalBg;
+            }, 2000);
+          }
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+          // Fallback for mobile browsers
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              const button = event.target.closest('button');
+              const originalHTML = button.innerHTML;
+              button.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+              setTimeout(() => {
+                button.innerHTML = originalHTML;
+              }, 2000);
+            });
+          }
+        }
+
+        // Clean up
+        document.body.removeChild(textarea);
+      }
+
+      // Add click handlers to all copy buttons with better touch support
+      document.addEventListener('DOMContentLoaded', function () {
+        const copyButtons = document.querySelectorAll(
+          'button[onclick^="copyCode"]',
+        );
+        copyButtons.forEach((button) => {
+          // Add touch feedback
+          button.addEventListener('touchstart', function () {
+            this.style.transform = 'scale(0.95)';
+          });
+
+          button.addEventListener('touchend', function () {
+            this.style.transform = 'scale(1)';
+          });
+
+          // Prevent context menu on long press
+          button.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            return false;
+          });
+        });
+
+        // Add subtle animation to section cards on scroll
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px',
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.style.opacity = '1';
+              entry.target.style.transform = 'translateY(0)';
+            }
+          });
+        }, observerOptions);
+
+        // Observe all section cards
+        document.querySelectorAll('.section-card').forEach((card) => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+          observer.observe(card);
+        });
+
+        // Handle orientation change
+        let timeoutId;
+        window.addEventListener('orientationchange', function () {
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(function () {
+            // Scroll to top on orientation change to fix layout issues
+            window.scrollTo(0, 0);
+          }, 100);
+        });
+
+        // Better touch handling for mobile
+        if ('ontouchstart' in window) {
+          document.body.classList.add('touch-device');
+
+          // Increase touch targets for better usability
+          document.querySelectorAll('.copy-btn').forEach((btn) => {
+            btn.classList.add('touch-target');
+          });
+
+          // Prevent double tap zoom on buttons
+          document.addEventListener(
+            'touchstart',
+            function (e) {
+              if (e.touches.length > 1) {
+                e.preventDefault();
+              }
+            },
+            { passive: false },
+          );
+
+          // Add haptic feedback for copy buttons on supported devices
+          copyButtons.forEach((btn) => {
+            btn.addEventListener('click', function () {
+              if (navigator.vibrate) {
+                navigator.vibrate(50);
+              }
+            });
+          });
+        }
+      });
+
+      // Scroll to top button for mobile
+      const scrollBtn = document.createElement('button');
+      scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+      scrollBtn.className =
+        'fixed bottom-4 right-4 md:bottom-6 md:right-6 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center text-lg md:text-xl shadow-2xl z-50 touch-target no-select';
+      scrollBtn.style.display = 'none';
+      scrollBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.body.appendChild(scrollBtn);
+
+      window.addEventListener('scroll', () => {
+        scrollBtn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+      });
+    </script>
+  </body>
+</html>

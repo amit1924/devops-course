@@ -1,0 +1,88 @@
+                🧠 CONTROL PLANE
+         --------------------------------
+         |                               |
+         |        API SERVER             |
+         |             |                 |
+         |             v                 |
+         |           etcd  (DB)          |
+         |                               |
+         |             |
+         |             v
+         |       CONTROLLER MANAGER
+         |             |
+         |             v
+         |          SCHEDULER
+         |             |
+         --------------------------------
+                       |
+                       v
+────────────────────────────────────────────────────────
+                 ⚙️ WORKER NODES
+────────────────────────────────────────────────────────
+
+        NODE 1                     NODE 2                  NODE 3
+  ------------------        ------------------       ------------------
+  |   Kubelet      |        |   Kubelet      |       |   Kubelet      |
+  |   Kube Proxy   |        |   Kube Proxy   |       |   Kube Proxy   |
+  |   Runtime      |        |   Runtime      |       |   Runtime      |
+  |      |         |        |      |         |       |      |         |
+  |      v         |        |      v         |       |      v         |
+  |   PODS         |        |    PODS        |       |    PODS        |
+  ------------------        ------------------       ------------------
+
+
+🔁 How Kubernetes Works — Flow Revision
+
+YOU (Developer)
+       |
+       v
+ kubectl apply
+       |
+       v
+ API SERVER  ← (Gatekeeper)
+       |
+       v
+ Stores Desired State in etcd
+       |
+       v
+ CONTROLLER MANAGER checks:
+ "Is reality = desired?"
+       |
+       v
+ SCHEDULER:
+ "Which node should run this?"
+       |
+       v
+ Assigns Pod → Worker Node
+       |
+       v
+ Kubelet runs container
+       |
+       v
+ Kube Proxy manages networking
+       |
+       v
+ 🎉 App Running ✔️ Auto-Healing ✔️ Scaling ✔️
+
+✅ Ultra-Short Revision Cheat Sheet
+
+Kubernetes = container manager
+
+Control Plane decides 👑
+
+Workers execute ⚙️
+
+etcd remembers 🧠
+
+Scheduler chooses node 🎯
+
+Controller fixes problems 🩹
+
+Kubelet runs pods 🛠️
+
+Kube Proxy handles networking 🌐
+
+Pod = smallest app unit 📦
+
+///////Kubernets URL /////
+http://127.0.0.1:41937/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=default

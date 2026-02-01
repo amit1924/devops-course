@@ -1,0 +1,211 @@
+
+~/Desktop/Power Search 
+❯ cd bash
+
+Desktop/Power Search/bash 
+❯ echo file.txt
+file.txt
+
+Desktop/Power Search/bash 
+❯ touch file.txt
+
+Desktop/Power Search/bash 
+❯ echo dave >> file.txt
+
+Desktop/Power Search/bash 
+❯ echo amit >> file.txt
+
+Desktop/Power Search/bash 
+❯ grep dave file.txt
+dave
+
+Desktop/Power Search/bash 
+❯ grep -i dave file.txt
+dave
+
+Desktop/Power Search/bash 
+❯ echo DAVE >> file.txt
+
+Desktop/Power Search/bash 
+❯ grep -i dave file.txt
+dave
+DAVE
+
+Desktop/Power Search/bash 
+❯ grep -o '^d.' file.txt
+da
+
+Desktop/Power Search/bash 
+❯ grep -o -i '^d.' file.txt
+da
+DA
+
+Desktop/Power Search/bash 
+❯ grep -oi '^d.' file.txt
+da
+DA
+
+
+Desktop/Power Search/bash 
+❯ cat file.txt
+dave
+amit
+DAVE
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep
+Usage: grep [OPTION]... PATTERNS [FILE]...
+Try 'grep --help' for more information.
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep dave
+dave
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep -i dave
+dave
+DAVE
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep -i dave | grep i
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep -i dave | grep am
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep -i dave | grep amit
+
+Desktop/Power Search/bash 
+❯ cat file.txt | grep -i dave | grep da
+dave
+
+Desktop/Power Search/bash 
+
+less file.txt
+
+
+Desktop/Power Search/bash 
+❯ grep -A 1 dave file.txt
+dave
+amit
+
+Desktop/Power Search/bash 
+❯ grep -B 1 DAVE file.txt
+amit
+DAVE
+
+❯ type history
+history is a shell builtin
+
+
+Desktop/Power Search/bash took 13s 
+❯ type ls
+ls is aliased to `ls --color=auto'
+
+Desktop/Power Search/bash 
+❯ type -a ls
+ls is aliased to `ls --color=auto'
+ls is /usr/bin/ls
+ls is /bin/ls
+
+compgen -b
+
+Desktop/Power Search/bash 
+❯ compgen -b > builtins.txt
+
+Desktop/Power Search/bash 
+❯ cat builtins.txt
+
+Desktop/Power Search/bash 
+❯ file file.txt
+file.txt: ASCII text
+
+Desktop/Power Search/bash 
+❯ file *.txt
+builtins.txt: ASCII text
+file.txt:     ASCII text
+
+
+Desktop/Power Search/bash 
+❯ echo $PATH |tr : '\n'
+/home/amit/.npm-global/bin
+/home/amit/.nvm/versions/node/v22.21.1/bin
+/home/amit/.npm-global/bin
+/usr/local/sbin
+/usr/local/bin
+/usr/sbin
+/usr/bin
+/sbin
+/bin
+/usr/games
+/usr/local/games
+/snap/bin
+/home/amit/.vscode/extensions/ms-python.debugpy-2025.18.0-linux-x64/bundled/scripts/noConfigScripts
+/home/amit/.config/Code/User/globalStorage/github.copilot-chat/debugCommand
+
+
+Desktop/Power Search/bash 
+❯ echo $PWD
+/home/amit/Desktop/Power Search/bash
+
+Desktop/Power Search/bash 
+❯ pwd
+/home/amit/Desktop/Power Search/bash
+
+Desktop/Power Search/bash 
+❯ echo $USER
+amit
+
+Desktop/Power Search/bash 
+❯ whoami
+amit
+
+Desktop/Power Search/bash 
+❯ echo $SHELL
+/bin/bash
+
+Desktop/Power Search/bash 
+❯ echo $HOSTNAME
+amit
+
+Desktop/Power Search/bash 
+❯ echo $LINUXTYPE
+
+
+
+Desktop/Power Search/bash 
+❯ name=abhi
+
+Desktop/Power Search/bash 
+❯ echo $name
+abhi
+
+Desktop/Power Search/bash 
+❯ title='kumar    jha'
+
+Desktop/Power Search/bash 
+❯ echo $title
+kumar jha
+
+Desktop/Power Search/bash 
+❯ unset name
+
+Desktop/Power Search/bash 
+❯ echo $name
+
+
+
+Desktop/Power Search/bash 
+❯ uname
+Linux
+
+Desktop/Power Search/bash 
+❯ uname -a
+Linux amit 6.8.0-71-generic #71-Ubuntu SMP PREEMPT_DYNAMIC Tue Jul 22 16:52:38 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+
+Desktop/Power Search/bash 
+❯ thing=`uname -a`
+
+Desktop/Power Search/bash 
+❯ echo $thing
+Linux amit 6.8.0-71-generic #71-Ubuntu SMP PREEMPT_DYNAMIC Tue Jul 22 16:52:38 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux

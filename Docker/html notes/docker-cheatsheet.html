@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Added responsive viewport meta tag -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0"
+    />
+    <title>Docker Complete Reference Guide</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <style>
+      body {
+        background: linear-gradient(135deg, #0a0a2a 0%, #0c0c1d 100%);
+        min-height: 100vh;
+      }
+      .glow {
+        text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff3;
+      }
+      .card {
+        background: rgba(10, 15, 35, 0.8);
+        border: 1px solid #13f2ff44;
+        box-shadow: 0 0 25px #0ff3, inset 0 1px 0 #ffffff0d;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 35px #0ff5, 0 0 40px #0ff2;
+      }
+      .code {
+        background: #090019;
+        border: 1px solid #9500ff55;
+        border-left: 4px solid #0ff;
+        position: relative;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .code-header {
+        background: rgba(0, 255, 255, 0.1);
+        padding: 8px 15px;
+        border-bottom: 1px solid #0ff4;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .copy-btn {
+        background: linear-gradient(135deg, #0ff 0%, #00a3a3 100%);
+        border: none;
+        padding: 6px 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        min-width: 60px;
+      }
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #00ffff 0%, #008080 100%);
+        transform: translateY(-2px);
+      }
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #00ff88 0%, #008844 100%);
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin: 4px;
+      }
+      .badge-info {
+        background: rgba(0, 255, 255, 0.2);
+        color: #0ff;
+        border: 1px solid #0ff4;
+      }
+      .badge-success {
+        background: rgba(0, 255, 128, 0.2);
+        color: #0f8;
+        border: 1px solid #0f84;
+      }
+      .badge-warning {
+        background: rgba(255, 200, 0, 0.2);
+        color: #ff0;
+        border: 1px solid #ff04;
+      }
+      .badge-danger {
+        background: rgba(255, 50, 50, 0.2);
+        color: #f55;
+        border: 1px solid #f554;
+      }
+      .tip {
+        background: rgba(0, 255, 255, 0.05);
+        border-left: 3px solid #0ff;
+        padding: 12px 15px;
+        margin: 10px 0;
+        border-radius: 0 5px 5px 0;
+        font-size: 0.9rem;
+      }
+      .command-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 12px 0;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+      @media (min-width: 768px) {
+        .command-grid {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+        }
+      }
+      .command-grid:hover {
+        background: rgba(255, 255, 255, 0.05);
+        transform: translateX(5px);
+      }
+      .command-text {
+        font-family: 'JetBrains Mono', monospace;
+        color: #0f8;
+        word-break: break-all;
+        font-size: 0.9rem;
+      }
+      .command-desc {
+        color: #ccc;
+        font-size: 0.9rem;
+        flex: 1;
+        padding: 0 10px;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      /* Mobile-specific adjustments */
+      @media (max-width: 767px) {
+        .header-badges {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .card {
+          padding: 20px !important;
+          margin: 10px 0;
+        }
+
+        pre {
+          font-size: 0.8rem;
+          padding: 12px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .code pre {
+          white-space: pre;
+        }
+
+        .copy-btn {
+          padding: 8px 16px;
+          font-size: 0.85rem;
+          min-height: 36px;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="text-gray-200">
+    <!-- Header -->
+    <div
+      class="text-center py-6 md:py-10 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border-b border-cyan-500/30"
+    >
+      <h1
+        class="text-2xl md:text-4xl lg:text-5xl font-bold text-cyan-400 glow mb-4 px-2"
+      >
+        <i class="fa-brands fa-docker"></i> Docker Complete Reference Guide
+      </h1>
+      <p class="text-lg md:text-xl text-purple-300 mb-6 px-4">
+        Master Docker with Real Examples & Simple Explanations
+      </p>
+      <div class="header-badges px-2">
+        <span class="badge badge-info pulse"
+          ><i class="fa-solid fa-lightbulb"></i> 50+ Commands</span
+        >
+        <span class="badge badge-success"
+          ><i class="fa-solid fa-code"></i> Real Examples</span
+        >
+        <span class="badge badge-warning"
+          ><i class="fa-solid fa-clipboard"></i> Copy Ready</span
+        >
+      </div>
+    </div>
+
+    <div
+      class="max-w-6xl mx-auto px-3 md:px-4 space-y-6 md:space-y-10 py-6 md:py-10"
+    >
+      <!-- What is Docker - Expanded -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-circle-info"></i> What is Docker?
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div class="space-y-4">
+            <div class="p-4 bg-cyan-900/20 rounded-lg">
+              <h3 class="text-lg md:text-xl text-cyan-200 mb-2">
+                <i class="fa-solid fa-box"></i> Containers
+              </h3>
+              <p class="text-gray-300 text-sm md:text-base">
+                Think of containers as
+                <span class="text-cyan-300">lightweight virtual machines</span>
+                that package your app with everything it needs to run.
+              </p>
+              <div class="mt-3 p-3 bg-black/30 rounded">
+                <p class="text-sm text-gray-400">
+                  Real example: When you run
+                  <code class="text-green-400">docker run nginx</code>, you get
+                  a complete web server in seconds!
+                </p>
+              </div>
+            </div>
+
+            <div class="p-4 bg-purple-900/20 rounded-lg">
+              <h3 class="text-lg md:text-xl text-purple-200 mb-2">
+                <i class="fa-solid fa-image"></i> Images
+              </h3>
+              <p class="text-gray-300 text-sm md:text-base">
+                Images are
+                <span class="text-purple-300">read-only templates</span> used to
+                create containers. Like a recipe for your app.
+              </p>
+              <div class="mt-3 p-3 bg-black/30 rounded">
+                <p class="text-sm text-gray-400">
+                  Your Dockerfile builds an image, then you create containers
+                  from it.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="p-4 bg-green-900/20 rounded-lg">
+              <h3 class="text-lg md:text-xl text-green-200 mb-2">
+                <i class="fa-solid fa-layer-group"></i> Layered Architecture
+              </h3>
+              <p class="text-gray-300 text-sm md:text-base">
+                Docker images use <span class="text-green-300">layers</span>.
+                Each command in Dockerfile adds a layer.
+              </p>
+              <div class="mt-3">
+                <pre class="text-xs md:text-sm text-gray-400 overflow-x-auto">
+FROM node:18-alpine     ← Base layer (OS + Node)
+COPY package.json .     ← New layer
+RUN npm install        ← Another layer
+COPY . .              ← Another layer
+CMD ["npm", "start"]   ← Final layer</pre
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Docker Installation & Verification -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-download"></i> Installation & Verification
+        </h2>
+
+        <div class="space-y-4 md:space-y-6">
+          <div class="command-grid">
+            <div class="command-text">docker --version</div>
+            <div class="command-desc">Check Docker version installed</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker info</div>
+            <div class="command-desc">Detailed system-wide information</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker run hello-world</div>
+            <div class="command-desc">
+              Test installation with official test image
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="tip mt-6">
+          <i class="fa-solid fa-lightbulb text-cyan-400"></i>
+          <span class="ml-2 text-cyan-300">Pro Tip:</span>
+          <span class="text-gray-300 ml-2"
+            >Always run
+            <code class="text-green-400">docker run hello-world</code> after
+            installation to verify everything works!</span
+          >
+        </div>
+      </div>
+
+      <!-- Image Management - Detailed -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-image"></i> Image Management Mastery
+        </h2>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker images</div>
+            <div class="command-desc">
+              List all downloaded images on your system
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker pull ubuntu:22.04</div>
+            <div class="command-desc">
+              Download Ubuntu 22.04 image (specify version)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker pull nginx:alpine</div>
+            <div class="command-desc">
+              Download lightweight Nginx Alpine image
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker image inspect nginx</div>
+            <div class="command-desc">
+              Get detailed JSON metadata about Nginx image
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker rmi nginx</div>
+            <div class="command-desc">
+              Remove Nginx image (must stop containers first)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker rmi $(docker images -q)</div>
+            <div class="command-desc">Remove ALL images (⚠️ Dangerous!)</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker image prune -a</div>
+            <div class="command-desc">
+              Remove unused images (dangling images)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker tag myapp:latest myapp:v1.0</div>
+            <div class="command-desc">Tag image with version number</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker history nginx</div>
+            <div class="command-desc">Show history/layers of Nginx image</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="tip mt-6">
+          <i class="fa-solid fa-lightbulb text-cyan-400"></i>
+          <span class="ml-2 text-cyan-300">Image Naming Convention:</span>
+          <span class="text-gray-300 ml-2"
+            >Use <code class="text-green-400">name:tag</code> format like
+            <code class="text-green-400">myapp:v1.2.3</code> or
+            <code class="text-green-400">myapp:latest</code></span
+          >
+        </div>
+      </div>
+
+      <!-- Container Operations - Complete -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-box"></i> Container Operations
+        </h2>
+
+        <h3 class="text-xl md:text-2xl text-purple-300 mb-4">
+          <i class="fa-solid fa-play"></i> Running Containers
+        </h3>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">
+              docker run -d -p 8080:80 --name webserver nginx
+            </div>
+            <div class="command-desc">
+              Run Nginx in background, map host 8080 → container 80
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker run -it ubuntu bash</div>
+            <div class="command-desc">
+              Run Ubuntu interactively with bash terminal
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker run -d --name redis -p 6379:6379 redis
+            </div>
+            <div class="command-desc">Run Redis server in background</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker run -d --name mysql -e MYSQL_ROOT_PASSWORD=pass -p
+              3306:3306 mysql
+            </div>
+            <div class="command-desc">Run MySQL with environment variable</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker run -v /host/path:/container/path nginx
+            </div>
+            <div class="command-desc">
+              Run with volume mount (persistent storage)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker run --rm alpine echo "Hello"</div>
+            <div class="command-desc">
+              Run once and auto-remove after completion
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <h3 class="text-xl md:text-2xl text-purple-300 mt-8 mb-4">
+          <i class="fa-solid fa-gears"></i> Managing Running Containers
+        </h3>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker ps</div>
+            <div class="command-desc">List running containers</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker ps -a</div>
+            <div class="command-desc">
+              List ALL containers (including stopped)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker ps -q</div>
+            <div class="command-desc">Show only container IDs</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            </div>
+            <div class="command-desc">Custom format output</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker stop container_name</div>
+            <div class="command-desc">Stop container gracefully (SIGTERM)</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker kill container_name</div>
+            <div class="command-desc">Force stop container (SIGKILL)</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker start container_name</div>
+            <div class="command-desc">Start stopped container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker restart container_name</div>
+            <div class="command-desc">Restart container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker pause container_name</div>
+            <div class="command-desc">Pause all processes in container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker unpause container_name</div>
+            <div class="command-desc">Unpause container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Container Inspection & Debugging -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-magnifying-glass"></i> Inspection & Debugging
+        </h2>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker logs container_name</div>
+            <div class="command-desc">View container logs</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker logs -f container_name</div>
+            <div class="command-desc">Follow logs (like tail -f)</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker logs --tail 100 container_name
+            </div>
+            <div class="command-desc">Show last 100 lines of logs</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker logs --since 10m container_name
+            </div>
+            <div class="command-desc">Show logs from last 10 minutes</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker exec -it container_name bash</div>
+            <div class="command-desc">Enter container with bash shell</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker exec -it container_name sh</div>
+            <div class="command-desc">
+              Enter container with sh shell (Alpine)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker exec container_name ls /app</div>
+            <div class="command-desc">
+              Run command inside container without entering
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker top container_name</div>
+            <div class="command-desc">Show running processes in container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker stats</div>
+            <div class="command-desc">
+              Live resource usage (CPU, memory, network)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker stats --format "table
+              {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+            </div>
+            <div class="command-desc">Custom stats format</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker inspect container_name</div>
+            <div class="command-desc">Detailed JSON info about container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker inspect --format='{{.NetworkSettings.IPAddress}}'
+              container_name
+            </div>
+            <div class="command-desc">Get container IP address</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Building Images -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-hammer"></i> Building Images
+        </h2>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker build -t myapp:latest .</div>
+            <div class="command-desc">
+              Build image from Dockerfile in current directory
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker build -t myapp:v1.0 -f Dockerfile.prod .
+            </div>
+            <div class="command-desc">Build with custom Dockerfile name</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker build --no-cache -t myapp .</div>
+            <div class="command-desc">
+              Build without using cache (fresh build)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">
+              docker build --build-arg NODE_ENV=production .
+            </div>
+            <div class="command-desc">Pass build arguments to Dockerfile</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-xl md:text-2xl text-purple-300 mb-4">
+            Sample Dockerfile
+          </h3>
+          <div class="code">
+            <div class="code-header">
+              <span class="text-cyan-300">Dockerfile</span>
+              <button class="copy-btn" onclick="copyCode(this)">
+                Copy All
+              </button>
+            </div>
+            <pre class="p-4 text-green-400 overflow-x-auto text-sm">
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json .
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3000
+USER node
+CMD ["node", "index.js"]</pre
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Networks & Volumes -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-network-wired"></i> Networks & Volumes
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-xl md:text-2xl text-purple-300 mb-4">
+              Network Commands
+            </h3>
+            <div class="space-y-2">
+              <div class="command-grid">
+                <div class="command-text">docker network ls</div>
+                <div class="command-desc">List networks</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker network create mynet</div>
+                <div class="command-desc">Create custom network</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run --net=mynet --name app1 nginx
+                </div>
+                <div class="command-desc">Run container in custom network</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker network inspect bridge</div>
+                <div class="command-desc">Inspect default bridge network</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker network connect mynet container_name
+                </div>
+                <div class="command-desc">Connect container to network</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl md:text-2xl text-purple-300 mb-4">
+              Volume Commands
+            </h3>
+            <div class="space-y-2">
+              <div class="command-grid">
+                <div class="command-text">docker volume ls</div>
+                <div class="command-desc">List volumes</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker volume create db_data</div>
+                <div class="command-desc">Create volume</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run -v db_data:/var/lib/mysql mysql
+                </div>
+                <div class="command-desc">Use named volume for MySQL data</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker run -v $(pwd):/app node</div>
+                <div class="command-desc">Mount current directory to /app</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker volume prune</div>
+                <div class="command-desc">Remove unused volumes</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cleanup & System Management -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-broom"></i> Cleanup & System Management
+        </h2>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker rm container_name</div>
+            <div class="command-desc">Remove stopped container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker rm -f container_name</div>
+            <div class="command-desc">Force remove running container</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker rm $(docker ps -aq)</div>
+            <div class="command-desc">Remove ALL containers (stopped)</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker system df</div>
+            <div class="command-desc">Show Docker disk usage</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker system prune</div>
+            <div class="command-desc">Remove all unused data</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker system prune -a --volumes</div>
+            <div class="command-desc">
+              Remove everything (images, containers, volumes)
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="tip mt-6">
+          <i class="fa-solid fa-triangle-exclamation text-red-400"></i>
+          <span class="ml-2 text-red-300">Warning:</span>
+          <span class="text-gray-300 ml-2"
+            ><code class="text-green-400">docker system prune -a</code> will
+            delete ALL images and containers. Use carefully!</span
+          >
+        </div>
+      </div>
+
+      <!-- Docker Compose Basics -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-layer-group"></i> Docker Compose Basics
+        </h2>
+
+        <div class="space-y-4">
+          <div class="command-grid">
+            <div class="command-text">docker-compose up</div>
+            <div class="command-desc">
+              Start services defined in docker-compose.yml
+            </div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker-compose up -d</div>
+            <div class="command-desc">Start services in background</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker-compose down</div>
+            <div class="command-desc">Stop and remove services</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker-compose ps</div>
+            <div class="command-desc">List Compose services</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker-compose logs</div>
+            <div class="command-desc">View logs for all services</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+
+          <div class="command-grid">
+            <div class="command-text">docker-compose build</div>
+            <div class="command-desc">Build images for services</div>
+            <button
+              class="copy-btn text-xs md:text-sm"
+              onclick="copyCode(this)"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-xl md:text-2xl text-purple-300 mb-4">
+            Sample docker-compose.yml
+          </h3>
+          <div class="code">
+            <div class="code-header">
+              <span class="text-cyan-300">docker-compose.yml</span>
+              <button class="copy-btn" onclick="copyCode(this)">
+                Copy All
+              </button>
+            </div>
+            <pre class="p-4 text-green-400 overflow-x-auto text-sm">
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:</pre
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Practical Examples -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-laptop-code"></i> Practical Examples
+        </h2>
+
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-xl md:text-2xl text-purple-300 mb-3">
+              1. Development Workflow
+            </h3>
+            <div class="space-y-2">
+              <div class="command-grid">
+                <div class="command-text">docker build -t myapp .</div>
+                <div class="command-desc">Build your app</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run -d -p 3000:3000 --name myapp-container myapp
+                </div>
+                <div class="command-desc">Run in background</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">docker logs -f myapp-container</div>
+                <div class="command-desc">Monitor logs</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker exec -it myapp-container sh
+                </div>
+                <div class="command-desc">Debug inside container</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl md:text-2xl text-purple-300 mb-3">
+              2. Database Setup
+            </h3>
+            <div class="space-y-2">
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run -d --name mysql-db -e MYSQL_ROOT_PASSWORD=secret -p
+                  3306:3306 mysql:8
+                </div>
+                <div class="command-desc">Run MySQL database</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run -d --name redis-cache -p 6379:6379 redis
+                </div>
+                <div class="command-desc">Run Redis cache</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl md:text-2xl text-purple-300 mb-3">
+              3. Web Server Setup
+            </h3>
+            <div class="space-y-2">
+              <div class="command-grid">
+                <div class="command-text">
+                  docker run -d --name nginx-proxy -p 80:80 -p 443:443 -v
+                  /nginx/conf:/etc/nginx nginx
+                </div>
+                <div class="command-desc">Nginx with custom config</div>
+                <button
+                  class="copy-btn text-xs md:text-sm"
+                  onclick="copyCode(this)"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cheat Sheet -->
+      <div class="card p-5 md:p-8 rounded-2xl">
+        <h2 class="text-2xl md:text-3xl text-cyan-300 glow mb-4">
+          <i class="fa-solid fa-scroll"></i> Quick Cheat Sheet
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <h3 class="text-lg md:text-xl text-purple-300">Daily Use</h3>
+            <ul class="space-y-2 text-gray-300 text-sm md:text-base">
+              <li>
+                <code class="text-green-400">docker ps</code> - Check containers
+              </li>
+              <li>
+                <code class="text-green-400">docker logs -f</code> - Follow logs
+              </li>
+              <li>
+                <code class="text-green-400">docker exec -it</code> - Enter
+                container
+              </li>
+              <li>
+                <code class="text-green-400">docker build -t</code> - Build
+                image
+              </li>
+              <li>
+                <code class="text-green-400">docker run -d -p</code> - Run
+                container
+              </li>
+            </ul>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg md:text-xl text-purple-300">Troubleshooting</h3>
+            <ul class="space-y-2 text-gray-300 text-sm md:text-base">
+              <li>
+                <code class="text-green-400">docker inspect</code> - Debug
+                details
+              </li>
+              <li>
+                <code class="text-green-400">docker stats</code> - Resource
+                usage
+              </li>
+              <li>
+                <code class="text-green-400">docker top</code> - View processes
+              </li>
+              <li>
+                <code class="text-green-400">docker system df</code> - Disk
+                usage
+              </li>
+              <li>
+                <code class="text-green-400">docker events</code> - Real-time
+                events
+              </li>
+            </ul>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg md:text-xl text-purple-300">Cleanup</h3>
+            <ul class="space-y-2 text-gray-300 text-sm md:text-base">
+              <li>
+                <code class="text-green-400">docker system prune</code> - Clean
+                unused
+              </li>
+              <li>
+                <code class="text-green-400">docker rm $(docker ps -aq)</code> -
+                Remove all containers
+              </li>
+              <li>
+                <code class="text-green-400"
+                  >docker rmi $(docker images -q)</code
+                >
+                - Remove all images
+              </li>
+              <li>
+                <code class="text-green-400">docker volume prune</code> - Clean
+                volumes
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center py-6 md:py-10 border-t border-cyan-500/30">
+        <p class="text-xl md:text-2xl text-cyan-300 mb-4">
+          🚀 Keep Crushing Docker, Amit!
+        </p>
+        <p class="text-gray-400 text-sm md:text-base">
+          Remember: Practice makes perfect. Try these commands daily!
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 md:gap-4 mt-4 md:mt-6">
+          <span class="badge badge-info"
+            ><i class="fa-solid fa-code"></i> 100+ Commands</span
+          >
+          <span class="badge badge-success"
+            ><i class="fa-solid fa-check"></i> Production Ready</span
+          >
+          <span class="badge badge-warning"
+            ><i class="fa-solid fa-rocket"></i> Keep Learning</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Enhanced copy functionality
+      function copyCode(button) {
+        // Get the command from the grid structure
+        const grid = button.closest('.command-grid');
+        const commandElement = grid.querySelector('.command-text');
+        let command = commandElement.textContent;
+
+        // Or get from pre tag if in code block
+        if (!command && grid.querySelector('pre')) {
+          command = grid.querySelector('pre').textContent;
+        }
+
+        // Copy to clipboard
+        navigator.clipboard
+          .writeText(command)
+          .then(() => {
+            // Visual feedback
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+            button.innerHTML = '<i class="fa-solid fa-times"></i> Failed';
+            setTimeout(() => {
+              button.innerHTML = 'Copy';
+            }, 2000);
+          });
+      }
+
+      // Add copy functionality to all code blocks with headers
+      document.querySelectorAll('.code-header .copy-btn').forEach((btn) => {
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          const codeBlock = this.closest('.code').querySelector('pre');
+          const text = codeBlock.textContent;
+
+          navigator.clipboard.writeText(text).then(() => {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            this.classList.add('copied');
+
+            setTimeout(() => {
+              this.innerHTML = originalText;
+              this.classList.remove('copied');
+            }, 2000);
+          });
+        });
+      });
+
+      // Add hover effects to command grids
+      document.querySelectorAll('.command-grid').forEach((grid) => {
+        grid.addEventListener('mouseenter', () => {
+          const copyBtn = grid.querySelector('.copy-btn');
+          if (copyBtn) {
+            copyBtn.style.transform = 'scale(1.05)';
+          }
+        });
+
+        grid.addEventListener('mouseleave', () => {
+          const copyBtn = grid.querySelector('.copy-btn');
+          if (copyBtn && !copyBtn.classList.contains('copied')) {
+            copyBtn.style.transform = 'scale(1)';
+          }
+        });
+      });
+
+      // Add some interactive features
+      document.addEventListener('DOMContentLoaded', () => {
+        // Add click to copy on command text
+        document.querySelectorAll('.command-text').forEach((el) => {
+          el.style.cursor = 'pointer';
+          el.title = 'Click to copy';
+          el.addEventListener('click', function () {
+            navigator.clipboard.writeText(this.textContent);
+            this.style.color = '#ff0';
+            setTimeout(() => (this.style.color = '#0f8'), 1000);
+          });
+        });
+
+        // Make badges more touch-friendly
+        document.querySelectorAll('.badge').forEach((badge) => {
+          badge.style.cursor = 'pointer';
+          badge.addEventListener('click', function () {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => (this.style.transform = ''), 200);
+          });
+        });
+      });
+
+      // Touch device detection and adjustments
+      function isTouchDevice() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      }
+
+      if (isTouchDevice()) {
+        // Add mobile-specific adjustments
+        document.body.classList.add('touch-device');
+
+        // Make copy buttons larger on touch devices
+        document.querySelectorAll('.copy-btn').forEach((btn) => {
+          btn.style.padding = '10px 18px';
+          btn.style.fontSize = '0.9rem';
+        });
+      }
+    </script>
+  </body>
+</html>

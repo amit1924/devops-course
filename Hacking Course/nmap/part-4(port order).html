@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nmap Port Selection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #0a0e17;
+        color: #e0e0e0;
+      }
+
+      .code-font {
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .neon-border {
+        border: 1px solid #00d9ff;
+        box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+      }
+
+      .neon-text {
+        color: #00d9ff;
+        text-shadow: 0 0 5px rgba(0, 217, 255, 0.7);
+      }
+
+      .neon-pink {
+        color: #ff00ff;
+        text-shadow: 0 0 5px rgba(255, 0, 255, 0.7);
+      }
+
+      .neon-green {
+        color: #00ff9d;
+        text-shadow: 0 0 5px rgba(0, 255, 157, 0.7);
+      }
+
+      .neon-yellow {
+        color: #ffff00;
+        text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+      }
+
+      .dark-card {
+        background-color: #111827;
+        border-radius: 0.75rem;
+      }
+
+      .copy-btn:hover {
+        background-color: rgba(0, 217, 255, 0.1);
+      }
+
+      .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-track {
+        background: #1a202c;
+        border-radius: 4px;
+      }
+
+      .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: #00d9ff;
+        border-radius: 4px;
+      }
+
+      .command-block {
+        background-color: #1a202c;
+        border-left: 4px solid #00d9ff;
+      }
+
+      .note-highlight {
+        background-color: rgba(0, 217, 255, 0.1);
+        border-left: 4px solid #ff00ff;
+      }
+
+      .port-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .port-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 217, 255, 0.15);
+      }
+
+      .port-badge {
+        background: linear-gradient(135deg, #0a0e17 0%, #1a202c 100%);
+        border: 1px solid #2d3748;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto mb-8">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center"
+      >
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold neon-text">
+            <i class="fas fa-door-open mr-3"></i>Nmap Port Selection
+          </h1>
+          <p class="text-gray-400 mt-2">Which Ports to Scan & In What Order</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex items-center space-x-2">
+          <div
+            class="px-3 py-1 bg-cyan-900/30 rounded-full text-sm border border-cyan-700"
+          >
+            <i class="fas fa-filter mr-1"></i> Port Selection
+          </div>
+          <div
+            class="px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700"
+          >
+            <i class="fas fa-bolt mr-1"></i> Optimization
+          </div>
+        </div>
+      </div>
+
+      <!-- Introduction Card -->
+      <div class="mt-6 p-5 dark-card neon-border rounded-xl">
+        <div class="flex items-start">
+          <i class="fas fa-chart-bar text-cyan-400 mt-1 mr-3 text-2xl"></i>
+          <div>
+            <h2 class="text-xl font-bold neon-yellow mb-2">
+              From Previous Lessons:
+            </h2>
+            <p class="text-gray-300 mb-3">You learned:</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="p-3 bg-gray-900/50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-bullseye text-green-400 mr-2"></i>
+                  <h4 class="font-bold text-gray-300 text-sm">
+                    How to choose targets
+                  </h4>
+                </div>
+              </div>
+              <div class="p-3 bg-gray-900/50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-wifi text-blue-400 mr-2"></i>
+                  <h4 class="font-bold text-gray-300 text-sm">
+                    How to discover hosts
+                  </h4>
+                </div>
+              </div>
+              <div class="p-3 bg-gray-900/50 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-tools text-yellow-400 mr-2"></i>
+                  <h4 class="font-bold text-gray-300 text-sm">
+                    How to choose scan techniques
+                  </h4>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="p-4 bg-gray-900/50 rounded-lg border-l-4 border-cyan-500"
+            >
+              <p class="text-lg text-gray-300">
+                <span class="font-bold neon-green">Now the question is:</span
+                ><br />
+                👉 "Out of 65,535 ports… WHICH ones should I scan? And HOW fast
+                / in what order?"
+              </p>
+            </div>
+
+            <div class="mt-4 p-3 note-highlight rounded-lg">
+              <p class="text-gray-300 flex items-center">
+                <i class="fas fa-info-circle text-cyan-400 mr-2"></i>
+                <span>
+                  By default:
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >nmap &lt;target&gt;</code
+                  >
+                  scans:
+                  <span class="font-bold text-green-400"
+                    >✔️ Top 1000 most common TCP ports</span
+                  >
+                </span>
+              </p>
+            </div>
+
+            <div
+              class="mt-4 p-4 bg-yellow-900/20 rounded-lg border border-yellow-800"
+            >
+              <p class="text-yellow-300 flex items-center">
+                <i class="fas fa-crown mr-2"></i>
+                <span>But YOU can control everything 😎</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto">
+      <!-- Section 1: -p Option -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mr-3 border border-green-700"
+          >
+            <span class="font-bold text-green-400">1</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            -p — Choose EXACT Ports to Scan
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-6">
+              <span class="font-bold neon-yellow"
+                >This is the most powerful option in this section.</span
+              >
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Single Port -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-blue-800"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-1 text-blue-300"></i>
+                </div>
+                <h3 class="text-lg font-semibold neon-yellow">
+                  Scan Single Port
+                </h3>
+              </div>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg">nmap -p 80 192.168.1.10</code>
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-blue-700 text-blue-400 hover:bg-blue-900/30 transition"
+                onclick="copyToClipboard('nmap -p 80 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+            </div>
+
+            <!-- Multiple Ports -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-purple-800"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-list-ol text-purple-300"></i>
+                </div>
+                <h3 class="text-lg font-semibold neon-yellow">
+                  Scan Multiple Ports
+                </h3>
+              </div>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg"
+                  >nmap -p 22,80,443 192.168.1.10</code
+                >
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition"
+                onclick="copyToClipboard('nmap -p 22,80,443 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Range Scan -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-green-800"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-arrows-alt-h text-green-300"></i>
+                </div>
+                <h3 class="text-lg font-semibold neon-yellow">Scan a Range</h3>
+              </div>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg"
+                  >nmap -p 1-1000 192.168.1.10</code
+                >
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-green-700 text-green-400 hover:bg-green-900/30 transition"
+                onclick="copyToClipboard('nmap -p 1-1000 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+            </div>
+
+            <!-- All Ports -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-red-800"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-infinity text-red-300"></i>
+                </div>
+                <h3 class="text-lg font-semibold neon-yellow">
+                  Scan ALL 65535 Ports
+                </h3>
+              </div>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg">nmap -p- 192.168.1.10</code>
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-red-700 text-red-400 hover:bg-red-900/30 transition"
+                onclick="copyToClipboard('nmap -p- 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+              <div class="mt-4 p-3 bg-red-900/20 rounded-lg">
+                <p class="text-red-300 text-sm">
+                  <i class="fas fa-fire mr-2"></i>
+                  <span class="font-bold">This is the FULL brutal scan</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: TCP + UDP Together -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mr-3 border border-blue-700"
+          >
+            <span class="font-bold text-blue-400">2</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Scan TCP + UDP Together</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">
+              Normally Nmap only scans TCP. So to scan UDP too:
+            </p>
+
+            <div class="command-block p-4 rounded-lg mb-6">
+              <code class="code-font text-lg"
+                >nmap -sU -sS -p U:53,161,T:22,80 192.168.1.10</code
+              >
+            </div>
+
+            <button
+              class="copy-btn mb-6 px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap -sU -sS -p U:53,161,T:22,80 192.168.1.10')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy Command
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h4 class="font-bold text-gray-300 mb-3">Breakdown:</h4>
+              <ul class="space-y-3">
+                <li class="flex items-center">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded mr-3"
+                    >U:</code
+                  >
+                  <span class="text-gray-300">= UDP ports</span>
+                </li>
+                <li class="flex items-center">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded mr-3"
+                    >T:</code
+                  >
+                  <span class="text-gray-300">= TCP ports</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <h4 class="font-bold text-gray-300 mb-3">Example meaning:</h4>
+              <ul class="space-y-2">
+                <li class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-gray-300">Scan UDP ports 53, 161</span>
+                </li>
+                <li class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-gray-300">Scan TCP ports 22, 80</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 note-highlight rounded-lg">
+            <p class="text-gray-300">
+              <span class="font-bold neon-yellow">Without protocol prefix:</span
+              ><br />
+              👉 Same ports get added to ALL protocol scans
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Ports by Name -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700"
+          >
+            <span class="font-bold text-yellow-400">3</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Scan Ports by NAME 😎</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">
+              Instead of numbers, you can use service names.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Regular Name -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-green-800"
+            >
+              <h3 class="text-lg font-semibold neon-yellow mb-4">Example:</h3>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg"
+                  >nmap -p ftp,http 192.168.1.10</code
+                >
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-green-700 text-green-400 hover:bg-green-900/30 transition"
+                onclick="copyToClipboard('nmap -p ftp,http 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+            </div>
+
+            <!-- Wildcard -->
+            <div
+              class="port-card dark-card p-5 rounded-xl border border-purple-800"
+            >
+              <h3 class="text-lg font-semibold neon-yellow mb-4">
+                Or Wildcard:
+              </h3>
+
+              <div class="command-block p-4 rounded-lg mb-4">
+                <code class="code-font text-lg"
+                  >nmap -p http* 192.168.1.10</code
+                >
+              </div>
+              <button
+                class="copy-btn w-full px-4 py-2 rounded-lg border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition"
+                onclick="copyToClipboard('nmap -p http* 192.168.1.10')"
+              >
+                <i class="fas fa-copy mr-1"></i> Copy Command
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-gray-900/50 rounded-lg">
+            <p class="text-gray-300">
+              <i class="fas fa-database text-cyan-400 mr-2"></i>
+              This uses
+              <span class="font-bold text-cyan-400">nmap-services database</span
+              >.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 4: Intelligent Range -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700"
+          >
+            <span class="font-bold text-purple-400">4</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Intelligent Range Port Selection
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl border border-purple-800">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">Cool trick:</p>
+
+            <div class="command-block p-4 rounded-lg mb-4">
+              <code class="code-font text-lg">nmap -p 1-1024 192.168.1.10</code>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg mb-4">
+              <p class="text-gray-300">
+                <span class="font-bold neon-yellow">Meaning:</span><br />
+                👉 Scan ports 1-1024 (well-known ports)
+              </p>
+            </div>
+
+            <div class="p-4 note-highlight rounded-lg">
+              <p class="text-gray-300">
+                <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                <span class="font-bold">But usually we use numeric ranges</span>
+                — this is for specific scenarios.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Exclude Ports -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center mr-3 border border-red-700"
+          >
+            <span class="font-bold text-red-400">5</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">--exclude-ports</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-4">
+              Sometimes you DON'T want to scan certain ports.
+            </p>
+
+            <div class="command-block p-4 rounded-lg mb-6">
+              <code class="code-font text-lg"
+                >nmap -p- --exclude-ports 80,443 192.168.1.10</code
+              >
+            </div>
+
+            <button
+              class="copy-btn mb-6 px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap -p- --exclude-ports 80,443 192.168.1.10')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy Command
+            </button>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <p class="text-gray-300">
+                <span class="font-bold neon-yellow">Meaning:</span><br />
+                Scan ALL ports except 80 & 443
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 bg-green-900/20 rounded-lg border border-green-800">
+            <h4 class="font-bold text-gray-300 mb-3">Works for:</h4>
+            <div class="flex flex-wrap gap-2">
+              <span
+                class="px-3 py-1 bg-gray-900 rounded-full text-sm border border-gray-700"
+                >TCP</span
+              >
+              <span
+                class="px-3 py-1 bg-gray-900 rounded-full text-sm border border-gray-700"
+                >UDP</span
+              >
+              <span
+                class="px-3 py-1 bg-gray-900 rounded-full text-sm border border-gray-700"
+                >SCTP</span
+              >
+              <span
+                class="px-3 py-1 bg-gray-900 rounded-full text-sm border border-gray-700"
+                >IP Protocol scans (-sO)</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Fast Scan -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700"
+          >
+            <span class="font-bold text-yellow-400">6</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">Fast Scan -F</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h4 class="font-bold text-gray-300 mb-3">Default:</h4>
+                <div class="p-4 bg-gray-900/50 rounded-lg">
+                  <p class="text-gray-300">1000 ports</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="font-bold text-gray-300 mb-3">Fast Mode:</h4>
+                <div class="p-4 bg-yellow-900/20 rounded-lg">
+                  <p class="text-yellow-300">only top 100 ports</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="command-block p-4 rounded-lg mb-6">
+              <code class="code-font text-lg">nmap -F 192.168.1.10</code>
+            </div>
+
+            <button
+              class="copy-btn mb-6 px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+              onclick="copyToClipboard('nmap -F 192.168.1.10')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy Command
+            </button>
+          </div>
+
+          <div class="p-4 bg-gray-900/50 rounded-lg">
+            <h4 class="font-bold text-gray-300 mb-3">Use when:</h4>
+            <ul class="space-y-3">
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span class="text-gray-300">✔️ You want a quick idea</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span class="text-gray-300"
+                  >✔️ You're scanning a big network</span
+                >
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span class="text-gray-300">✔️ Time matters</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 7: Scan Order -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mr-3 border border-blue-700"
+          >
+            <span class="font-bold text-blue-400">7</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Random vs Sequential Scan Order
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <div class="p-4 bg-gray-900/50 rounded-lg mb-6">
+              <p class="text-gray-300">
+                <span class="font-bold neon-yellow">By default:</span> 👉 Nmap
+                randomizes port order
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h4 class="font-bold text-gray-300 mb-3">Why Randomize?</h4>
+                <ul class="space-y-2">
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300 text-sm"
+                      >✔️ Avoids triggering simple IDS</span
+                    >
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300 text-sm"
+                      >✔️ Avoids pattern detection</span
+                    >
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span class="text-gray-300 text-sm"
+                      >✔️ Avoids scan throttling</span
+                    >
+                  </li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-gray-900/50 rounded-lg">
+                <h4 class="font-bold text-gray-300 mb-3">
+                  But if you want sequential:
+                </h4>
+                <div class="command-block p-3 rounded-lg mb-3">
+                  <code class="code-font">nmap -r 192.168.1.10</code>
+                </div>
+                <p class="text-gray-300 text-sm">
+                  <span class="font-bold">Meaning:</span> → Scan ports from
+                  lowest to highest in straight order.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-800">
+            <h4 class="font-bold text-gray-300 mb-3">Use sequential when:</h4>
+            <ul class="space-y-2">
+              <li class="flex items-center">
+                <i class="fas fa-bug text-green-400 mr-2"></i>
+                <span class="text-gray-300 text-sm">✔️ Debugging</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-flask text-blue-400 mr-2"></i>
+                <span class="text-gray-300 text-sm">✔️ Research</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-tachometer-alt text-purple-400 mr-2"></i>
+                <span class="text-gray-300 text-sm"
+                  >✔️ Testing rate behavior</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 8: Top Ports -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mr-3 border border-green-700"
+          >
+            <span class="font-bold text-green-400">8</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            --top-ports — Smartest Feature
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-6">
+              Want only most commonly used ports?
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <!-- Top 20 -->
+              <div
+                class="port-card dark-card p-5 rounded-xl border border-green-800"
+              >
+                <h4 class="font-bold text-gray-300 mb-4">Top 20 Ports:</h4>
+                <div class="command-block p-4 rounded-lg mb-4">
+                  <code class="code-font text-lg"
+                    >nmap --top-ports 20 192.168.1.10</code
+                  >
+                </div>
+                <button
+                  class="copy-btn w-full px-4 py-2 rounded-lg border border-green-700 text-green-400 hover:bg-green-900/30 transition"
+                  onclick="copyToClipboard('nmap --top-ports 20 192.168.1.10')"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy Command
+                </button>
+              </div>
+
+              <!-- Top 100 -->
+              <div
+                class="port-card dark-card p-5 rounded-xl border border-cyan-800"
+              >
+                <h4 class="font-bold text-gray-300 mb-4">Top 100 Ports:</h4>
+                <div class="command-block p-4 rounded-lg mb-4">
+                  <code class="code-font text-lg"
+                    >nmap --top-ports 100 192.168.1.10</code
+                  >
+                </div>
+                <button
+                  class="copy-btn w-full px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition"
+                  onclick="copyToClipboard('nmap --top-ports 100 192.168.1.10')"
+                >
+                  <i class="fas fa-copy mr-1"></i> Copy Command
+                </button>
+              </div>
+            </div>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg">
+              <p class="text-gray-300">
+                Scans: 👉 Top N most active ports in real-world traffic
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-800">
+            <h4 class="font-bold text-gray-300 mb-3">This is AWESOME for:</h4>
+            <ul class="space-y-2">
+              <li class="flex items-center">
+                <i class="fas fa-user-shield text-green-400 mr-2"></i>
+                <span class="text-gray-300 text-sm">✔️ Pentesting</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-search text-blue-400 mr-2"></i>
+                <span class="text-gray-300 text-sm">✔️ Quick recon</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                <span class="text-gray-300 text-sm"
+                  >✔️ Practical real scans</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 9: Port Ratio -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700"
+          >
+            <span class="font-bold text-purple-400">9</span>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">--port-ratio</h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl border border-purple-800">
+          <div class="mb-6">
+            <p class="text-gray-300 mb-6">This is more nerdy / advanced.</p>
+
+            <div class="command-block p-4 rounded-lg mb-6">
+              <code class="code-font text-lg"
+                >nmap --port-ratio 0.5 192.168.1.10</code
+              >
+            </div>
+
+            <button
+              class="copy-btn mb-6 px-4 py-2 rounded-lg border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition"
+              onclick="copyToClipboard('nmap --port-ratio 0.5 192.168.1.10')"
+            >
+              <i class="fas fa-copy mr-1"></i> Copy Command
+            </button>
+
+            <div class="p-4 bg-gray-900/50 rounded-lg mb-6">
+              <p class="text-gray-300">
+                <span class="font-bold neon-yellow">Meaning:</span><br />
+                👉 Scan ONLY ports that are used more than 50% of the time
+                globally
+              </p>
+            </div>
+
+            <div class="p-4 note-highlight rounded-lg">
+              <p class="text-gray-300">
+                <i class="fas fa-info-circle text-cyan-400 mr-2"></i>
+                Every port has a popularity score in nmap database.
+                <span class="font-bold">Useful but advanced.</span>
+                You'll use top-ports more in real life.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary Table -->
+      <section class="mb-10">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center mr-3 border border-cyan-700"
+          >
+            <i class="fas fa-table text-cyan-400"></i>
+          </div>
+          <h2 class="text-2xl font-bold neon-green">
+            Port Selection Quick Reference
+          </h2>
+        </div>
+
+        <div class="dark-card p-5 rounded-xl neon-border overflow-x-auto">
+          <table class="w-full min-w-full">
+            <thead>
+              <tr class="border-b border-cyan-800">
+                <th class="text-left py-3 px-4 text-cyan-400">Option</th>
+                <th class="text-left py-3 px-4 text-cyan-400">Meaning</th>
+                <th class="text-left py-3 px-4 text-cyan-400">Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >-p</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">Choose ports</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >-p 22,80,443</code
+                  >
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >-p-</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">All 65535 ports</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >-p-</code
+                  >
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >-F</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">Fast 100 ports</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >-F</code
+                  >
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >-r</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">Sequential order</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >-r</code
+                  >
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >--top-ports N</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">Most common N ports</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >--top-ports 100</code
+                  >
+                </td>
+              </tr>
+              <tr class="hover:bg-gray-900/50">
+                <td class="py-3 px-4">
+                  <code class="code-font bg-gray-900 px-2 py-1 rounded"
+                    >--exclude-ports</code
+                  >
+                </td>
+                <td class="py-3 px-4 text-gray-300">Skip certain ports</td>
+                <td class="py-3 px-4">
+                  <code class="code-font text-sm bg-black px-2 py-1 rounded"
+                    >--exclude-ports 80,443</code
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Summary Card -->
+      <div class="mt-12 p-6 dark-card rounded-xl border border-cyan-800">
+        <div class="flex items-center mb-4">
+          <i class="fas fa-graduation-cap text-cyan-400 text-3xl mr-4"></i>
+          <div>
+            <h3 class="text-2xl font-bold neon-green mb-2">
+              Port Selection Strategy
+            </h3>
+            <p class="text-gray-300">
+              Choose the right port selection method based on your goals, time
+              constraints, and target environment.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+            <i class="fas fa-bullseye text-green-400 text-2xl mb-2"></i>
+            <h4 class="font-bold text-gray-300">Precise Targeting</h4>
+            <p class="text-gray-400 text-sm">Use -p for exact ports</p>
+          </div>
+
+          <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+            <i class="fas fa-bolt text-yellow-400 text-2xl mb-2"></i>
+            <h4 class="font-bold text-gray-300">Quick Recon</h4>
+            <p class="text-gray-400 text-sm">Use -F or --top-ports</p>
+          </div>
+
+          <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+            <i class="fas fa-infinity text-red-400 text-2xl mb-2"></i>
+            <h4 class="font-bold text-gray-300">Complete Scan</h4>
+            <p class="text-gray-400 text-sm">Use -p- for all ports</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-5 right-5 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg border border-cyan-700 transition-transform transform translate-y-20 z-50 max-w-sm hidden"
+    >
+      <div class="flex items-center">
+        <i class="fas fa-check-circle text-green-400 text-xl mr-3"></i>
+        <span id="toast-message">Command copied to clipboard!</span>
+      </div>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyToClipboard(text) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast('Command copied to clipboard!');
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy command');
+          });
+      }
+
+      // Show toast notification
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        toast.classList.remove('translate-y-20');
+        toast.classList.add('translate-y-0');
+
+        setTimeout(() => {
+          toast.classList.remove('translate-y-0');
+          toast.classList.add('translate-y-20');
+          setTimeout(() => {
+            toast.classList.add('hidden');
+          }, 300);
+        }, 3000);
+      }
+
+      // Initialize page
+      document.addEventListener('DOMContentLoaded', function () {
+        console.log('Nmap Port Selection notes loaded!');
+      });
+    </script>
+  </body>
+</html>

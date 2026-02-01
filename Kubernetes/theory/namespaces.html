@@ -1,0 +1,1850 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Namespaces Master Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .namespace-card {
+        border: 2px solid;
+        border-radius: 15px;
+        background: rgba(17, 17, 42, 0.8);
+        transition: all 0.3s ease;
+      }
+
+      .namespace-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 243, 255, 0.2);
+      }
+
+      .finance-card {
+        border-color: var(--neon-green);
+        background: rgba(0, 255, 157, 0.05);
+      }
+
+      .hr-card {
+        border-color: var(--neon-blue);
+        background: rgba(0, 243, 255, 0.05);
+      }
+
+      .devops-card {
+        border-color: var(--neon-purple);
+        background: rgba(185, 103, 255, 0.05);
+      }
+
+      .dns-visual {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        padding: 15px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        border-radius: 8px;
+      }
+
+      .cluster-visual {
+        border: 2px solid var(--neon-blue);
+        border-radius: 15px;
+        padding: 20px;
+        background: rgba(0, 243, 255, 0.05);
+      }
+
+      .tab-button {
+        background: rgba(26, 26, 58, 0.8);
+        border: 1px solid var(--neon-blue);
+        transition: all 0.3s ease;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .analogy-box {
+        border: 2px dashed var(--neon-orange);
+        background: rgba(255, 107, 53, 0.1);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .warning-box {
+        border-left: 4px solid var(--neon-orange);
+        background: rgba(255, 107, 53, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      .step-flow {
+        position: relative;
+        padding-left: 40px;
+        margin: 15px 0;
+      }
+
+      .step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        background: var(--neon-purple);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .namespace-resource {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        margin: 3px;
+        display: inline-block;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header
+      class="top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-layer-group text-2xl neon-text-purple"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-blue">
+                Kubernetes Namespaces Master Guide
+              </h1>
+              <p class="text-gray-300">
+                Logical Separation in a Single Cluster
+              </p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button
+              onclick="switchTab('basics')"
+              id="basicsTab"
+              class="tab-button active px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-building mr-2"></i>Basics
+            </button>
+            <button
+              onclick="switchTab('kubectl')"
+              id="kubectlTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-terminal mr-2"></i>kubectl Context
+            </button>
+            <button
+              onclick="switchTab('patterns')"
+              id="patternsTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-sitemap mr-2"></i>Patterns
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Basics Tab -->
+      <div id="basicsContent" class="tab-content">
+        <!-- Scenario Introduction -->
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-blue-900/50 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-user-tie text-2xl neon-text-blue"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-blue">
+                🏢 Imagine This Scenario
+              </h2>
+              <p class="text-gray-300">
+                You are Amit 👨‍💻 managing one Kubernetes cluster with 3 teams
+              </p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="namespace-card finance-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  💰 Finance Team
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Express app for financial transactions
+              </p>
+              <div class="namespace-resource">express-app</div>
+              <div class="namespace-resource">payment-api</div>
+            </div>
+
+            <div class="namespace-card hr-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-users"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-blue">🧾 HR Team</h3>
+              </div>
+              <p class="text-gray-300 mb-4">
+                Express app for employee management
+              </p>
+              <div class="namespace-resource">express-app</div>
+              <div class="namespace-resource">employee-api</div>
+            </div>
+
+            <div class="namespace-card devops-card p-6">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-purple-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-cogs"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-purple">
+                  🛠 DevOps Team
+                </h3>
+              </div>
+              <p class="text-gray-300 mb-4">Express app for CI/CD pipelines</p>
+              <div class="namespace-resource">express-app</div>
+              <div class="namespace-resource">monitoring-api</div>
+            </div>
+          </div>
+
+          <div class="bg-black/40 p-6 rounded-xl">
+            <div class="flex items-center mb-4">
+              <i class="fas fa-lightbulb text-2xl text-yellow-400 mr-3"></i>
+              <h3 class="text-xl font-bold neon-text-orange">The Problem</h3>
+            </div>
+            <p class="mb-3">
+              Without namespaces, you'd need 3 separate clusters (expensive!)
+            </p>
+            <p class="text-sm text-gray-400">
+              Namespaces let you create 3 virtual areas within one cluster
+            </p>
+          </div>
+        </div>
+
+        <!-- Creating Namespaces -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🎯 Step 1: Create Namespaces
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-6">
+            <div class="code-block p-4 rounded-lg">
+              <code class="text-green-300">kubectl create ns finance</code>
+            </div>
+            <div class="code-block p-4 rounded-lg">
+              <code class="text-green-300">kubectl create ns hr</code>
+            </div>
+            <div class="code-block p-4 rounded-lg">
+              <code class="text-green-300">kubectl create ns devops</code>
+            </div>
+          </div>
+
+          <div class="cluster-visual p-6">
+            <div class="text-center mb-4">
+              <div class="inline-block bg-blue-900/30 px-4 py-2 rounded-lg">
+                <h3 class="text-lg font-bold">Single Cluster Organization</h3>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <div class="inline-block bg-gray-900 px-6 py-3 rounded-lg mb-4">
+                <p class="font-bold">Cluster</p>
+              </div>
+
+              <div class="flex justify-center space-x-4">
+                <div class="text-center">
+                  <div class="bg-green-900/30 px-4 py-2 rounded-lg">
+                    <p class="font-bold">finance</p>
+                    <p class="text-xs text-gray-400">Namespace</p>
+                  </div>
+                  <div class="mt-2">
+                    <div class="namespace-resource">express-app</div>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="bg-blue-900/30 px-4 py-2 rounded-lg">
+                    <p class="font-bold">hr</p>
+                    <p class="text-xs text-gray-400">Namespace</p>
+                  </div>
+                  <div class="mt-2">
+                    <div class="namespace-resource">express-app</div>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="bg-purple-900/30 px-4 py-2 rounded-lg">
+                    <p class="font-bold">devops</p>
+                    <p class="text-xs text-gray-400">Namespace</p>
+                  </div>
+                  <div class="mt-2">
+                    <div class="namespace-resource">express-app</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deployment Examples -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🚀 Step 2: Deploy Express Apps
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <!-- Finance Deployment -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Finance Express App
+              </h3>
+              <div class="code-block p-4 rounded-lg">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: apps/v1
+<span class="text-blue-300">kind</span>: Deployment
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-app
+  <span class="text-blue-300">namespace</span>: finance  <span class="text-gray-500">← THIS LINE</span>
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">replicas</span>: 2
+  <span class="text-blue-300">template</span>:
+    <span class="text-blue-300">spec</span>:
+      <span class="text-blue-300">containers</span>:
+      - <span class="text-blue-300">name</span>: app
+        <span class="text-blue-300">image</span>: amit/finance-express:v1</pre>
+              </div>
+            </div>
+
+            <!-- HR Deployment -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                HR Express App
+              </h3>
+              <div class="code-block p-4 rounded-lg">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: apps/v1
+<span class="text-blue-300">kind</span>: Deployment
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-app      <span class="text-gray-500">← SAME NAME!</span>
+  <span class="text-blue-300">namespace</span>: hr        <span class="text-gray-500">← DIFFERENT NAMESPACE</span>
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">replicas</span>: 3
+  <span class="text-blue-300">template</span>:
+    <span class="text-blue-300">spec</span>:
+      <span class="text-blue-300">containers</span>:
+      - <span class="text-blue-300">name</span>: app
+        <span class="text-blue-300">image</span>: amit/hr-express:v1</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 bg-green-900/20 p-6 rounded-xl">
+            <div class="flex items-center mb-4">
+              <i
+                class="fas fa-exclamation-circle text-2xl text-green-400 mr-3"
+              ></i>
+              <h3 class="text-xl font-bold neon-text-green">
+                🧠 Important Rule
+              </h3>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="bg-red-900/20 p-4 rounded-lg">
+                <p class="text-center font-bold">Inside one Namespace:</p>
+                <p class="text-center text-lg neon-text-red">
+                  Names must be unique
+                </p>
+                <p class="text-center text-sm text-gray-400 mt-2">
+                  Cannot have two "express-app" in finance
+                </p>
+              </div>
+
+              <div class="bg-green-900/20 p-4 rounded-lg">
+                <p class="text-center font-bold">
+                  Across different Namespaces:
+                </p>
+                <p class="text-center text-lg neon-text-green">
+                  Same names are allowed
+                </p>
+                <p class="text-center text-sm text-gray-400 mt-2">
+                  Both finance and hr can have "express-app"
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-4 bg-gray-800 p-4 rounded-lg">
+              <p class="text-center font-bold">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                This is valid: finance/express-app AND hr/express-app
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross-Namespace Communication -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🌐 Cross-Namespace Communication
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8 mb-6">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Service Structure
+              </h3>
+
+              <div class="space-y-4">
+                <div class="bg-gray-800 p-4 rounded">
+                  <p class="font-bold mb-2">finance namespace:</p>
+                  <p>
+                    Service name:
+                    <code class="bg-black px-2 py-1 rounded">api</code>
+                  </p>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded">
+                  <p class="font-bold mb-2">hr namespace:</p>
+                  <p>
+                    Service name:
+                    <code class="bg-black px-2 py-1 rounded">api</code>
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-6 space-y-3">
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-network-wired"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Inside finance Namespace:</p>
+                    <p class="text-sm text-gray-400">
+                      <code>http://api</code> → finance Service
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-network-wired"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Inside hr Namespace:</p>
+                    <p class="text-sm text-gray-400">
+                      <code>http://api</code> → hr Service
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                🔍 Cross-Namespace Call
+              </h3>
+
+              <p class="mb-4">If finance app wants to call HR app:</p>
+
+              <div class="dns-visual mb-4">
+                <span class="text-green-300">http://</span>
+                <span class="text-blue-300">api</span>
+                <span class="text-gray-400">.</span>
+                <span class="text-purple-300">hr</span>
+                <span class="text-gray-400">.</span>
+                <span class="text-yellow-300">svc.cluster.local</span>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <i class="fas fa-tag text-green-400 mr-2"></i>
+                  <span
+                    ><code class="bg-gray-800 px-2 py-1 rounded">api</code> =
+                    service-name</span
+                  >
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-layer-group text-blue-400 mr-2"></i>
+                  <span
+                    ><code class="bg-gray-800 px-2 py-1 rounded">hr</code> =
+                    namespace</span
+                  >
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-globe text-purple-400 mr-2"></i>
+                  <span
+                    ><code class="bg-gray-800 px-2 py-1 rounded"
+                      >svc.cluster.local</code
+                    >
+                    = cluster domain</span
+                  >
+                </div>
+              </div>
+
+              <div class="mt-6 bg-blue-900/20 p-4 rounded">
+                <p class="text-sm">
+                  <strong>Short name</strong> → same Namespace<br />
+                  <strong>Full name</strong> → different Namespace
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Isolation Level -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-orange mb-6">
+            🔐 Isolation Level
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                What Namespaces Isolate
+              </h3>
+
+              <div class="space-y-4">
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Resource names</p>
+                    <p class="text-sm text-gray-400">
+                      Can have same names in different namespaces
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">RBAC permissions</p>
+                    <p class="text-sm text-gray-400">
+                      Different access controls per namespace
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Network policies</p>
+                    <p class="text-sm text-gray-400">
+                      Control traffic between namespaces
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">Resource quotas</p>
+                    <p class="text-sm text-gray-400">
+                      Limit CPU/memory per namespace
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="warning-box mb-4">
+                <div class="flex items-center">
+                  <i
+                    class="fas fa-exclamation-triangle text-orange-400 mr-3"
+                  ></i>
+                  <h3 class="text-lg font-bold neon-text-orange">
+                    ⚠️ Important Limitation
+                  </h3>
+                </div>
+                <p class="text-sm mt-2">
+                  Namespaces provide logical isolation, NOT physical isolation
+                </p>
+              </div>
+
+              <div class="space-y-3">
+                <p class="font-bold">
+                  Finance cannot accidentally delete HR resources:
+                </p>
+                <div class="code-block p-3 rounded">
+                  <code class="text-green-300"
+                    >kubectl delete deployment express-app -n finance</code
+                  >
+                  <p class="text-sm text-gray-400 mt-1">
+                    Only deletes finance deployment
+                  </p>
+                </div>
+
+                <div class="bg-red-900/20 p-4 rounded mt-4">
+                  <p class="text-sm font-bold mb-2">But important:</p>
+                  <p class="text-sm">They still run on same physical nodes!</p>
+                  <p class="text-xs text-gray-400 mt-1">
+                    If a node crashes, both namespaces are affected
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dev/Test/Prod Example -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🧮 Dev/Test/Prod Pattern (Very Common)
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-6">
+            <div
+              class="namespace-card p-6"
+              style="
+                border-color: #ff6b35;
+                background: rgba(255, 107, 53, 0.05);
+              "
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-orange-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-code"></i>
+                </div>
+                <h3 class="text-xl font-bold" style="color: #ff6b35">dev</h3>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <p class="font-bold">express-app (dev)</p>
+                  <div class="text-xs text-gray-400">
+                    <p>Replicas: 1</p>
+                    <p>CPU: 100m</p>
+                    <p>Memory: 128Mi</p>
+                  </div>
+                </div>
+                <div class="bg-gray-800 p-2 rounded">
+                  <p class="text-xs">Access: Engineers only</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="namespace-card p-6"
+              style="border-color: #ffc107; background: rgba(255, 193, 7, 0.05)"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-yellow-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-flask"></i>
+                </div>
+                <h3 class="text-xl font-bold" style="color: #ffc107">test</h3>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <p class="font-bold">express-app (test)</p>
+                  <div class="text-xs text-gray-400">
+                    <p>Replicas: 2</p>
+                    <p>CPU: 200m</p>
+                    <p>Memory: 256Mi</p>
+                  </div>
+                </div>
+                <div class="bg-gray-800 p-2 rounded">
+                  <p class="text-xs">Access: QA team</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="namespace-card p-6"
+              style="border-color: #00ff9d; background: rgba(0, 255, 157, 0.05)"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-rocket"></i>
+                </div>
+                <h3 class="text-xl font-bold" style="color: #00ff9d">prod</h3>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <p class="font-bold">express-app (prod)</p>
+                  <div class="text-xs text-gray-400">
+                    <p>Replicas: 5</p>
+                    <p>CPU: 500m</p>
+                    <p>Memory: 512Mi</p>
+                  </div>
+                </div>
+                <div class="bg-gray-800 p-2 rounded">
+                  <p class="text-xs">Access: Everyone</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Why Powerful -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🧠 Why Namespaces Are Powerful
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-times"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-red">
+                  Without Namespaces
+                </h3>
+              </div>
+
+              <ul class="space-y-3">
+                <li class="flex items-start">
+                  <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                  <span>All apps dumped into "default" namespace</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                  <span>Name conflicts happen frequently</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                  <span>Hard to manage and organize</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                  <span>No separation between teams</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                  <span>No per-team resource quotas</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-check"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  With Namespaces
+                </h3>
+              </div>
+
+              <ul class="space-y-3">
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                  <span>Clean separation of concerns</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                  <span>Resource quotas per namespace:</span>
+                </li>
+                <div class="ml-6 space-y-2">
+                  <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                    <span class="text-sm">Finance: max 4 CPU</span>
+                  </div>
+                  <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                    <span class="text-sm">HR: max 2 CPU</span>
+                  </div>
+                  <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                    <span class="text-sm">DevOps: max 8 CPU</span>
+                  </div>
+                </div>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                  <span>Team-specific RBAC policies</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                  <span>Clean resource organization</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Analogy -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🏗 Visual Analogy
+          </h2>
+
+          <div class="analogy-box">
+            <div class="flex items-center mb-4">
+              <i class="fas fa-building text-3xl text-orange-400 mr-4"></i>
+              <div>
+                <h3 class="text-xl font-bold neon-text-orange">
+                  Cluster = Apartment Building
+                </h3>
+                <p class="text-gray-400">One physical structure</p>
+              </div>
+            </div>
+
+            <div class="flex items-center mb-4">
+              <i class="fas fa-layer-group text-3xl text-blue-400 mr-4"></i>
+              <div>
+                <h3 class="text-xl font-bold neon-text-blue">
+                  Namespace = Floor
+                </h3>
+                <p class="text-gray-400">Separate levels in the building</p>
+              </div>
+            </div>
+
+            <div class="flex items-center mb-4">
+              <i class="fas fa-door-open text-3xl text-green-400 mr-4"></i>
+              <div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  Pods = Apartments
+                </h3>
+                <p class="text-gray-400">Individual living spaces</p>
+              </div>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-lg mt-4">
+              <p class="text-center font-bold">
+                Two people can have apartment 101 on different floors!
+              </p>
+              <div class="flex justify-center mt-3 space-x-6">
+                <div class="text-center">
+                  <div class="bg-green-900/30 px-3 py-1 rounded">
+                    <p class="font-bold">Finance Floor</p>
+                  </div>
+                  <p class="text-sm">Room 101</p>
+                </div>
+                <div class="text-center">
+                  <div class="bg-blue-900/30 px-3 py-1 rounded">
+                    <p class="font-bold">HR Floor</p>
+                  </div>
+                  <p class="text-sm">Room 101</p>
+                </div>
+              </div>
+              <p class="text-center text-sm text-gray-400 mt-3">
+                No conflict! Same building, different floors
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Answers -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🧠 Quick Answers to Your Confusion
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-question"></i>
+                </div>
+                <h3 class="text-lg font-bold neon-text-green">
+                  ❓ Can two Namespaces have same Express app name?
+                </h3>
+              </div>
+              <div class="bg-green-900/30 p-4 rounded-lg">
+                <p class="text-center font-bold text-lg">✅ YES</p>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-question"></i>
+                </div>
+                <h3 class="text-lg font-bold neon-text-blue">
+                  ❓ Can they talk to each other?
+                </h3>
+              </div>
+              <div class="bg-green-900/30 p-4 rounded-lg">
+                <p class="text-center font-bold text-lg">✅ YES</p>
+                <p class="text-center text-sm mt-2">
+                  Using full DNS name:
+                  <code>service.namespace.svc.cluster.local</code>
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-orange-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-question"></i>
+                </div>
+                <h3 class="text-lg font-bold neon-text-orange">
+                  ❓ Are they fully secure from each other?
+                </h3>
+              </div>
+              <div class="bg-red-900/30 p-4 rounded-lg">
+                <p class="text-center font-bold text-lg">❌ NO</p>
+                <p class="text-center text-sm mt-2">
+                  Only soft isolation (logical, not physical)
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-question"></i>
+                </div>
+                <h3 class="text-lg font-bold neon-text-purple">
+                  ❓ When do we use Namespaces?
+                </h3>
+              </div>
+              <div class="bg-blue-900/30 p-4 rounded-lg">
+                <p class="text-center text-sm">
+                  When we want logical separation without buying new clusters
+                </p>
+                <div class="mt-3 grid grid-cols-3 gap-2">
+                  <div class="bg-gray-800 p-1 rounded text-center text-xs">
+                    Multiple teams
+                  </div>
+                  <div class="bg-gray-800 p-1 rounded text-center text-xs">
+                    Dev/Test/Prod
+                  </div>
+                  <div class="bg-gray-800 p-1 rounded text-center text-xs">
+                    Cost saving
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- kubectl Context Tab -->
+      <div id="kubectlContent" class="tab-content hidden">
+        <!-- Problem First -->
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-red-900/50 flex items-center justify-center mr-4"
+            >
+              <i
+                class="fas fa-exclamation-triangle text-2xl neon-text-orange"
+              ></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-orange">
+                🎯 Problem First (Real Pain)
+              </h2>
+              <p class="text-gray-300">
+                Working with multiple namespaces can be exhausting
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-black/40 p-6 rounded-xl mb-6">
+            <div class="space-y-4">
+              <div class="code-block p-4 rounded-lg">
+                <code class="text-green-300">kubectl get pods</code>
+                <p class="text-sm text-gray-400 mt-2">
+                  By default, checks default namespace → You see nothing if app
+                  is in finance
+                </p>
+              </div>
+
+              <div class="code-block p-4 rounded-lg">
+                <code class="text-green-300">kubectl get pods -n finance</code>
+              </div>
+
+              <div class="code-block p-4 rounded-lg">
+                <code class="text-green-300">kubectl get svc -n finance</code>
+              </div>
+
+              <div class="code-block p-4 rounded-lg">
+                <code class="text-green-300">kubectl logs api -n finance</code>
+              </div>
+            </div>
+
+            <div class="mt-4 bg-red-900/20 p-4 rounded-lg">
+              <div class="flex items-center">
+                <i class="fas fa-tired text-2xl text-orange-400 mr-3"></i>
+                <p class="font-bold">After 50 commands, you're tired 😅</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Solution: Set Default Namespace -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🧠 Solution: Set Default Namespace for kubectl
+          </h2>
+
+          <div class="step-flow">
+            <div class="step-number">1</div>
+            <div class="bg-black/40 p-6 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-blue mb-3">
+                Tell kubectl your namespace
+              </h3>
+              <div class="code-block p-4 rounded-lg mb-4">
+                <code class="text-green-300"
+                  >kubectl config set-context --current --namespace
+                  finance</code
+                >
+              </div>
+              <p class="text-gray-300">
+                "From now on, assume I am working in finance namespace"
+              </p>
+            </div>
+          </div>
+
+          <div class="step-flow">
+            <div class="step-number">2</div>
+            <div class="bg-black/40 p-6 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-blue mb-3">
+                Now simple commands work
+              </h3>
+              <div class="code-block p-4 rounded-lg mb-2">
+                <code class="text-green-300">kubectl get pods</code>
+                <p class="text-sm text-gray-400 mt-2">
+                  Now automatically means:
+                  <code>kubectl get pods -n finance</code>
+                </p>
+              </div>
+              <div class="code-block p-4 rounded-lg">
+                <code class="text-green-300">kubectl get svc</code>
+                <p class="text-sm text-gray-400 mt-2">
+                  Now automatically means:
+                  <code>kubectl get svc -n finance</code>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 bg-green-900/20 p-6 rounded-xl">
+            <p class="text-center font-bold text-lg">
+              <i class="fas fa-magic text-green-400 mr-2"></i>
+              No more typing -n every single time!
+            </p>
+          </div>
+        </div>
+
+        <!-- Deploying to Namespace -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🚀 Deploying to a Namespace
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <!-- Imperative Way -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-green">
+                  🟢 Imperative Way (Quick Command)
+                </h3>
+              </div>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <code class="text-green-300"
+                  >kubectl apply -f app.yaml -n finance</code
+                >
+              </div>
+
+              <p class="text-gray-300 mb-4">
+                That means: "Deploy this object into finance namespace"
+              </p>
+
+              <div class="bg-gray-800 p-4 rounded">
+                <p class="text-sm">
+                  <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                  Quick but you need to remember -n flag every time
+                </p>
+              </div>
+            </div>
+
+            <!-- Declarative Way -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-file-code"></i>
+                </div>
+                <h3 class="text-xl font-bold neon-text-blue">
+                  🔵 Declarative Way (Best Practice)
+                </h3>
+              </div>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-api
+  <span class="text-blue-300">namespace</span>: finance  <span class="text-gray-500">← Specify in YAML</span></pre>
+              </div>
+
+              <p class="text-gray-300 mb-4">Now when you run:</p>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <code class="text-green-300">kubectl apply -f app.yaml</code>
+                <p class="text-sm text-gray-400 mt-2">
+                  It automatically goes to finance namespace (no -n needed)
+                </p>
+              </div>
+
+              <div class="bg-green-900/20 p-4 rounded">
+                <p class="text-sm">
+                  <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                  Clean, self-documenting, no flags to remember
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deleting Namespace -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-red mb-6">
+            🧹 Deleting a Namespace = Nuclear Delete
+          </h2>
+
+          <div class="bg-black/40 p-6 rounded-xl">
+            <div class="code-block p-4 rounded-lg mb-4">
+              <code class="text-red-300">kubectl delete ns shield</code>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 class="text-xl font-bold neon-text-orange mb-3">
+                  What Gets Deleted:
+                </h3>
+                <ul class="space-y-2">
+                  <li class="flex items-center">
+                    <i class="fas fa-box text-red-400 mr-2"></i>
+                    <span>All Pods</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-exchange-alt text-red-400 mr-2"></i>
+                    <span>All Services</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-rocket text-red-400 mr-2"></i>
+                    <span>All Deployments</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-key text-red-400 mr-2"></i>
+                    <span>All Secrets</span>
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-cogs text-red-400 mr-2"></i>
+                    <span>Everything inside that namespace</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="analogy-box">
+                <h3 class="text-lg font-bold neon-text-orange mb-2">
+                  Namespace = Folder
+                </h3>
+                <p class="text-sm">Delete folder → Delete all contents</p>
+                <div class="mt-3 flex items-center">
+                  <i class="fas fa-folder text-2xl text-yellow-400 mr-3"></i>
+                  <div>
+                    <p class="font-bold">shield/</p>
+                    <div class="text-xs text-gray-400">
+                      <p>├── pod.yaml</p>
+                      <p>├── service.yaml</p>
+                      <p>└── deployment.yaml</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="warning-box">
+              <div class="flex items-center">
+                <i
+                  class="fas fa-exclamation-circle text-2xl text-orange-400 mr-3"
+                ></i>
+                <h3 class="text-lg font-bold neon-text-orange">
+                  🧠 Important Gotcha
+                </h3>
+              </div>
+              <p class="mt-2">
+                If you delete the namespace while kubectl context points to it:
+              </p>
+              <div class="code-block p-3 rounded mt-2">
+                <code class="text-green-300">kubectl get pods</code>
+                <p class="text-sm text-gray-400 mt-1">
+                  Returns nothing (namespace doesn't exist)
+                </p>
+              </div>
+              <p class="mt-3">You must reset context:</p>
+              <div class="code-block p-3 rounded">
+                <code class="text-green-300"
+                  >kubectl config set-context --current --namespace
+                  default</code
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Production Pattern -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🏢 Real Production Pattern
+          </h2>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-6">
+            <div
+              class="namespace-card p-6"
+              style="
+                border-color: #ff6b35;
+                background: rgba(255, 107, 53, 0.05);
+              "
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-orange-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-code"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold" style="color: #ff6b35">
+                    Working on dev
+                  </h3>
+                  <p class="text-sm text-gray-400">Developers' playground</p>
+                </div>
+              </div>
+              <div class="code-block p-3 rounded mb-3">
+                <code class="text-green-300"
+                  >kubectl config set-context --current --namespace dev</code
+                >
+              </div>
+              <p class="text-sm">Deploy test build, experiment freely</p>
+            </div>
+
+            <div
+              class="namespace-card p-6"
+              style="border-color: #ffc107; background: rgba(255, 193, 7, 0.05)"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-yellow-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-flask"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold" style="color: #ffc107">
+                    Working on staging
+                  </h3>
+                  <p class="text-sm text-gray-400">Pre-production testing</p>
+                </div>
+              </div>
+              <div class="code-block p-3 rounded mb-3">
+                <code class="text-green-300"
+                  >kubectl config set-context --current --namespace
+                  staging</code
+                >
+              </div>
+              <p class="text-sm">Test integration, load testing</p>
+            </div>
+
+            <div
+              class="namespace-card p-6"
+              style="border-color: #00ff9d; background: rgba(0, 255, 157, 0.05)"
+            >
+              <div class="flex items-center mb-4">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-rocket"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold" style="color: #00ff9d">
+                    Working on prod
+                  </h3>
+                  <p class="text-sm text-gray-400">Live environment</p>
+                </div>
+              </div>
+              <div class="code-block p-3 rounded mb-3">
+                <code class="text-green-300"
+                  >kubectl config set-context --current --namespace prod</code
+                >
+              </div>
+              <p class="text-sm">Deploy stable version, monitor carefully</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Mental Model -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🔥 Final Mental Model
+          </h2>
+
+          <div class="analogy-box">
+            <div class="grid md:grid-cols-3 gap-6 text-center">
+              <div>
+                <div
+                  class="w-16 h-16 rounded-full bg-blue-900/50 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-hdd text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-lg neon-text-blue">
+                  Cluster = Hard disk
+                </h3>
+                <p class="text-sm text-gray-400">Physical storage device</p>
+              </div>
+
+              <div>
+                <div
+                  class="w-16 h-16 rounded-full bg-green-900/50 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-folder text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-lg neon-text-green">
+                  Namespace = Folder
+                </h3>
+                <p class="text-sm text-gray-400">Directory on the hard disk</p>
+              </div>
+
+              <div>
+                <div
+                  class="w-16 h-16 rounded-full bg-purple-900/50 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-terminal text-2xl"></i>
+                </div>
+                <h3 class="font-bold text-lg neon-text-purple">
+                  kubectl context = Current directory
+                </h3>
+                <p class="text-sm text-gray-400">
+                  Where you're currently working
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+              <div class="flex items-center">
+                <i class="fas fa-terminal text-green-400 mr-3"></i>
+                <div>
+                  <p class="font-bold">Setting namespace in kubectl:</p>
+                  <p class="text-sm text-gray-400">
+                    Does NOT change cluster | Does NOT move objects | Just
+                    changes where kubectl looks by default
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4 flex items-center">
+                <i class="fab fa-linux text-yellow-400 mr-3"></i>
+                <div>
+                  <p class="font-bold">
+                    It's like changing directory in Linux:
+                  </p>
+                  <div class="code-block p-3 rounded mt-2">
+                    <code class="text-green-300">cd finance</code>
+                    <p class="text-sm text-gray-400 mt-1">
+                      Now all file commands operate inside that folder
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Test -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-orange mb-6">
+            🧪 Quick Test for Clarity
+          </h2>
+
+          <div class="bg-black/40 p-6 rounded-xl">
+            <div class="mb-6">
+              <p class="text-lg mb-3">
+                If your kubectl context is set to <strong>finance</strong>, and
+                you run:
+              </p>
+              <div class="code-block p-4 rounded-lg text-center">
+                <code class="text-green-300 text-xl"
+                  >kubectl delete pod express-api</code
+                >
+              </div>
+              <p class="text-center mt-3 text-gray-400">Will it delete:</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4">
+              <div
+                class="bg-gray-800 p-4 rounded-lg text-center cursor-pointer"
+                onclick="showAnswer('A')"
+              >
+                <p class="font-bold mb-2">A)</p>
+                <p>express-api in default namespace</p>
+              </div>
+
+              <div
+                class="bg-gray-800 p-4 rounded-lg text-center cursor-pointer"
+                onclick="showAnswer('B')"
+              >
+                <p class="font-bold mb-2">B)</p>
+                <p>express-api in finance namespace</p>
+              </div>
+
+              <div
+                class="bg-gray-800 p-4 rounded-lg text-center cursor-pointer"
+                onclick="showAnswer('C')"
+              >
+                <p class="font-bold mb-2">C)</p>
+                <p>All express-api pods in cluster</p>
+              </div>
+            </div>
+
+            <div id="answerBox" class="mt-6 hidden">
+              <div class="bg-green-900/20 p-6 rounded-lg">
+                <div class="flex items-center mb-3">
+                  <i
+                    class="fas fa-check-circle text-2xl text-green-400 mr-3"
+                  ></i>
+                  <h3 class="text-xl font-bold neon-text-green">Correct! ✅</h3>
+                </div>
+                <p class="mb-3">
+                  It will delete:
+                  <strong>express-api in the finance namespace</strong>
+                </p>
+                <p class="text-gray-300">
+                  Because your kubectl context is currently pointing to finance.
+                </p>
+                <div class="code-block p-4 rounded-lg mt-4">
+                  <code class="text-green-300"
+                    >kubectl delete pod express-api</code
+                  >
+                  <p class="text-sm text-gray-400 mt-2">
+                    Actually means:
+                    <code>kubectl delete pod express-api -n finance</code>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Why This Matters -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-red mb-6">
+            🚨 Why This Matters in Real Life
+          </h2>
+
+          <div class="bg-red-900/20 p-6 rounded-xl">
+            <div class="flex items-center mb-6">
+              <i class="fas fa-skull-crossbones text-3xl text-red-400 mr-4"></i>
+              <div>
+                <h3 class="text-2xl font-bold neon-text-red">
+                  Common Real-World Disaster Scenario
+                </h3>
+                <p class="text-gray-300">
+                  This happens more often than you think!
+                </p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="mb-4">Imagine this situation:</p>
+                <div class="space-y-3">
+                  <div class="flex items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-yellow-900 flex items-center justify-center mr-3"
+                    >
+                      <i class="fas fa-user"></i>
+                    </div>
+                    <span
+                      >You THINK you're in
+                      <strong>dev</strong> namespace...</span
+                    >
+                  </div>
+                  <div class="flex items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                    >
+                      <i class="fas fa-exclamation"></i>
+                    </div>
+                    <span
+                      >But your context is actually set to
+                      <strong>prod</strong> 😅</span
+                    >
+                  </div>
+                </div>
+
+                <div class="mt-4">
+                  <p>You run:</p>
+                  <div class="code-block p-4 rounded-lg mt-2">
+                    <code class="text-red-300"
+                      >kubectl delete deployment express-api</code
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-center">
+                <div class="text-center">
+                  <div class="text-6xl mb-4">💥</div>
+                  <div class="bg-red-900/40 p-4 rounded-lg">
+                    <p class="font-bold text-xl">Boom!</p>
+                    <p class="text-sm">Production is down</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-black/40 p-4 rounded-lg">
+              <p class="text-center text-sm">
+                <i class="fas fa-exclamation-triangle text-orange-400 mr-2"></i>
+                This is a very common real-world mistake
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pro Tip -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🔥 Pro Tip (Production Habit)
+          </h2>
+
+          <div class="bg-black/40 p-6 rounded-xl">
+            <div class="flex items-center mb-6">
+              <i class="fas fa-shield-alt text-2xl text-green-400 mr-3"></i>
+              <h3 class="text-xl font-bold neon-text-green">
+                Always Check Before Dangerous Commands
+              </h3>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="mb-3">Check current context:</p>
+                <div class="code-block p-4 rounded-lg">
+                  <code class="text-green-300"
+                    >kubectl config current-context</code
+                  >
+                </div>
+              </div>
+
+              <div>
+                <p class="mb-3">Check pods to confirm location:</p>
+                <div class="code-block p-4 rounded-lg">
+                  <code class="text-green-300">kubectl get pods</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-green-900/20 p-4 rounded-lg">
+              <p class="text-center">
+                <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                <strong
+                  >Many engineers add namespace to their terminal prompt</strong
+                >
+                to avoid mistakes
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patterns Tab -->
+      <div id="patternsContent" class="tab-content hidden">
+        <!-- Coming Soon -->
+        <div class="text-center py-12">
+          <div
+            class="w-32 h-32 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-6"
+          >
+            <i class="fas fa-cogs text-4xl neon-text-purple"></i>
+          </div>
+          <h2 class="text-3xl font-bold neon-text-purple mb-4">
+            Namespace Patterns
+          </h2>
+          <p class="text-gray-300 mb-6">
+            Advanced namespace usage patterns and best practices
+          </p>
+          <div class="bg-black/40 p-6 rounded-xl max-w-md mx-auto">
+            <p class="text-sm text-gray-400">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              This section would cover:
+            </p>
+            <ul class="text-left text-sm space-y-2 mt-3">
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Namespace resource quotas</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Network policies between namespaces</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>RBAC per namespace</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Namespace lifecycle management</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-neon-blue/30 pt-8 pb-6">
+      <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-8">
+          <div>
+            <h4 class="font-bold neon-text-purple mb-4">Key Concepts</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-center">
+                <i class="fas fa-layer-group text-blue-400 mr-2"></i>
+                <span>Logical separation</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-tag text-green-400 mr-2"></i>
+                <span>Same names allowed</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-network-wired text-purple-400 mr-2"></i>
+                <span>Cross-namespace DNS</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-blue mb-4">Common Patterns</h4>
+            <ul class="space-y-2 text-sm">
+              <li class="flex items-center">
+                <i class="fas fa-code text-orange-400 mr-2"></i>
+                <span>dev / test / prod</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-users text-green-400 mr-2"></i>
+                <span>Team separation</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-project-diagram text-purple-400 mr-2"></i>
+                <span>Multi-tenant clusters</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-green mb-4">kubectl Commands</h4>
+            <div class="space-y-2 text-sm">
+              <code class="block bg-black/50 px-2 py-1 rounded"
+                >kubectl create ns NAME</code
+              >
+              <code class="block bg-black/50 px-2 py-1 rounded"
+                >kubectl config set-context --current --namespace NAME</code
+              >
+              <code class="block bg-black/50 px-2 py-1 rounded"
+                >kubectl delete ns NAME</code
+              >
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-orange mb-4">
+              ⚠️ Production Warning
+            </h4>
+            <div class="bg-red-900/20 p-3 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Always check context before delete commands!
+              </p>
+              <p class="text-xs text-gray-400 mt-2">
+                Common mistake: deleting prod instead of dev
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+          <p class="text-gray-500 text-sm">
+            🎯
+            <strong
+              >Namespaces = Virtual clusters within one physical cluster</strong
+            >
+            | Save costs | Improve organization | Enable multi-tenancy
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach((content) => {
+          content.classList.add('hidden');
+        });
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + 'Content').classList.remove('hidden');
+
+        // Add active class to clicked tab button
+        document.getElementById(tabName + 'Tab').classList.add('active');
+      }
+
+      function showAnswer(choice) {
+        const answerBox = document.getElementById('answerBox');
+
+        // Remove previous highlighting
+        document.querySelectorAll('.bg-gray-800').forEach((el) => {
+          el.classList.remove('bg-green-900/40', 'bg-red-900/40');
+        });
+
+        // Highlight correct answer
+        if (choice === 'B') {
+          document
+            .querySelectorAll('.bg-gray-800')[1]
+            .classList.add('bg-green-900/40');
+          answerBox.innerHTML = `
+                    <div class="bg-green-900/20 p-6 rounded-lg">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-check-circle text-2xl text-green-400 mr-3"></i>
+                            <h3 class="text-xl font-bold neon-text-green">Correct! ✅</h3>
+                        </div>
+                        <p class="mb-3">It will delete: <strong>express-api in the finance namespace</strong></p>
+                        <p class="text-gray-300">Because your kubectl context is currently pointing to finance.</p>
+                        <div class="code-block p-4 rounded-lg mt-4">
+                            <code class="text-green-300">kubectl delete pod express-api</code>
+                            <p class="text-sm text-gray-400 mt-2">Actually means: <code>kubectl delete pod express-api -n finance</code></p>
+                        </div>
+                    </div>
+                `;
+        } else {
+          document
+            .querySelectorAll('.bg-gray-800')
+            [choice === 'A' ? 0 : 2].classList.add('bg-red-900/40');
+          answerBox.innerHTML = `
+                    <div class="bg-red-900/20 p-6 rounded-lg">
+                        <div class="flex items-center mb-3">
+                            <i class="fas fa-times-circle text-2xl text-red-400 mr-3"></i>
+                            <h3 class="text-xl font-bold neon-text-red">Incorrect</h3>
+                        </div>
+                        <p class="mb-3">The correct answer is <strong>B) express-api in finance namespace</strong></p>
+                        <p class="text-gray-300">Your kubectl context determines which namespace commands apply to.</p>
+                    </div>
+                `;
+        }
+
+        answerBox.classList.remove('hidden');
+      }
+
+      // Interactive namespace cards
+      document.addEventListener('DOMContentLoaded', function () {
+        const namespaceCards = document.querySelectorAll('.namespace-card');
+        namespaceCards.forEach((card) => {
+          card.addEventListener('click', function () {
+            this.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              this.style.transform = '';
+            }, 200);
+          });
+        });
+
+        // Simulate namespace switching
+        const financeButton = document.querySelector(
+          'button:has(.fa-building)',
+        );
+        if (financeButton) {
+          financeButton.addEventListener('click', function () {
+            this.classList.add('pulse');
+            setTimeout(() => {
+              this.classList.remove('pulse');
+            }, 1000);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

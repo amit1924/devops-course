@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Guide: grep & cat Commands</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              neon: {
+                cyan: '#00f3ff',
+                pink: '#ff00ff',
+                green: '#00ff9d',
+                purple: '#9d00ff',
+                blue: '#0066ff',
+                yellow: '#ffea00',
+                orange: '#ff6b00',
+                red: '#ff0055',
+              },
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s infinite',
+              glow: 'glow 1.5s ease-in-out infinite alternate',
+              float: 'float 3s ease-in-out infinite',
+              typewriter: 'typewriter 2s steps(40) 1s 1 normal both',
+              blink: 'blink 0.75s step-end infinite',
+            },
+            keyframes: {
+              'pulse-glow': {
+                '0%, 100%': { opacity: 1 },
+                '50%': { opacity: 0.7 },
+              },
+              glow: {
+                from: {
+                  textShadow:
+                    '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00f3ff, 0 0 20px #00f3ff',
+                },
+                to: {
+                  textShadow:
+                    '0 0 10px #fff, 0 0 20px #00ff9d, 0 0 30px #00ff9d, 0 0 40px #00ff9d',
+                },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              typewriter: {
+                from: { width: '0' },
+                to: { width: '100%' },
+              },
+              blink: {
+                'from, to': { borderColor: 'transparent' },
+                '50%': { borderColor: '#00f3ff' },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background: linear-gradient(135deg, #0a0a0f 0%, #0f172a 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, monospace;
+      }
+
+      .neon-border {
+        border: 1px solid rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 10px rgba(0, 243, 255, 0.1),
+          inset 0 0 10px rgba(0, 243, 255, 0.05);
+      }
+
+      .neon-card {
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(157, 0, 255, 0.2);
+        box-shadow: 0 0 20px rgba(157, 0, 255, 0.1);
+      }
+
+      .grep-card {
+        background: rgba(0, 255, 157, 0.05);
+        border: 1px solid rgba(0, 255, 157, 0.2);
+      }
+
+      .cat-card {
+        background: rgba(0, 243, 255, 0.05);
+        border: 1px solid rgba(0, 243, 255, 0.2);
+      }
+
+      .command-output {
+        background: rgba(0, 0, 0, 0.3);
+        border-left: 3px solid #00ff9d;
+        font-family: 'Courier New', monospace;
+        line-height: 1.6;
+      }
+
+      .regex-visual {
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
+      }
+
+      .typewriter {
+        overflow: hidden;
+        border-right: 0.15em solid #00f3ff;
+        white-space: nowrap;
+        animation: typewriter 3s steps(40) 1s 1 normal both,
+          blink 0.75s step-end infinite;
+      }
+
+      .glowing-text {
+        text-shadow: 0 0 5px currentColor;
+      }
+
+      .feature-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin: 0 4px 4px 0;
+      }
+
+      .grep-badge {
+        background: rgba(0, 255, 157, 0.2);
+        color: #00ff9d;
+        border: 1px solid rgba(0, 255, 157, 0.3);
+      }
+
+      .cat-badge {
+        background: rgba(0, 243, 255, 0.2);
+        color: #00f3ff;
+        border: 1px solid rgba(0, 243, 255, 0.3);
+      }
+
+      .regex-badge {
+        background: rgba(255, 0, 255, 0.2);
+        color: #ff00ff;
+        border: 1px solid rgba(255, 0, 255, 0.3);
+      }
+
+      .interactive-btn {
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .interactive-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 243, 255, 0.3);
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.5);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 243, 255, 0.3);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 243, 255, 0.5);
+      }
+
+      .highlight-match {
+        background-color: rgba(255, 255, 0, 0.3);
+        border-radius: 2px;
+        padding: 0 2px;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: rgba(0, 0, 0, 0.9);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.8rem;
+      }
+
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="mb-12 text-center">
+        <div class="mb-6">
+          <h1 class="text-5xl md:text-6xl font-bold mb-4">
+            <span class="text-neon-green glowing-text animate-pulse-glow"
+              >grep</span
+            >
+            <span class="text-gray-400 mx-4">&</span>
+            <span class="text-neon-cyan glowing-text animate-pulse-glow"
+              >cat</span
+            >
+          </h1>
+          <div class="typewriter inline-block text-2xl text-neon-purple mt-2">
+            Master Text Processing in Linux
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 mt-8">
+          <div class="text-center">
+            <div class="text-3xl text-neon-green font-bold">grep</div>
+            <div class="text-sm text-gray-400">
+              Global Regular Expression Print
+            </div>
+          </div>
+          <div class="text-center">
+            <div class="text-3xl text-neon-cyan font-bold">cat</div>
+            <div class="text-sm text-gray-400">ConCATenate files</div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap justify-center gap-2">
+          <span class="feature-badge grep-badge"
+            ><i class="fas fa-search mr-1"></i>Pattern Matching</span
+          >
+          <span class="feature-badge cat-badge"
+            ><i class="fas fa-file-alt mr-1"></i>File Concatenation</span
+          >
+          <span class="feature-badge regex-badge"
+            ><i class="fas fa-code mr-1"></i>Regular Expressions</span
+          >
+          <span class="feature-badge grep-badge"
+            ><i class="fas fa-filter mr-1"></i>Text Filtering</span
+          >
+          <span class="feature-badge cat-badge"
+            ><i class="fas fa-eye mr-1"></i>File Viewing</span
+          >
+          <span class="feature-badge grep-badge"
+            ><i class="fas fa-bolt mr-1"></i>Fast Searching</span
+          >
+        </div>
+      </header>
+
+      <!-- Navigation -->
+      <nav class="mb-10">
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a
+            href="#grep-theory"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-green/10 transition interactive-btn"
+          >
+            <i class="fas fa-search mr-2 text-neon-green"></i>grep Theory
+          </a>
+          <a
+            href="#grep-examples"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-green/20 transition interactive-btn"
+          >
+            <i class="fas fa-code mr-2 text-neon-green"></i>grep Examples
+          </a>
+          <a
+            href="#cat-theory"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-cyan/10 transition interactive-btn"
+          >
+            <i class="fas fa-file-alt mr-2 text-neon-cyan"></i>cat Theory
+          </a>
+          <a
+            href="#cat-examples"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-cyan/20 transition interactive-btn"
+          >
+            <i class="fas fa-file-code mr-2 text-neon-cyan"></i>cat Examples
+          </a>
+          <a
+            href="#comparison"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-purple/10 transition interactive-btn"
+          >
+            <i class="fas fa-balance-scale mr-2 text-neon-purple"></i>Comparison
+          </a>
+          <a
+            href="#advanced"
+            class="neon-border px-4 py-2 rounded-lg hover:bg-neon-orange/10 transition interactive-btn"
+          >
+            <i class="fas fa-rocket mr-2 text-neon-orange"></i>Advanced Usage
+          </a>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- GREP - Left Column -->
+        <div class="space-y-8">
+          <!-- grep Theory -->
+          <section id="grep-theory" class="grep-card p-6 rounded-2xl">
+            <div class="flex items-center mb-6">
+              <div class="text-4xl mr-4 text-neon-green">
+                <i class="fas fa-search"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-neon-green">
+                  grep - Theory & Fundamentals
+                </h2>
+                <p class="text-gray-400">Global Regular Expression Print</p>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-yellow mb-3">
+                  <i class="fas fa-lightbulb mr-2"></i>What is grep?
+                </h3>
+                <p class="text-gray-300 mb-3">
+                  <strong>grep</strong> is a command-line utility for searching
+                  plain-text data sets for lines that match a regular expression
+                  pattern. It's one of the most powerful and frequently used
+                  commands in Unix-like operating systems.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <h4 class="font-bold text-neon-cyan mb-2">Basic Syntax</h4>
+                    <div class="command-output p-3 rounded text-sm">
+                      <span class="text-neon-green">grep</span> [options]
+                      <span class="text-neon-yellow">pattern</span> [file...]
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      Common Use Cases
+                    </h4>
+                    <ul class="text-sm space-y-1">
+                      <li>• Search for specific text in files</li>
+                      <li>• Filter command output</li>
+                      <li>• Find patterns in log files</li>
+                      <li>• Extract specific lines</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- How grep Works -->
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-purple mb-3">
+                  <i class="fas fa-cogs mr-2"></i>How grep Works Internally
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-green/20 text-neon-green p-2 rounded mr-3"
+                    >
+                      1
+                    </div>
+                    <div>
+                      <strong class="text-neon-cyan">Input Reading</strong>
+                      <p class="text-sm text-gray-400">
+                        grep reads input line by line from files or stdin
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-green/20 text-neon-green p-2 rounded mr-3"
+                    >
+                      2
+                    </div>
+                    <div>
+                      <strong class="text-neon-cyan">Pattern Matching</strong>
+                      <p class="text-sm text-gray-400">
+                        Compares each line against the specified regular
+                        expression
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-green/20 text-neon-green p-2 rounded mr-3"
+                    >
+                      3
+                    </div>
+                    <div>
+                      <strong class="text-neon-cyan">Output Filtering</strong>
+                      <p class="text-sm text-gray-400">
+                        Prints only lines that match the pattern (by default)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- grep Family -->
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-orange mb-3">
+                  <i class="fas fa-users mr-2"></i>The grep Family
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 class="font-bold text-neon-green">grep</h4>
+                    <p class="text-sm text-gray-400">
+                      Basic grep with BRE (Basic Regular Expressions)
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-cyan">egrep / grep -E</h4>
+                    <p class="text-sm text-gray-400">
+                      Extended Regular Expressions (ERE)
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-pink">fgrep / grep -F</h4>
+                    <p class="text-sm text-gray-400">
+                      Fixed strings (no regex, faster)
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-yellow">rgrep / grep -r</h4>
+                    <p class="text-sm text-gray-400">
+                      Recursive search in directories
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- grep Examples -->
+          <section id="grep-examples" class="grep-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-green border-b border-neon-green/30 pb-3"
+            >
+              <i class="fas fa-code mr-3"></i>grep - Complete Examples
+            </h2>
+
+            <div class="space-y-8">
+              <!-- Basic Search Examples -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-cyan">
+                  Basic Search Examples
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      1. Simple Text Search
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep "error"
+                      logfile.txt<br />
+                      <span class="text-gray-400">
+                        [2023-12-22 10:30:15]
+                        <span class="highlight-match">ERROR</span>: Connection
+                        failed<br />
+                        [2023-12-22 11:45:22]
+                        <span class="highlight-match">error</span> 404 not
+                        found<br />
+                        FATAL <span class="highlight-match">ERROR</span>: System
+                        crash detected
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Case-sensitive search for "error"
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      2. Case-Insensitive Search
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -i "error"
+                      logfile.txt<br />
+                      <span class="text-gray-400">
+                        [2023-12-22 10:30:15]
+                        <span class="highlight-match">ERROR</span>: Connection
+                        failed<br />
+                        [2023-12-22 11:45:22]
+                        <span class="highlight-match">error</span> 404 not
+                        found<br />
+                        FATAL <span class="highlight-match">ERROR</span>: System
+                        crash detected<br />
+                        Warning: Minor
+                        <span class="highlight-match">Error</span> in processing
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Matches ERROR, error, Error, etc.
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      3. Search Multiple Files
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep "TODO" *.py
+                      *.js<br />
+                      <span class="text-gray-400">
+                        app.py:<span class="highlight-match">TODO</span>: Add
+                        error handling here<br />
+                        utils.py:<span class="highlight-match">TODO</span>:
+                        Optimize this function<br />
+                        script.js:// <span class="highlight-match">TODO</span>:
+                        Implement validation
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Searches in all .py and .js files
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Advanced grep Examples -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-purple">
+                  Advanced grep Examples
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      4. Invert Match (Exclude)
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -v "debug"
+                      app.log<br />
+                      <span class="text-gray-400">
+                        [INFO] Application started<br />
+                        [ERROR] Database connection failed<br />
+                        [WARN] High memory usage<br />
+                        <span class="text-gray-500"
+                          ># DEBUG lines are excluded</span
+                        >
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Shows lines NOT containing "debug"
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      5. Count Matches
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -c "success"
+                      transactions.log<br />
+                      <span class="text-gray-400">42</span><br /><br />
+                      <span class="text-neon-green">$</span> grep -c -v "failed"
+                      transactions.log<br />
+                      <span class="text-gray-400">158</span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Counts matching/non-matching lines
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      6. Line Numbers
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -n "function"
+                      script.js<br />
+                      <span class="text-gray-400">
+                        15:function calculateTotal() {<br />
+                        42:function validateInput(input) {<br />
+                        78:function init() {
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Shows line numbers with matches
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      7. Recursive Search
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -r "TODO" .<br />
+                      <span class="text-gray-400">
+                        ./src/main.py:TODO: Refactor this module<br />
+                        ./src/utils.py:TODO: Add logging<br />
+                        ./tests/test_api.py:TODO: Write more tests<br />
+                        ./docs/README.md:TODO: Update installation guide
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Recursively searches all files in current directory
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Regular Expression Examples -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-orange">
+                  Regular Expression Examples
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      8. Basic Regex Patterns
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -E
+                      "^\[ERROR\]" logfile.txt<br />
+                      <span class="text-gray-400">
+                        <span class="highlight-match">[ERROR]</span>: Database
+                        connection failed<br />
+                        <span class="highlight-match">[ERROR]</span>: File not
+                        found<br />
+                        <span class="text-gray-500"
+                          ># Matches lines starting with [ERROR]</span
+                        > </span
+                      ><br /><br />
+                      <span class="text-neon-green">$</span> grep -E
+                      "\.(py|js|java)$" files.txt<br />
+                      <span class="text-gray-400">
+                        app.py<br />
+                        script.js<br />
+                        Main.java<br />
+                        <span class="text-gray-500"
+                          ># Matches .py, .js, or .java extensions</span
+                        >
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      9. Character Classes
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -E
+                      "[0-9]{3}-[0-9]{3}-[0-9]{4}" contacts.txt<br />
+                      <span class="text-gray-400">
+                        John: 555-123-4567<br />
+                        Jane: 888-999-0000<br />
+                        <span class="text-gray-500"
+                          ># Matches phone number patterns</span
+                        > </span
+                      ><br /><br />
+                      <span class="text-neon-green">$</span> grep -E
+                      "[A-Z][a-z]+ [A-Z][a-z]+" names.txt<br />
+                      <span class="text-gray-400">
+                        John Smith<br />
+                        Alice Johnson<br />
+                        <span class="text-gray-500"
+                          ># Matches "First Last" name format</span
+                        >
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      10. Word Boundaries
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> grep -w "run"
+                      commands.txt<br />
+                      <span class="text-gray-400">
+                        Please run the script<br />
+                        Don't run with sudo<br />
+                        <span class="text-gray-500"
+                          ># Matches "run" but not "running" or "prune"</span
+                        >
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- CAT - Right Column -->
+        <div class="space-y-8">
+          <!-- cat Theory -->
+          <section id="cat-theory" class="cat-card p-6 rounded-2xl">
+            <div class="flex items-center mb-6">
+              <div class="text-4xl mr-4 text-neon-cyan">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-neon-cyan">
+                  cat - Theory & Fundamentals
+                </h2>
+                <p class="text-gray-400">Concatenate and Display Files</p>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-yellow mb-3">
+                  <i class="fas fa-lightbulb mr-2"></i>What is cat?
+                </h3>
+                <p class="text-gray-300 mb-3">
+                  <strong>cat</strong> (short for concatenate) is a standard
+                  Unix utility that reads files sequentially, writing them to
+                  standard output. Despite its simple name, it's incredibly
+                  versatile.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <h4 class="font-bold text-neon-green mb-2">Basic Syntax</h4>
+                    <div class="command-output p-3 rounded text-sm">
+                      <span class="text-neon-green">cat</span> [options]
+                      [file...]
+                    </div>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      Primary Functions
+                    </h4>
+                    <ul class="text-sm space-y-1">
+                      <li>• Display file contents</li>
+                      <li>• Concatenate multiple files</li>
+                      <li>• Create new files</li>
+                      <li>• Copy/append file content</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- How cat Works -->
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-purple mb-3">
+                  <i class="fas fa-cogs mr-2"></i>How cat Works Internally
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-cyan/20 text-neon-cyan p-2 rounded mr-3"
+                    >
+                      1
+                    </div>
+                    <div>
+                      <strong class="text-neon-green">File Reading</strong>
+                      <p class="text-sm text-gray-400">
+                        Reads files in order specified (or stdin if no files)
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-cyan/20 text-neon-cyan p-2 rounded mr-3"
+                    >
+                      2
+                    </div>
+                    <div>
+                      <strong class="text-neon-green">Buffer Management</strong>
+                      <p class="text-sm text-gray-400">
+                        Reads data in chunks for efficiency
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-cyan/20 text-neon-cyan p-2 rounded mr-3"
+                    >
+                      3
+                    </div>
+                    <div>
+                      <strong class="text-neon-green">Output Writing</strong>
+                      <p class="text-sm text-gray-400">
+                        Writes content to stdout (screen) by default
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex items-start">
+                    <div
+                      class="bg-neon-cyan/20 text-neon-cyan p-2 rounded mr-3"
+                    >
+                      4
+                    </div>
+                    <div>
+                      <strong class="text-neon-green">Error Handling</strong>
+                      <p class="text-sm text-gray-400">
+                        Continues with next file if one fails (unless -b)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Common Use Cases -->
+              <div class="bg-black/30 p-4 rounded-lg">
+                <h3 class="text-xl font-bold text-neon-orange mb-3">
+                  <i class="fas fa-tasks mr-2"></i>Common Use Cases
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 class="font-bold text-neon-cyan mb-2">File Viewing</h4>
+                    <p class="text-sm text-gray-400">
+                      Quickly view contents of small files
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-green mb-2">
+                      File Creation
+                    </h4>
+                    <p class="text-sm text-gray-400">
+                      Create new files with user input
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      File Concatenation
+                    </h4>
+                    <p class="text-sm text-gray-400">
+                      Combine multiple files into one
+                    </p>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-neon-yellow mb-2">Data Piping</h4>
+                    <p class="text-sm text-gray-400">
+                      Pass file content to other commands
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- cat Examples -->
+          <section id="cat-examples" class="cat-card p-6 rounded-2xl">
+            <h2
+              class="text-2xl font-bold mb-6 text-neon-cyan border-b border-neon-cyan/30 pb-3"
+            >
+              <i class="fas fa-file-code mr-3"></i>cat - Complete Examples
+            </h2>
+
+            <div class="space-y-8">
+              <!-- Basic cat Examples -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-green">
+                  Basic File Operations
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      1. Display File Contents
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat file.txt<br />
+                      <span class="text-gray-400">
+                        Line 1: Hello World<br />
+                        Line 2: This is a test file<br />
+                        Line 3: Created with cat command<br />
+                        Line 4: End of file
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Simple file viewing - most common use
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      2. Create New File
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat >
+                      newfile.txt<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"
+                          ># Type your content, then Ctrl+D to save</span
+                        ><br />
+                        This is line 1<br />
+                        This is line 2<br />
+                        ^D<br /><br />
+                        <span class="text-neon-green">$</span> cat
+                        newfile.txt<br />
+                        This is line 1<br />
+                        This is line 2
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Creates file with keyboard input (Ctrl+D to finish)
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      3. Append to File
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat >>
+                      existing.txt<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"># Adds to end of file</span
+                        ><br />
+                        Additional line 1<br />
+                        Additional line 2<br />
+                        ^D
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Appends content without overwriting
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Advanced cat Examples -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-purple">
+                  Advanced cat Operations
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      4. Concatenate Multiple Files
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat file1.txt
+                      file2.txt file3.txt > combined.txt<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"
+                          ># Creates combined.txt with all three files</span
+                        ><br /><br />
+                        <span class="text-neon-green">$</span> cat
+                        combined.txt<br />
+                        <span class="text-gray-400">
+                          === Contents of file1.txt ===<br />
+                          === Contents of file2.txt ===<br />
+                          === Contents of file3.txt ===
+                        </span>
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Merges files in specified order
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      5. Number Lines
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat -n data.txt<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"> 1</span> Apple<br />
+                        <span class="text-neon-cyan"> 2</span> Banana<br />
+                        <span class="text-neon-cyan"> 3</span> Cherry<br />
+                        <span class="text-neon-cyan"> 4</span> Date<br />
+                        <span class="text-neon-cyan"> 5</span> Elderberry </span
+                      ><br /><br />
+                      <span class="text-neon-green">$</span> cat -b code.py<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"> 1</span> def hello():<br />
+                        <span class="text-neon-cyan"> 2</span>
+                        print("Hello")<br />
+                        <span class="text-gray-500"> </span><br />
+                        <span class="text-neon-cyan"> 3</span> def world():<br />
+                        <span class="text-neon-cyan"> 4</span> print("World")
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      <code>-n</code> numbers all lines, <code>-b</code> numbers
+                      non-blank lines
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      6. Show Non-Printable Characters
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat -A
+                      special.txt<br />
+                      <span class="text-gray-400">
+                        Line 1$<br />
+                        Line 2^I(tab character)$<br />
+                        Line 3^M$<br />
+                        End of file$
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      <code>-A</code> shows $ for newlines, ^I for tabs, ^M for
+                      carriage returns
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-pink mb-2">
+                      7. Squeeze Blank Lines
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat -s messy.txt<br />
+                      <span class="text-gray-400">
+                        Line 1<br />
+                        <br />
+                        Line 2<br />
+                        <br />
+                        Line 3<br />
+                        <span class="text-gray-500"
+                          ># Multiple blank lines become single blank
+                          lines</span
+                        >
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Reduces multiple consecutive blank lines to single blank
+                      lines
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Practical Use Cases -->
+              <div>
+                <h3 class="text-xl font-bold mb-4 text-neon-orange">
+                  Practical Use Cases
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      8. Create Configuration File
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat > config.env <<
+                      'EOF'<br />
+                      <span class="text-gray-400">
+                        DATABASE_HOST=localhost<br />
+                        DATABASE_PORT=5432<br />
+                        DATABASE_USER=admin<br />
+                        DATABASE_PASS=secret123<br />
+                        DEBUG=true<br />
+                        EOF<br /><br />
+                        <span class="text-neon-green">$</span> cat config.env<br />
+                        DATABASE_HOST=localhost<br />
+                        DATABASE_PORT=5432<br />
+                        DATABASE_USER=admin<br />
+                        DATABASE_PASS=secret123<br />
+                        DEBUG=true
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Here-document syntax for multi-line input
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      9. Copy File Content
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat source.txt >
+                      destination.txt<br />
+                      <span class="text-neon-green">$</span> cat image.jpg >
+                      backup.jpg<br />
+                      <span class="text-gray-400">
+                        <span class="text-neon-cyan"
+                          ># Works with binary files too!</span
+                        >
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      Simple file copy (though cp is better for this)
+                    </p>
+                  </div>
+
+                  <div class="command-block">
+                    <h4 class="font-bold text-neon-yellow mb-2">
+                      10. View Multiple Files
+                    </h4>
+                    <div class="command-output p-4 rounded">
+                      <span class="text-neon-green">$</span> cat file1.txt
+                      file2.txt<br />
+                      <span class="text-gray-400">
+                        === Contents of file1.txt ===<br />
+                        Line 1 from file1<br />
+                        Line 2 from file1<br />
+                        === Contents of file2.txt ===<br />
+                        Line 1 from file2<br />
+                        Line 2 from file2
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">
+                      View multiple files sequentially without concatenating
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Comparison Section -->
+      <section id="comparison" class="neon-card p-6 rounded-2xl mt-8">
+        <h2
+          class="text-2xl font-bold mb-6 text-neon-purple border-b border-neon-purple/30 pb-3"
+        >
+          <i class="fas fa-balance-scale mr-3"></i>grep vs cat: Comparison &
+          When to Use
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Comparison Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-neon-purple/30">
+                  <th class="text-left py-3 text-neon-cyan">Feature</th>
+                  <th class="text-left py-3 text-neon-green">grep</th>
+                  <th class="text-left py-3 text-neon-cyan">cat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">Primary Purpose</td>
+                  <td class="py-3">Search/filter text</td>
+                  <td class="py-3">Display/concatenate files</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">Output</td>
+                  <td class="py-3">Only matching lines</td>
+                  <td class="py-3">Entire file content</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">Pattern Matching</td>
+                  <td class="py-3 text-neon-green">✓ Yes (regex)</td>
+                  <td class="py-3 text-gray-500">✗ No</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">File Creation</td>
+                  <td class="py-3 text-gray-500">✗ No</td>
+                  <td class="py-3 text-neon-cyan">✓ Yes (with >)</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">Speed for Large Files</td>
+                  <td class="py-3">Fast (stops early)</td>
+                  <td class="py-3">Slower (reads all)</td>
+                </tr>
+                <tr class="border-b border-gray-800">
+                  <td class="py-3 font-bold">Best For</td>
+                  <td class="py-3">Searching, filtering</td>
+                  <td class="py-3">Viewing, combining</td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-bold">Common Flags</td>
+                  <td class="py-3"><code>-i, -v, -n, -r, -c</code></td>
+                  <td class="py-3"><code>-n, -b, -A, -s</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- When to Use Guide -->
+          <div class="bg-black/30 p-6 rounded-xl">
+            <h3 class="text-xl font-bold mb-4 text-neon-yellow">
+              <i class="fas fa-question-circle mr-2"></i>Which One to Use?
+            </h3>
+
+            <div class="space-y-4">
+              <div class="p-4 bg-neon-green/10 rounded-lg">
+                <h4 class="font-bold text-neon-green mb-2">
+                  Use <code>grep</code> when:
+                </h4>
+                <ul class="text-sm space-y-2">
+                  <li>• Searching for specific text in files</li>
+                  <li>• Filtering command output</li>
+                  <li>• Finding patterns in logs</li>
+                  <li>• Extracting specific lines</li>
+                  <li>• Counting occurrences</li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-neon-cyan/10 rounded-lg">
+                <h4 class="font-bold text-neon-cyan mb-2">
+                  Use <code>cat</code> when:
+                </h4>
+                <ul class="text-sm space-y-2">
+                  <li>• Viewing complete file contents</li>
+                  <li>• Creating small text files</li>
+                  <li>• Concatenating multiple files</li>
+                  <li>• Appending to files</li>
+                  <li>• Piping file content to other commands</li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-neon-purple/10 rounded-lg">
+                <h4 class="font-bold text-neon-purple mb-2">
+                  Use Both Together:
+                </h4>
+                <div class="command-output p-3 rounded text-sm">
+                  <span class="text-neon-green">$</span> cat largefile.txt |
+                  grep "error" | head -20<br />
+                  <span class="text-neon-green">$</span> grep "TODO" *.py | cat
+                  -n<br />
+                  <span class="text-neon-green">$</span> cat access.log | grep
+                  "404" | wc -l
+                </div>
+                <p class="text-sm text-gray-400 mt-2">
+                  Combine strengths: cat feeds data, grep filters it
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Advanced Usage Section -->
+      <section id="advanced" class="neon-card p-6 rounded-2xl mt-8">
+        <h2
+          class="text-2xl font-bold mb-6 text-neon-orange border-b border-neon-orange/30 pb-3"
+        >
+          <i class="fas fa-rocket mr-3"></i>Advanced Usage & Pro Tips
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Advanced grep Techniques -->
+          <div>
+            <h3 class="text-xl font-bold mb-4 text-neon-green">
+              Advanced grep Techniques
+            </h3>
+
+            <div class="space-y-4">
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">Context Lines</h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> grep -B2 -A2 "crash"
+                  system.log<br />
+                  <span class="text-gray-400">
+                    [INFO] Memory usage: 45%<br />
+                    [WARN] Memory usage: 85%<br />
+                    <span class="highlight-match"
+                      >[ERROR] System crash detected</span
+                    ><br />
+                    [INFO] Attempting recovery<br />
+                    [INFO] Recovery successful
+                  </span>
+                </div>
+                <p class="text-sm text-gray-400 mt-2">
+                  <code>-B2</code>: 2 lines Before match<br />
+                  <code>-A2</code>: 2 lines After match<br />
+                  <code>-C3</code>: 3 lines Context (both sides)
+                </p>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Binary File Search
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> grep -a "text"
+                  binaryfile.bin<br />
+                  <span class="text-neon-green">$</span> grep -I "TODO" *<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"
+                      ># -a: treat binary as text</span
+                    ><br />
+                    <span class="text-neon-cyan"># -I: skip binary files</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">Colored Output</h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> grep --color=auto
+                  "pattern" file.txt<br />
+                  <span class="text-neon-green">$</span> alias grep='grep
+                  --color=auto'<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"
+                      ># Add to ~/.bashrc for permanent colored grep</span
+                    >
+                  </span>
+                </div>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Performance Tips
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> grep -F "fixed.string"
+                  largefile.txt<br />
+                  <span class="text-neon-green">$</span> grep -m 10 "pattern"
+                  hugefile.log<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"># -F: faster (no regex)</span
+                    ><br />
+                    <span class="text-neon-cyan"
+                      ># -m 10: stop after 10 matches</span
+                    >
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced cat Techniques -->
+          <div>
+            <h3 class="text-xl font-bold mb-4 text-neon-cyan">
+              Advanced cat Techniques
+            </h3>
+
+            <div class="space-y-4">
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Here Documents & Strings
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> cat << 'EOF' >
+                  script.sh<br />
+                  <span class="text-gray-400">
+                    #!/bin/bash<br />
+                    echo "Hello $USER"<br />
+                    date<br />
+                    EOF<br /><br />
+                    <span class="text-neon-green">$</span> cat <<< "Quick inline
+                    text"<br />
+                  </span>
+                </div>
+                <p class="text-sm text-gray-400 mt-2">
+                  Here-doc for multi-line, Here-string for single line
+                </p>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Combining with tee
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> cat file1 file2 | tee
+                  combined.txt | wc -l<br />
+                  <span class="text-neon-green">$</span> cat input.txt | tee -a
+                  log.txt | process_command<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"
+                      ># tee: saves to file AND passes to next command</span
+                    >
+                  </span>
+                </div>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Creating Multi-File Archives
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> cat file1 file2 file3 >
+                  archive.tar<br />
+                  <span class="text-neon-green">$</span> cat part1 part2 part3 >
+                  largefile.iso<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"
+                      ># Can combine binary files too!</span
+                    >
+                  </span>
+                </div>
+              </div>
+
+              <div class="command-block">
+                <h4 class="font-bold text-neon-yellow mb-2">
+                  Interactive File Editing
+                </h4>
+                <div class="command-output p-4 rounded text-sm">
+                  <span class="text-neon-green">$</span> cat >> diary.txt<br />
+                  <span class="text-gray-400">
+                    <span class="text-neon-cyan"># Type diary entry</span><br />
+                    Today I learned about grep and cat.<br />
+                    They are incredibly useful tools!<br />
+                    ^D<br /><br />
+                    <span class="text-neon-green">$</span> cat diary.txt<br />
+                    Today I learned about grep and cat.<br />
+                    They are incredibly useful tools!
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-World Examples -->
+        <div
+          class="mt-8 p-6 bg-gradient-to-r from-neon-purple/10 to-neon-orange/10 rounded-xl"
+        >
+          <h3 class="text-xl font-bold mb-4 text-neon-pink">
+            <i class="fas fa-globe mr-2"></i>Real-World Examples
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="command-output p-4 rounded">
+              <strong class="text-neon-green">Log Analysis</strong><br />
+              <span class="text-neon-green">$</span> grep "ERROR" app.log | cat
+              -n<br />
+              <span class="text-neon-green">$</span> cat app.log | grep -c "404"
+            </div>
+
+            <div class="command-output p-4 rounded">
+              <strong class="text-neon-cyan">Configuration</strong><br />
+              <span class="text-neon-green">$</span> cat /etc/passwd | grep
+              "/bin/bash"<br />
+              <span class="text-neon-green">$</span> cat ~/.bashrc ~/.profile >
+              bash_config.backup
+            </div>
+
+            <div class="command-output p-4 rounded">
+              <strong class="text-neon-yellow">Development</strong><br />
+              <span class="text-neon-green">$</span> grep -r "TODO" src/ | cat
+              -n<br />
+              <span class="text-neon-green">$</span> cat header.txt body.txt
+              footer.txt > index.html
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Reference Cheatsheet -->
+      <section class="neon-card p-6 rounded-2xl mt-8">
+        <h2
+          class="text-2xl font-bold mb-6 text-neon-yellow border-b border-neon-yellow/30 pb-3"
+        >
+          <i class="fas fa-book mr-3"></i>Quick Reference Cheatsheet
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- grep Cheatsheet -->
+          <div>
+            <h3 class="text-xl font-bold mb-4 text-neon-green">
+              grep Options Cheatsheet
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-neon-green/30">
+                    <th class="text-left py-2 text-neon-cyan">Option</th>
+                    <th class="text-left py-2 text-neon-cyan">Meaning</th>
+                    <th class="text-left py-2 text-neon-cyan">Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-i</code></td>
+                    <td class="py-2">Case insensitive</td>
+                    <td class="py-2"><code>grep -i "error"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-v</code></td>
+                    <td class="py-2">Invert match</td>
+                    <td class="py-2"><code>grep -v "debug"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-n</code></td>
+                    <td class="py-2">Line numbers</td>
+                    <td class="py-2"><code>grep -n "TODO"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-c</code></td>
+                    <td class="py-2">Count matches</td>
+                    <td class="py-2"><code>grep -c "success"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-r</code></td>
+                    <td class="py-2">Recursive search</td>
+                    <td class="py-2"><code>grep -r "function" .</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-l</code></td>
+                    <td class="py-2">List files only</td>
+                    <td class="py-2"><code>grep -l "pattern" *</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-w</code></td>
+                    <td class="py-2">Whole word</td>
+                    <td class="py-2"><code>grep -w "run"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-E</code></td>
+                    <td class="py-2">Extended regex</td>
+                    <td class="py-2"><code>grep -E "[0-9]+"</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-F</code></td>
+                    <td class="py-2">Fixed string</td>
+                    <td class="py-2"><code>grep -F "$var"</code></td>
+                  </tr>
+                  <tr>
+                    <td class="py-2"><code>-A/-B/-C</code></td>
+                    <td class="py-2">Context lines</td>
+                    <td class="py-2"><code>grep -A2 -B2 "crash"</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- cat Cheatsheet -->
+          <div>
+            <h3 class="text-xl font-bold mb-4 text-neon-cyan">
+              cat Options Cheatsheet
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-neon-cyan/30">
+                    <th class="text-left py-2 text-neon-green">Option</th>
+                    <th class="text-left py-2 text-neon-green">Meaning</th>
+                    <th class="text-left py-2 text-neon-green">Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-n</code></td>
+                    <td class="py-2">Number all lines</td>
+                    <td class="py-2"><code>cat -n file.txt</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-b</code></td>
+                    <td class="py-2">Number non-blank</td>
+                    <td class="py-2"><code>cat -b code.py</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-s</code></td>
+                    <td class="py-2">Squeeze blanks</td>
+                    <td class="py-2"><code>cat -s messy.txt</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-A</code></td>
+                    <td class="py-2">Show all chars</td>
+                    <td class="py-2"><code>cat -A special.txt</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-T</code></td>
+                    <td class="py-2">Show tabs as ^I</td>
+                    <td class="py-2"><code>cat -T file.txt</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>-E</code></td>
+                    <td class="py-2">Show $ at line end</td>
+                    <td class="py-2"><code>cat -E script.sh</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>></code></td>
+                    <td class="py-2">Create/overwrite</td>
+                    <td class="py-2"><code>cat > newfile</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code>>></code></td>
+                    <td class="py-2">Append</td>
+                    <td class="py-2"><code>cat >> existing</code></td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-2"><code><<</code></td>
+                    <td class="py-2">Here document</td>
+                    <td class="py-2"><code>cat << EOF</code></td>
+                  </tr>
+                  <tr>
+                    <td class="py-2"><code><<<</code></td>
+                    <td class="py-2">Here string</td>
+                    <td class="py-2"><code>cat <<< "text"</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="mt-12 pt-8 border-t border-gray-800">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <h3 class="text-neon-cyan font-bold text-xl">
+              grep & cat Mastery Guide
+            </h3>
+            <p class="text-sm text-gray-400">
+              Complete reference with theory, examples, and outputs
+            </p>
+          </div>
+          <div class="flex space-x-4">
+            <div class="text-center p-3 bg-neon-green/10 rounded-lg">
+              <div class="text-2xl text-neon-green font-bold">grep</div>
+              <div class="text-xs text-gray-400">Pattern Search</div>
+            </div>
+            <div class="text-center p-3 bg-neon-cyan/10 rounded-lg">
+              <div class="text-2xl text-neon-cyan font-bold">cat</div>
+              <div class="text-xs text-gray-400">File Operations</div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 text-center text-sm text-gray-500">
+          <p>
+            Pro Tip: Combine <code class="text-neon-green">grep</code> and
+            <code class="text-neon-cyan">cat</code> with pipes for powerful text
+            processing!
+          </p>
+          <p class="mt-2">
+            Example:
+            <code class="text-gray-400"
+              >cat file.txt | grep "pattern" | wc -l</code
+            >
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Interactive features
+      document.addEventListener('DOMContentLoaded', function () {
+        // Copy functionality for command outputs
+        document.querySelectorAll('.command-output').forEach((output) => {
+          output.addEventListener('click', function () {
+            const text = this.innerText.replace(/\$ /g, '').trim();
+            navigator.clipboard.writeText(text).then(() => {
+              const originalHTML = this.innerHTML;
+              this.innerHTML =
+                '<div class="text-neon-green text-center py-2">✓ Command copied to clipboard!</div>';
+              setTimeout(() => {
+                this.innerHTML = originalHTML;
+              }, 1500);
+            });
+          });
+          output.style.cursor = 'pointer';
+          output.title = 'Click to copy command';
+        });
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+          anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+              window.scrollTo({
+                top: targetElement.offsetTop - 20,
+                behavior: 'smooth',
+              });
+            }
+          });
+        });
+
+        // Interactive regex examples
+        const regexExamples = [
+          {
+            pattern: '^Error',
+            description: "Lines starting with 'Error'",
+            test: 'Error: Something went wrong\nWarning: Minor issue\nError: Another error',
+          },
+          {
+            pattern: '\.(txt|pdf)$',
+            description: 'Files ending with .txt or .pdf',
+            test: 'document.txt\nimage.jpg\nreport.pdf\nscript.py',
+          },
+          {
+            pattern: '[0-9]{3}-[0-9]{2}-[0-9]{4}',
+            description: 'Social Security Number pattern',
+            test: 'John: 123-45-6789\nJane: 987-65-4321\nID: ABC-12-3456',
+          },
+        ];
+
+        // Create interactive regex tester if space available
+        const createRegexTester = () => {
+          const testerDiv = document.createElement('div');
+          testerDiv.className = 'mt-8 p-6 bg-black/30 rounded-xl';
+          testerDiv.innerHTML = `
+                    <h4 class="font-bold text-neon-pink mb-3">Interactive Regex Tester</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Test String:</label>
+                            <textarea id="regex-test" class="w-full bg-black/50 text-white p-2 rounded" rows="3">Enter text to test patterns against</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Pattern:</label>
+                            <input type="text" id="regex-pattern" class="w-full bg-black/50 text-white p-2 rounded" value="^Error">
+                        </div>
+                        <button id="test-regex" class="px-4 py-2 bg-neon-green text-black rounded font-bold">Test Pattern</button>
+                        <div id="regex-result" class="command-output p-4 rounded hidden"></div>
+                    </div>
+                `;
+
+          document.querySelector('#advanced').appendChild(testerDiv);
+
+          document
+            .getElementById('test-regex')
+            .addEventListener('click', function () {
+              const pattern = document.getElementById('regex-pattern').value;
+              const testText = document.getElementById('regex-test').value;
+              const resultDiv = document.getElementById('regex-result');
+
+              try {
+                const regex = new RegExp(pattern, 'gm');
+                const matches = testText.match(regex) || [];
+
+                let highlightedText = testText;
+                matches.forEach((match) => {
+                  highlightedText = highlightedText.replace(
+                    match,
+                    `<span class="highlight-match">${match}</span>`,
+                  );
+                });
+
+                resultDiv.innerHTML = `
+                            <strong class="text-neon-cyan">Matches Found: ${matches.length}</strong><br>
+                            <div class="mt-2">${highlightedText}</div>
+                        `;
+                resultDiv.classList.remove('hidden');
+              } catch (e) {
+                resultDiv.innerHTML = `<span class="text-neon-red">Invalid regex pattern: ${e.message}</span>`;
+                resultDiv.classList.remove('hidden');
+              }
+            });
+        };
+
+        // Add interactive examples
+        document.querySelectorAll('.highlight-match').forEach((match) => {
+          match.addEventListener('click', function () {
+            const text = this.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+              const original = this.textContent;
+              this.textContent = '✓ Copied!';
+              setTimeout(() => {
+                this.textContent = original;
+              }, 1000);
+            });
+          });
+          match.style.cursor = 'pointer';
+          match.title = 'Click to copy matched text';
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          // Ctrl+G for grep examples
+          if (e.ctrlKey && e.key === 'g') {
+            e.preventDefault();
+            document
+              .querySelector('#grep-examples')
+              .scrollIntoView({ behavior: 'smooth' });
+          }
+          // Ctrl+C for cat examples
+          if (e.ctrlKey && e.key === 'c') {
+            e.preventDefault();
+            document
+              .querySelector('#cat-examples')
+              .scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+
+        // Add tooltip to pattern examples
+        document.querySelectorAll('code').forEach((code) => {
+          if (
+            code.textContent.includes('grep') ||
+            code.textContent.includes('cat')
+          ) {
+            code.classList.add('tooltip');
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltiptext';
+            tooltip.textContent = 'Click command outputs to copy them!';
+            code.appendChild(tooltip);
+          }
+        });
+
+        // Initialize regex tester
+        createRegexTester();
+      });
+    </script>
+  </body>
+</html>

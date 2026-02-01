@@ -1,0 +1,54 @@
+
+Desktop/Power Search/bash 
+❯ ls -l
+total 8
+-rw-rw-r-- 1 amit amit 363 Dec 18 10:09 builtins.txt
+-rw-rw-r-- 1 amit amit   0 Dec 18 10:23 file_permission.txt
+-rw-rw-r-- 1 amit amit  15 Dec 18 09:47 file.txt
+
+Desktop/Power Search/bash 
+❯ date
+Thu Dec 18 10:28:48 AM IST 2025
+
+Desktop/Power Search/bash 
+❯ chmod +x script.sh
+
+Desktop/Power Search/bash 
+❯ ./script.sh
+hello world
+
+
+Desktop/Power Search/bash 
+❯ chmod 755 script.sh
+
+Desktop/Power Search/bash 
+❯ ls -l
+total 16
+-rw-rw-r-- 1 amit amit 363 Dec 18 10:09 builtins.txt
+-rw-rw-r-- 1 amit amit 384 Dec 18 10:29 file_permission.txt
+-rw-rw-r-- 1 amit amit  15 Dec 18 09:47 file.txt
+-rwxr-xr-x 1 amit amit  18 Dec 18 10:29 script.sh
+
+Desktop/Power Search/bash 
+❯ ./script.sh
+hello world
+
+
+
+Desktop/Power Search/bash 
+❯ file script.sh
+script.sh: Bourne-Again shell script, ASCII text executable
+
+Desktop/Power Search/bash 
+❯ mv script.sh script
+
+Desktop/Power Search/bash 
+❯ ./script
+hello world
+
+rm * will delete all files inside the folder
+
+
+#use for finding errors in code
+ bash -n script.sh
+script.sh: line 13: syntax error: unexpected end of file

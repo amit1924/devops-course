@@ -1,0 +1,2311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Services Master Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .service-flow {
+        border: 2px solid var(--neon-blue);
+        border-radius: 15px;
+        padding: 20px;
+        background: rgba(0, 243, 255, 0.05);
+        position: relative;
+      }
+
+      .pod-box {
+        border: 2px solid var(--neon-green);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+        background: rgba(0, 255, 157, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .pod-box:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+      }
+
+      .service-box {
+        border: 2px solid var(--neon-purple);
+        border-radius: 10px;
+        padding: 20px;
+        background: rgba(185, 103, 255, 0.1);
+      }
+
+      .port-visual {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin: 5px;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+      }
+
+      .port-public {
+        background: rgba(185, 103, 255, 0.2);
+        border: 2px solid var(--neon-purple);
+      }
+
+      .port-node {
+        background: rgba(255, 107, 53, 0.2);
+        border: 2px solid var(--neon-orange);
+      }
+
+      .port-container {
+        background: rgba(0, 255, 157, 0.2);
+        border: 2px solid var(--neon-green);
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 15px 0;
+      }
+
+      .arrow {
+        color: var(--neon-blue);
+        font-size: 2rem;
+        margin: 0 10px;
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .tab-button {
+        background: rgba(26, 26, 58, 0.8);
+        border: 1px solid var(--neon-blue);
+        transition: all 0.3s ease;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      }
+
+      .service-type-card {
+        border: 2px solid;
+        border-radius: 15px;
+        padding: 20px;
+        margin: 15px 0;
+        transition: all 0.3s ease;
+      }
+
+      .service-type-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 243, 255, 0.2);
+      }
+
+      .comparison-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .comparison-table th {
+        background: rgba(26, 26, 58, 0.8);
+        padding: 15px;
+      }
+
+      .comparison-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .architecture-layer {
+        padding: 20px;
+        margin: 10px 0;
+        border-radius: 10px;
+        position: relative;
+      }
+
+      .warning-box {
+        border-left: 4px solid var(--neon-orange);
+        background: rgba(255, 107, 53, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      .endpoint-visual {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 10px rgba(185, 103, 255, 0.5);
+      }
+
+      .neon-text-orange {
+        color: var(--neon-orange);
+        text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+      }
+
+      .neon-text-red {
+        color: #ff4757;
+        text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .highlight-box {
+        background: linear-gradient(
+          135deg,
+          rgba(0, 243, 255, 0.1) 0%,
+          rgba(0, 255, 157, 0.05) 100%
+        );
+        border: 2px solid var(--neon-blue);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-12 h-12 rounded-xl bg-blue-900/30 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-network-wired text-2xl neon-text-blue"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-blue">
+                Kubernetes Services Master Guide
+              </h1>
+              <p class="text-gray-300">The Stable Face of Your Express Apps</p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button
+              onclick="switchTab('basics')"
+              id="basicsTab"
+              class="tab-button active px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-cube mr-2"></i>Service Basics
+            </button>
+            <button
+              onclick="switchTab('types')"
+              id="typesTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-sitemap mr-2"></i>Service Types
+            </button>
+            <button
+              onclick="switchTab('flow')"
+              id="flowTab"
+              class="tab-button px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-exchange-alt mr-2"></i>Traffic Flow
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Basics Tab -->
+      <div id="basicsContent" class="tab-content active">
+        <!-- Why Pods Are Unreliable -->
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-red-900/50 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-skull-crossbones text-2xl neon-text-red"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-red">
+                🧠 Why Pods Are Unreliable
+              </h2>
+              <p class="text-gray-300">
+                Pods are ephemeral and constantly changing
+              </p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Pods Get Deleted When:
+              </h3>
+
+              <div class="space-y-4">
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-arrow-down"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Scaling down</p>
+                    <p class="text-sm text-gray-400">Reducing replica count</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-sync"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Rolling updates</p>
+                    <p class="text-sm text-gray-400">Version upgrades</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-undo"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Rollbacks</p>
+                    <p class="text-sm text-gray-400">Version downgrades</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-server"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Node failures</p>
+                    <p class="text-sm text-gray-400">Node crashes/restarts</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold">Evictions</p>
+                    <p class="text-sm text-gray-400">Resource pressure</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-red mb-4">
+                ❌ The Problem:
+              </h3>
+
+              <div class="space-y-4">
+                <div class="bg-red-900/20 p-4 rounded-lg">
+                  <p class="font-bold mb-2">Pod IP changes constantly</p>
+                  <p class="text-sm text-gray-400">
+                    Today: 10.1.2.45, Tomorrow: different IP
+                  </p>
+                </div>
+
+                <div class="bg-red-900/20 p-4 rounded-lg">
+                  <p class="font-bold mb-2">Pod name changes</p>
+                  <p class="text-sm text-gray-400">New Pod = new name</p>
+                </div>
+
+                <div class="bg-red-900/20 p-4 rounded-lg">
+                  <p class="font-bold mb-2">Pods can disappear anytime</p>
+                  <p class="text-sm text-gray-400">Unpredictable lifecycle</p>
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <p class="mb-3">So if your frontend connects directly to:</p>
+                <div class="code-block p-4 rounded-lg text-center">
+                  <code class="text-green-300">http://10.1.2.45:8080</code>
+                </div>
+                <div class="mt-3 text-center">
+                  <div class="inline-block bg-red-900/40 p-3 rounded-lg">
+                    <p class="font-bold">
+                      Tomorrow that Pod is gone. Boom. Broken app.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- What is a Service -->
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-green-900/50 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-shield-alt text-2xl neon-text-green"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-green">
+                🔥 What Is a Service?
+              </h2>
+              <p class="text-gray-300">
+                A stable network endpoint in front of Pods
+              </p>
+            </div>
+          </div>
+
+          <div class="service-flow p-6 mb-6">
+            <div class="text-center mb-8">
+              <div
+                class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg mb-4"
+              >
+                <h3 class="text-xl font-bold neon-text-purple">Service</h3>
+                <p class="text-sm text-gray-400">Stable endpoint</p>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="arrow fas fa-arrow-down"></i>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-4">
+                <div class="pod-box">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mx-auto mb-3"
+                  >
+                    <i class="fab fa-node-js"></i>
+                  </div>
+                  <h4 class="font-bold">Pod A</h4>
+                  <p class="text-xs text-gray-400">10.1.0.5:3000</p>
+                </div>
+
+                <div class="pod-box">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mx-auto mb-3"
+                  >
+                    <i class="fab fa-node-js"></i>
+                  </div>
+                  <h4 class="font-bold">Pod B</h4>
+                  <p class="text-xs text-gray-400">10.1.0.6:3000</p>
+                </div>
+
+                <div class="pod-box">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mx-auto mb-3"
+                  >
+                    <i class="fab fa-node-js"></i>
+                  </div>
+                  <h4 class="font-bold">Pod C</h4>
+                  <p class="text-xs text-gray-400">10.1.0.7:3000</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="text-xl font-bold neon-text-blue mb-4">
+                  Service Gives:
+                </h3>
+                <div class="space-y-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Stable DNS name</p>
+                      <p class="text-sm text-gray-400">
+                        express-api.default.svc.cluster.local
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Stable IP</p>
+                      <p class="text-sm text-gray-400">
+                        Doesn't change like Pod IPs
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Stable port</p>
+                      <p class="text-sm text-gray-400">
+                        Consistent port mapping
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Load balancing</p>
+                      <p class="text-sm text-gray-400">
+                        Distributes traffic across Pods
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Health-aware routing</p>
+                      <p class="text-sm text-gray-400">
+                        Only sends to healthy Pods
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-center">
+                <div class="text-center">
+                  <p class="font-bold mb-4">Think of it like:</p>
+                  <div class="bg-gray-800 p-6 rounded-lg">
+                    <p><strong>Clients never talk to Pods directly.</strong></p>
+                    <p class="text-sm text-gray-400 mt-2">
+                      They talk to Service.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Express Example -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🚀 Express Example
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Express Deployment
+              </h3>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: apps/v1
+<span class="text-blue-300">kind</span>: Deployment
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-api
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">template</span>:
+    <span class="text-blue-300">metadata</span>:
+      <span class="text-blue-300">labels</span>:
+        <span class="text-blue-300">app</span>: express-api
+        <span class="text-blue-300">tier</span>: backend</pre>
+              </div>
+
+              <p class="mb-3">This creates:</p>
+              <div class="space-y-2">
+                <div class="flex items-center">
+                  <i class="fas fa-box text-green-400 mr-3"></i>
+                  <div>
+                    <p>
+                      Pod 1 →
+                      <code class="bg-gray-800 px-2 py-1 rounded"
+                        >10.1.0.5:3000</code
+                      >
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-box text-green-400 mr-3"></i>
+                  <div>
+                    <p>
+                      Pod 2 →
+                      <code class="bg-gray-800 px-2 py-1 rounded"
+                        >10.1.0.6:3000</code
+                      >
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-box text-green-400 mr-3"></i>
+                  <div>
+                    <p>
+                      Pod 3 →
+                      <code class="bg-gray-800 px-2 py-1 rounded"
+                        >10.1.0.7:3000</code
+                      >
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                Service Definition
+              </h3>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">kind</span>: Service
+<span class="text-blue-300">apiVersion</span>: v1
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-api
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">selector</span>:
+    <span class="text-blue-300">app</span>: express-api
+    <span class="text-blue-300">tier</span>: backend
+  <span class="text-blue-300">ports</span>:
+    - <span class="text-blue-300">port</span>: 80
+      <span class="text-blue-300">targetPort</span>: 3000</pre>
+              </div>
+
+              <p class="mb-3">Kubernetes creates:</p>
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-network-wired text-blue-400 mr-3"></i>
+                  <div>
+                    <p>
+                      Service IP →
+                      <code class="bg-gray-800 px-2 py-1 rounded"
+                        >10.99.1.10</code
+                      >
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-globe text-green-400 mr-3"></i>
+                  <div>
+                    <p>
+                      DNS →
+                      <code class="bg-gray-800 px-2 py-1 rounded"
+                        >express-api.default.svc.cluster.local</code
+                      >
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-green-900/20 p-4 rounded">
+                <p class="text-center">
+                  <strong>Clients connect to:</strong><br />
+                  <code class="text-lg">express-api:80</code>
+                </p>
+                <p class="text-center text-sm text-gray-400 mt-2">
+                  Service forwards traffic to one of the Pods
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scaling Example -->
+          <div class="bg-black/40 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              🔁 What Happens During Scaling?
+            </h3>
+
+            <div class="grid md:grid-cols-3 gap-6 text-center">
+              <div>
+                <div class="bg-blue-900/30 p-6 rounded-lg mb-4">
+                  <div class="text-4xl mb-3">📈</div>
+                  <h4 class="font-bold">Scale to 5 Pods</h4>
+                </div>
+                <p class="text-sm">Service automatically updates</p>
+                <div class="mt-2">
+                  <span class="text-xs bg-green-900/30 px-2 py-1 rounded"
+                    >No config changes needed</span
+                  >
+                </div>
+              </div>
+
+              <div>
+                <div class="bg-red-900/30 p-6 rounded-lg mb-4">
+                  <div class="text-4xl mb-3">📉</div>
+                  <h4 class="font-bold">Scale down to 2 Pods</h4>
+                </div>
+                <p class="text-sm">Service automatically updates</p>
+                <div class="mt-2">
+                  <span class="text-xs bg-green-900/30 px-2 py-1 rounded"
+                    >No config changes needed</span
+                  >
+                </div>
+              </div>
+
+              <div>
+                <div class="bg-purple-900/30 p-6 rounded-lg mb-4">
+                  <div class="text-4xl mb-3">💀</div>
+                  <h4 class="font-bold">Pods die</h4>
+                </div>
+                <p class="text-sm">Service removes them automatically</p>
+                <div class="mt-2">
+                  <span class="text-xs bg-green-900/30 px-2 py-1 rounded"
+                    >No manual intervention</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- How Service Knows Pods -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-green mb-6">
+            🧬 How Service Knows Which Pods To Send Traffic To?
+          </h2>
+
+          <div class="grid md:grid-cols-2 gap-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                Labels Are The Key
+              </h3>
+
+              <div class="code-block p-4 rounded-lg mb-4">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">selector</span>:
+  <span class="text-blue-300">app</span>: express-api
+  <span class="text-blue-300">tier</span>: backend</pre>
+              </div>
+
+              <p class="mb-4">This means:</p>
+              <div class="bg-gray-800 p-4 rounded-lg">
+                <p class="text-center font-bold text-lg">
+                  "Send traffic to Pods that have BOTH these labels"
+                </p>
+              </div>
+
+              <div class="mt-6">
+                <p class="font-bold mb-2">Loose coupling:</p>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-blue-900/20 p-3 rounded text-center">
+                    <p class="font-bold">Deployment</p>
+                    <p class="text-xs">Creates Pods with labels</p>
+                  </div>
+                  <div class="bg-green-900/20 p-3 rounded text-center">
+                    <p class="font-bold">Service</p>
+                    <p class="text-xs">Selects them using labels</p>
+                  </div>
+                </div>
+                <p class="text-center text-sm text-gray-400 mt-4">
+                  They don't know each other directly. Clean architecture.
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h3 class="text-xl font-bold neon-text-blue mb-4">
+                🎯 Visual Model
+              </h3>
+
+              <div class="space-y-6">
+                <div class="text-center">
+                  <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                    <p class="font-bold">Client</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Service (stable)</p>
+                    <p class="text-xs text-gray-400">DNS: express-api</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">EndpointSlice</p>
+                    <p class="text-xs text-gray-400">Internal tracking list</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Pods</p>
+                    <p class="text-xs text-gray-400">Changing constantly</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EndpointSlice -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-purple mb-6">
+            🧠 What Is EndpointSlice?
+          </h2>
+
+          <div class="service-flow p-6">
+            <div class="mb-6">
+              <p class="text-lg mb-3">
+                Behind the scenes, when you create Service:
+              </p>
+              <div class="bg-gray-800 p-4 rounded-lg">
+                <p class="text-center font-bold">
+                  Kubernetes creates
+                  <span class="neon-text-purple">EndpointSlice</span> object
+                </p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <h3 class="text-xl font-bold neon-text-green mb-4">
+                  EndpointSlice Contains:
+                </h3>
+
+                <div class="space-y-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-list text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">List of healthy Pod IPs</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-heartbeat text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Ready status</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-plug text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Ports</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-server text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Node location</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="endpoint-visual">
+                <p class="font-bold mb-2">Example EndpointSlice data:</p>
+                <pre class="text-sm">
+endpoints:
+- addresses:
+  - "10.1.0.5"
+  - "10.1.0.6"
+  - "10.1.0.7"
+ports:
+- name: http
+  port: 3000
+  protocol: TCP</pre
+                >
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="bg-red-900/20 p-4 rounded-lg">
+                <p class="font-bold mb-2">When Pod dies:</p>
+                <div class="flex items-center">
+                  <i class="fas fa-times text-red-400 mr-3"></i>
+                  <span>Removed from EndpointSlice</span>
+                </div>
+              </div>
+
+              <div class="bg-green-900/20 p-4 rounded-lg">
+                <p class="font-bold mb-2">When Pod created:</p>
+                <div class="flex items-center">
+                  <i class="fas fa-plus text-green-400 mr-3"></i>
+                  <span>Added to EndpointSlice</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-blue-900/20 p-4 rounded-lg">
+              <p class="text-center font-bold">
+                <i class="fas fa-magic text-blue-400 mr-2"></i>
+                Service forwards traffic to Pods listed in EndpointSlice
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Important Insight -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-orange mb-6">
+            💡 Important Insight
+          </h2>
+
+          <div class="bg-black/40 p-6 rounded-xl">
+            <div class="flex items-center mb-6">
+              <i class="fas fa-brain text-3xl text-orange-400 mr-4"></i>
+              <div>
+                <h3 class="text-xl font-bold neon-text-orange">
+                  Service is NOT a container
+                </h3>
+                <p class="text-gray-400">Service does NOT run on nodes</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <p class="mb-3">Service is:</p>
+                <div class="bg-gray-800 p-4 rounded-lg">
+                  <p class="text-center font-bold">A networking abstraction</p>
+                  <p class="text-center text-sm text-gray-400 mt-2">
+                    Handled by:
+                  </p>
+                  <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="bg-blue-900/30 p-2 rounded text-center">
+                      <p class="text-xs">kube-proxy</p>
+                    </div>
+                    <div class="bg-green-900/30 p-2 rounded text-center">
+                      <p class="text-xs">Cluster networking</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="warning-box">
+                  <div class="flex items-center">
+                    <i
+                      class="fas fa-exclamation-triangle text-orange-400 mr-3"
+                    ></i>
+                    <h4 class="font-bold neon-text-orange">
+                      🔥 Very Important Rule
+                    </h4>
+                  </div>
+
+                  <div class="mt-4 space-y-3">
+                    <div class="bg-red-900/20 p-3 rounded">
+                      <p class="font-bold text-sm">Never:</p>
+                      <code class="block bg-black p-2 rounded mt-1"
+                        >curl 10.1.0.5</code
+                      >
+                    </div>
+
+                    <div class="bg-green-900/20 p-3 rounded">
+                      <p class="font-bold text-sm">Always:</p>
+                      <code class="block bg-black p-2 rounded mt-1"
+                        >curl express-api</code
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                    <p class="font-bold">Pods are disposable</p>
+                    <p class="text-sm text-gray-400">Services are permanent</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real World Architecture -->
+        <div class="mb-8">
+          <h2 class="text-3xl font-bold neon-text-blue mb-6">
+            🏗 Real World Architecture Example
+          </h2>
+
+          <div class="service-flow p-6">
+            <div class="text-center mb-8">
+              <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg mb-4">
+                <h3 class="text-xl font-bold">Frontend → Backend → Database</h3>
+              </div>
+            </div>
+
+            <div class="space-y-8">
+              <div class="text-center">
+                <div class="inline-block bg-blue-900/30 px-6 py-4 rounded-lg">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-desktop text-2xl mr-3"></i>
+                    <h4 class="text-xl font-bold">Frontend (React)</h4>
+                  </div>
+                  <p class="text-sm text-gray-400">Connects to:</p>
+                  <code class="bg-black px-3 py-1 rounded"
+                    >backend-service</code
+                  >
+                </div>
+                <div class="flow-arrow">
+                  <i class="arrow fas fa-arrow-down"></i>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div class="inline-block bg-green-900/30 px-6 py-4 rounded-lg">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fab fa-node-js text-2xl mr-3"></i>
+                    <h4 class="text-xl font-bold">Backend (Express)</h4>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 mt-3">
+                    <div class="pod-box">Pod 1</div>
+                    <div class="pod-box">Pod 2</div>
+                    <div class="pod-box">Pod 3</div>
+                  </div>
+                  <p class="text-sm text-gray-400 mt-3">Connects to:</p>
+                  <code class="bg-black px-3 py-1 rounded">db-service</code>
+                </div>
+                <div class="flow-arrow">
+                  <i class="arrow fas fa-arrow-down"></i>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div class="inline-block bg-purple-900/30 px-6 py-4 rounded-lg">
+                  <div class="flex items-center justify-center mb-2">
+                    <i class="fas fa-database text-2xl mr-3"></i>
+                    <h4 class="text-xl font-bold">Database (MongoDB)</h4>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 mt-3">
+                    <div class="pod-box">Primary</div>
+                    <div class="pod-box">Replica</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 bg-gray-800 p-4 rounded-lg">
+              <p class="text-center font-bold">
+                <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                Nobody connects to Pods directly. Only through Services.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Types Tab -->
+      <div id="typesContent" class="tab-content">
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-purple-900/50 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-sitemap text-2xl neon-text-purple"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-purple">
+                📦 Kubernetes Service Types
+              </h2>
+              <p class="text-gray-300">Choosing the right exposure method</p>
+            </div>
+          </div>
+
+          <!-- ClusterIP -->
+          <div class="service-type-card border-purple-500 mb-8">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-purple-900/30 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-network-wired text-xl neon-text-purple"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold neon-text-purple">
+                  🟢 1️⃣ ClusterIP (Default)
+                </h3>
+                <p class="text-gray-400">Internal access only</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="text-xl font-bold mb-3">📦 What it does:</h4>
+                <p class="mb-4">Only apps inside the cluster can reach it.</p>
+
+                <div class="bg-purple-900/20 p-4 rounded-lg mb-4">
+                  <h5 class="font-bold mb-2">🧪 Express Example:</h5>
+                  <div class="code-block p-3 rounded">
+                    <pre class="text-sm">
+kind: Service
+spec:
+  type: ClusterIP
+  selector:
+    app: express-api
+  ports:
+    - port: 80
+      targetPort: 8080</pre
+                    >
+                  </div>
+                </div>
+
+                <div class="bg-gray-800 p-3 rounded">
+                  <p class="font-bold">Kubernetes creates:</p>
+                  <ul class="mt-2 space-y-2">
+                    <li class="flex items-center">
+                      <i class="fas fa-server text-green-400 mr-2"></i>
+                      <span>Service Name → <code>express-api</code></span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-network-wired text-blue-400 mr-2"></i>
+                      <span>Service IP → <code>10.96.12.45</code></span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="text-xl font-bold mb-3">🔍 Inside Cluster:</h4>
+                <div class="bg-green-900/20 p-4 rounded-lg mb-4">
+                  <p>Another Pod can do:</p>
+                  <div class="code-block p-3 mt-2">
+                    <code>fetch("http://express-api")</code>
+                  </div>
+                  <div class="mt-2 flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                    <span class="font-bold">Works ✅</span>
+                  </div>
+                </div>
+
+                <h4 class="text-xl font-bold mb-3">🔍 From Your Laptop:</h4>
+                <div class="bg-red-900/20 p-4 rounded-lg mb-4">
+                  <div class="code-block p-3">
+                    <code>http://10.96.12.45</code>
+                  </div>
+                  <div class="mt-2 flex items-center">
+                    <i class="fas fa-times-circle text-red-400 mr-2"></i>
+                    <span class="font-bold">❌ Doesn't work</span>
+                  </div>
+                  <p class="text-sm mt-2">
+                    Because ClusterIP is internal-only.
+                  </p>
+                </div>
+
+                <div class="bg-blue-900/20 p-4 rounded">
+                  <p class="font-bold">Use Case:</p>
+                  <p>Internal microservices communication</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NodePort -->
+          <div class="service-type-card border-orange-500 mb-8">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-orange-900/30 flex items-center justify-center mr-4"
+              >
+                <i
+                  class="fas fa-external-link-alt text-xl neon-text-orange"
+                ></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold neon-text-orange">
+                  🟡 2️⃣ NodePort
+                </h3>
+                <p class="text-gray-400">Exposes app on every node IP</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="text-xl font-bold mb-3">📦 What it does:</h4>
+                <p class="mb-4">
+                  Exposes app on every node IP using a high port.
+                </p>
+
+                <div class="mb-4">
+                  <p class="font-bold">
+                    Port range:
+                    <code class="bg-gray-800 px-2 py-1 rounded"
+                      >30000 – 32767</code
+                    >
+                  </p>
+                </div>
+
+                <div class="bg-orange-900/20 p-4 rounded-lg">
+                  <h5 class="font-bold mb-2">🧪 Express Example:</h5>
+                  <div class="code-block p-3 rounded">
+                    <pre class="text-sm">
+kind: Service
+spec:
+  type: NodePort
+  selector:
+    app: express-api
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30050</pre
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="text-xl font-bold mb-3">🌐 Access Pattern:</h4>
+                <div class="bg-gray-800 p-4 rounded-lg mb-4">
+                  <p>Kubernetes opens port <code>30050</code> on every node.</p>
+                  <p class="mt-2">If your node IP is:</p>
+                  <div class="code-block p-2 mt-2 text-center">
+                    <code>192.168.1.10</code>
+                  </div>
+                  <p class="mt-2">You can access:</p>
+                  <div class="code-block p-2 mt-2 text-center">
+                    <code>http://192.168.1.10:30050</code>
+                  </div>
+                  <div class="mt-2 flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                    <span class="font-bold">External access works ✅</span>
+                  </div>
+                </div>
+
+                <div class="bg-red-900/20 p-4 rounded">
+                  <h5 class="font-bold mb-2">❌ Problems with NodePort:</h5>
+                  <ul class="space-y-2">
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-red-400 mr-2"
+                      ></i>
+                      <span>Ugly high port (30050)</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-red-400 mr-2"
+                      ></i>
+                      <span>Must know node IP</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-red-400 mr-2"
+                      ></i>
+                      <span>Not production explain-friendly</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-red-400 mr-2"
+                      ></i>
+                      <span>No automatic public DNS</span>
+                    </li>
+                  </ul>
+                  <p class="mt-2 text-sm">
+                    That's why we rarely use it in production.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LoadBalancer -->
+          <div class="service-type-card border-blue-500 mb-8">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-cloud text-xl neon-text-blue"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold neon-text-blue">
+                  🔴 3️⃣ LoadBalancer (Most Common in Cloud)
+                </h3>
+                <p class="text-gray-400">Real-world production use</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="text-xl font-bold mb-3">🌩️ Cloud Integration:</h4>
+                <p class="mb-4">This is what real-world production uses.</p>
+
+                <div class="bg-blue-900/20 p-4 rounded-lg mb-4">
+                  <h5 class="font-bold mb-2">🧪 Express Example:</h5>
+                  <div class="code-block p-3 rounded">
+                    <pre class="text-sm">
+kind: Service
+spec:
+  type: LoadBalancer
+  selector:
+    app: express-api
+  ports:
+    - port: 80
+      targetPort: 8080</pre
+                    >
+                  </div>
+                </div>
+
+                <div class="bg-gray-800 p-4 rounded">
+                  <p class="font-bold mb-2">Cloud providers create:</p>
+                  <div class="grid grid-cols-3 gap-2 mt-2">
+                    <div class="bg-aws p-2 rounded text-center">
+                      <p class="font-bold text-xs">AWS</p>
+                      <p class="text-xs">Creates ELB</p>
+                    </div>
+                    <div class="bg-gcp p-2 rounded text-center">
+                      <p class="font-bold text-xs">GCP</p>
+                      <p class="text-xs">Cloud LB</p>
+                    </div>
+                    <div class="bg-azure p-2 rounded text-center">
+                      <p class="font-bold text-xs">Azure</p>
+                      <p class="text-xs">Azure LB</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 class="text-xl font-bold mb-3">🚀 You Get:</h4>
+                <div class="bg-green-900/20 p-4 rounded-lg mb-4">
+                  <p class="font-bold">EXTERNAL-IP:</p>
+                  <div class="code-block p-3 mt-2 text-center text-xl">
+                    <code>34.123.88.91</code>
+                  </div>
+                  <p class="mt-2">Now you access:</p>
+                  <div class="code-block p-3 mt-2 text-center">
+                    <code>http://34.123.88.91</code>
+                  </div>
+                </div>
+
+                <div class="space-y-2">
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span>Clean.</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span>Production ready.</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span>Stable.</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span>Low port (80/443).</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    <span>Public DNS possible.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 bg-purple-900/20 p-4 rounded">
+              <h4 class="text-xl font-bold neon-text-purple mb-3">
+                🔁 What Actually Happens Internally?
+              </h4>
+              <div class="text-center">
+                <div class="inline-block bg-gray-800 p-3 rounded-lg">
+                  <p class="font-bold">LoadBalancer =</p>
+                  <div class="space-y-2 mt-2">
+                    <div>Cloud Load Balancer</div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                    <div>NodePort</div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                    <div>ClusterIP</div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                    <div>Pods</div>
+                  </div>
+                  <p class="mt-2 text-sm">It builds on top of everything.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison Table -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              🧠 Simple Comparison Table
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="comparison-table w-full bg-black/40">
+                <thead>
+                  <tr>
+                    <th class="text-left">Type</th>
+                    <th class="text-center">Internal Access</th>
+                    <th class="text-center">External Access</th>
+                    <th class="text-center">Production Ready</th>
+                    <th class="text-center">Use Case</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-bold neon-text-purple">ClusterIP</td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-red-900/30 rounded-full"
+                      >
+                        ❌ No
+                      </span>
+                    </td>
+                    <td class="text-center">Internal only</td>
+                    <td class="text-center">Microservices</td>
+                  </tr>
+                  <tr>
+                    <td class="font-bold neon-text-orange">NodePort</td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">Rarely used</td>
+                    <td class="text-center">Testing/Demos</td>
+                  </tr>
+                  <tr>
+                    <td class="font-bold neon-text-blue">LoadBalancer</td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">
+                      <span
+                        class="inline-block px-3 py-1 bg-green-900/30 rounded-full"
+                      >
+                        ✅ Yes
+                      </span>
+                    </td>
+                    <td class="text-center">Production apps</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Real World Architecture -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              🎯 Real World Architecture Example
+            </h3>
+
+            <div class="service-flow p-6">
+              <div class="text-center space-y-8">
+                <div>
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <h4 class="font-bold">Frontend (React)</h4>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="font-bold">LoadBalancer Service (80)</h4>
+                    <p class="text-sm">External access</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="font-bold">Express Backend Pods</h4>
+                    <div class="flex space-x-2 justify-center mt-2">
+                      <span class="px-2 py-1 bg-gray-800 rounded text-xs"
+                        >Pod</span
+                      >
+                      <span class="px-2 py-1 bg-gray-800 rounded text-xs"
+                        >Pod</span
+                      >
+                      <span class="px-2 py-1 bg-gray-800 rounded text-xs"
+                        >Pod</span
+                      >
+                    </div>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-orange-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="font-bold">ClusterIP Service</h4>
+                    <p class="text-sm">Internal only</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="inline-block bg-red-900/30 px-6 py-3 rounded-lg">
+                    <h4 class="font-bold">MongoDB Pods</h4>
+                    <div class="flex space-x-2 justify-center mt-2">
+                      <span class="px-2 py-1 bg-gray-800 rounded text-xs"
+                        >Primary</span
+                      >
+                      <span class="px-2 py-1 bg-gray-800 rounded text-xs"
+                        >Secondary</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-8 bg-gray-800 p-4 rounded">
+                <p class="text-center font-bold">
+                  External world only talks to LoadBalancer.<br />
+                  Everything internal uses ClusterIP.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Design Rule -->
+          <div class="bg-black/40 p-6 rounded-xl">
+            <h3 class="text-2xl font-bold neon-text-green mb-4">
+              🧠 Important Design Rule
+            </h3>
+
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="text-center bg-purple-900/20 p-4 rounded">
+                <div
+                  class="w-12 h-12 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-network-wired"></i>
+                </div>
+                <h4 class="font-bold">Internal microservices</h4>
+                <p class="text-green-400">→ ClusterIP</p>
+              </div>
+
+              <div class="text-center bg-blue-900/20 p-4 rounded">
+                <div
+                  class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-globe"></i>
+                </div>
+                <h4 class="font-bold">Internet-facing apps</h4>
+                <p class="text-green-400">→ LoadBalancer</p>
+              </div>
+
+              <div class="text-center bg-orange-900/20 p-4 rounded">
+                <div
+                  class="w-12 h-12 rounded-full bg-orange-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-flask"></i>
+                </div>
+                <h4 class="font-bold">Learning/testing</h4>
+                <p class="text-green-400">→ NodePort</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Traffic Flow Tab -->
+      <div id="flowContent" class="tab-content">
+        <div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div
+              class="w-14 h-14 rounded-full bg-blue-900/50 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-exchange-alt text-2xl neon-text-blue"></i>
+            </div>
+            <div>
+              <h2 class="text-3xl font-bold neon-text-blue">
+                🔄 Traffic Flow Deep Dive
+              </h2>
+              <p class="text-gray-300">
+                How kubectl expose works and ports explained
+              </p>
+            </div>
+          </div>
+
+          <!-- What kubectl expose really does -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              1️⃣ What kubectl expose REALLY Does
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-xl font-bold mb-4">Scenario:</h4>
+                <p>You already had:</p>
+                <div class="bg-gray-800 p-4 rounded-lg mt-2">
+                  <p class="font-bold">
+                    Deployment → svc-test → 10 Express Pods
+                  </p>
+                </div>
+                <p class="mt-4">Each Pod runs:</p>
+                <div class="code-block p-3 rounded mt-2">
+                  <code>app.listen(8080)</code>
+                </div>
+
+                <div class="mt-6">
+                  <p>Then you ran:</p>
+                  <div class="code-block p-3 rounded mt-2">
+                    <code
+                      >kubectl expose deployment svc-test
+                      --type=LoadBalancer</code
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-xl font-bold mb-4">What Kubernetes did:</h4>
+                <div class="space-y-4">
+                  <div class="flex items-center">
+                    <i class="fas fa-search text-blue-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Read Deployment labels</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-plug text-green-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Read container port (8080)</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-cogs text-purple-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Created a Service</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-project-diagram text-orange-400 mr-3"></i>
+                    <div>
+                      <p class="font-bold">Wired everything automatically</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 bg-blue-900/20 p-4 rounded">
+                  <p class="text-center font-bold">
+                    "Oh, you want to expose this Express deployment? Cool. I'll
+                    build the Service for you."
+                  </p>
+                  <p class="text-center text-sm mt-2">Smart shortcut.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Understanding PORT Column -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-orange mb-6">
+              🔌 2️⃣ Understanding the PORT Column (Most Confusing Part)
+            </h3>
+
+            <div class="service-flow p-6">
+              <div class="text-center mb-6">
+                <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                  <p class="font-bold text-xl">PORT(S)</p>
+                  <p class="text-2xl font-mono">8080:31755/TCP</p>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <div class="port-visual port-public">
+                    <p class="text-sm">Public Load Balancer</p>
+                    <p class="text-2xl">8080</p>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-2">
+                    What users connect to
+                  </p>
+                </div>
+
+                <div>
+                  <div class="port-visual port-node">
+                    <p class="text-sm">NodePort</p>
+                    <p class="text-2xl">31755</p>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-2">Opened on each node</p>
+                </div>
+
+                <div>
+                  <div class="port-visual port-container">
+                    <p class="text-sm">Express container</p>
+                    <p class="text-2xl">8080</p>
+                  </div>
+                  <p class="text-xs text-gray-400 mt-2">Actual app port</p>
+                </div>
+              </div>
+
+              <div class="mt-8">
+                <h4 class="text-xl font-bold neon-text-blue mb-4">
+                  🚦 Traffic Flow (Step by Step)
+                </h4>
+                <p class="mb-4">Let's say client hits:</p>
+                <div class="code-block p-3 text-center text-xl">
+                  <code>http://212.2.245.220:8080</code>
+                </div>
+
+                <div class="space-y-4 mt-6">
+                  <div class="text-center">
+                    <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                      Client
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="inline-block bg-blue-900/30 px-4 py-2 rounded">
+                      Cloud Load Balancer (8080)
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div
+                      class="inline-block bg-orange-900/30 px-4 py-2 rounded"
+                    >
+                      NodePort (31755 on node)
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div
+                      class="inline-block bg-purple-900/30 px-4 py-2 rounded"
+                    >
+                      ClusterIP Service
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="inline-block bg-green-900/30 px-4 py-2 rounded">
+                      One of 10 Express Pods (8080)
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 bg-gray-800 p-4 rounded">
+                  <p class="text-center font-bold">
+                    LoadBalancer builds on NodePort.<br />
+                    NodePort builds on ClusterIP.<br />
+                    It's like layered networking.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- kubectl describe svc -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              📦 3️⃣ What kubectl describe svc Is Showing
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-xl font-bold mb-4">Important lines:</h4>
+
+                <div class="space-y-4">
+                  <div>
+                    <p class="font-bold mb-2">TargetPort: 8080</p>
+                    <div class="bg-gray-800 p-3 rounded">
+                      <p>This is your Express app port.</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">Endpoints:</p>
+                    <div class="code-block p-3 rounded">
+                      <pre>
+10.1.0.200:8080
+10.1.0.201:8080
++ 7 more...</pre
+                      >
+                    </div>
+                    <p class="mt-2 text-sm">These are your healthy Pods.</p>
+                  </div>
+                </div>
+
+                <div class="mt-6 bg-green-900/20 p-4 rounded">
+                  <p class="font-bold">
+                    Kubernetes is constantly updating this list.
+                  </p>
+                  <p class="mt-2">If a Pod dies?</p>
+                  <div class="mt-2 flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i>
+                    <span>It disappears from Endpoints instantly.</span>
+                  </div>
+                  <p class="mt-2 text-sm">
+                    That's why we never connect directly to Pods.
+                  </p>
+                </div>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-xl font-bold mb-4">
+                  Imperative vs Declarative (Production Mindset)
+                </h4>
+
+                <div class="mb-6">
+                  <p>You created Service like this:</p>
+                  <div class="code-block p-3 rounded mt-2">
+                    <code
+                      >kubectl expose deployment svc-test
+                      --type=LoadBalancer</code
+                    >
+                  </div>
+                  <p class="mt-2">This is convenient.</p>
+                  <p class="mt-2">But in real production?</p>
+                  <div class="bg-red-900/20 p-3 rounded mt-2">
+                    <p class="font-bold text-center">❌ Nobody does this.</p>
+                  </div>
+                </div>
+
+                <div class="bg-blue-900/20 p-4 rounded">
+                  <h5 class="font-bold mb-2">Why not?</h5>
+                  <ul class="space-y-2">
+                    <li class="flex items-center">
+                      <i class="fas fa-times text-red-400 mr-2"></i>
+                      <span>It's not version controlled</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-times text-red-400 mr-2"></i>
+                      <span>It's not stored in Git</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-times text-red-400 mr-2"></i>
+                      <span>Infra state becomes invisible</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="mt-6 bg-green-900/20 p-4 rounded">
+                  <h5 class="font-bold mb-2">✅ Proper Way (Declarative)</h5>
+                  <p>You write:</p>
+                  <div class="code-block p-3 rounded mt-2">
+                    <pre class="text-sm">
+kind: Service
+apiVersion: v1
+metadata:
+  name: cloud-lb
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 9000
+      targetPort: 8080
+  selector:
+    chapter: services</pre
+                    >
+                  </div>
+                  <div class="mt-2 space-y-2">
+                    <div class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>Stored in Git</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>CI/CD deploys it</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>Infra reproducible</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>Auditable</span>
+                    </div>
+                  </div>
+                  <p class="mt-2 text-sm">
+                    This is how real DevOps teams work.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Port Differences -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              🎯 Why port and targetPort Can Differ
+            </h3>
+
+            <div class="service-flow p-6">
+              <div class="text-center mb-6">
+                <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                  <p class="text-xl font-bold">Example:</p>
+                  <div class="code-block p-3 mt-2">
+                    <pre>
+port: 9000
+targetPort: 8080</pre
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-6">
+                <div class="text-center">
+                  <div class="port-visual port-public">
+                    <p>Public user hits:</p>
+                    <p class="text-2xl">:9000</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="port-visual port-container">
+                    <p>But inside container:</p>
+                    <p class="text-2xl">:8080</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 bg-gray-800 p-4 rounded">
+                <p class="text-center font-bold">Useful when:</p>
+                <div class="grid md:grid-cols-2 gap-4 mt-3">
+                  <div class="bg-blue-900/20 p-3 rounded">
+                    <p>You want friendly port externally</p>
+                  </div>
+                  <div class="bg-green-900/20 p-3 rounded">
+                    <p>Your app uses fixed internal port</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EndpointSlices Advanced -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              🧠 EndpointSlices (Advanced but Important)
+            </h3>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <p class="text-lg mb-4">Every Service automatically creates:</p>
+              <div class="bg-purple-900/20 p-4 rounded-lg text-center mb-6">
+                <p class="text-2xl font-bold">EndpointSlice</p>
+              </div>
+
+              <p class="mb-4">Think of it like:</p>
+              <div class="bg-gray-800 p-4 rounded-lg mb-6">
+                <p class="text-center font-bold">
+                  Kubernetes' live spreadsheet of healthy Pods.
+                </p>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 class="text-xl font-bold mb-4">It tracks:</h4>
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <i class="fas fa-map-marker-alt text-green-400 mr-3"></i>
+                      <span>Pod IP</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-heartbeat text-red-400 mr-3"></i>
+                      <span>Port</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-plug text-blue-400 mr-3"></i>
+                      <span>Ready status</span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="fas fa-server text-orange-400 mr-3"></i>
+                      <span>Node location</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 class="text-xl font-bold mb-4">Dynamic Updates:</h4>
+                  <div class="space-y-4">
+                    <div class="bg-green-900/20 p-3 rounded">
+                      <p class="font-bold">If you scale from 10 → 20 Pods</p>
+                      <p class="text-sm mt-1">
+                        EndpointSlice updates automatically.
+                      </p>
+                    </div>
+                    <div class="bg-blue-900/20 p-3 rounded">
+                      <p class="font-bold">
+                        Service always load balances correctly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session Affinity -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-orange mb-6">
+              🧠 Session Affinity (Interview Gold)
+            </h3>
+
+            <div class="service-flow p-6">
+              <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h4 class="text-xl font-bold mb-4">Default:</h4>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <p class="text-center font-bold">Session Affinity: None</p>
+                  </div>
+                  <p class="mt-4">Means:</p>
+                  <div class="bg-green-900/20 p-4 rounded mt-2">
+                    <p>Requests from same client may hit different Pods.</p>
+                    <p class="mt-2 text-sm">That's good.</p>
+                  </div>
+                  <p class="mt-4">
+                    Because cloud-native apps should be stateless.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 class="text-xl font-bold mb-4">If you enable:</h4>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <p class="text-center font-bold">ClientIP</p>
+                  </div>
+                  <p class="mt-4">Then same client always hits same Pod.</p>
+
+                  <div class="warning-box mt-4">
+                    <div class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-orange-400 mr-2"
+                      ></i>
+                      <p class="font-bold">
+                        ⚠ Anti-pattern unless absolutely needed.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="mt-6">
+                    <p class="font-bold mb-2">Better approach?</p>
+                    <p>Store session in:</p>
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                      <div class="bg-red-900/20 p-2 rounded text-center">
+                        Redis
+                      </div>
+                      <div class="bg-blue-900/20 p-2 rounded text-center">
+                        Database
+                      </div>
+                      <div class="bg-green-900/20 p-2 rounded text-center">
+                        JWT
+                      </div>
+                      <div class="bg-purple-900/20 p-2 rounded text-center">
+                        External store
+                      </div>
+                    </div>
+                    <p class="mt-2 text-sm">Not inside Pod memory.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Production Architecture -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              🎯 Real Production Architecture
+            </h3>
+
+            <div class="service-flow p-6">
+              <div class="text-center space-y-6">
+                <div>
+                  <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                    <h4 class="text-xl font-bold">Internet</h4>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <h4 class="text-xl font-bold">LoadBalancer Service</h4>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="text-xl font-bold">
+                      Express Deployment (10 replicas)
+                    </h4>
+                    <div class="flex justify-center space-x-1 mt-2">
+                      <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    </div>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="text-xl font-bold">ClusterIP Service</h4>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-orange-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <h4 class="text-xl font-bold">MongoDB Deployment</h4>
+                    <div class="flex justify-center space-x-2 mt-2">
+                      <div class="px-2 py-1 bg-gray-800 rounded text-xs">
+                        Primary
+                      </div>
+                      <div class="px-2 py-1 bg-gray-800 rounded text-xs">
+                        Secondary
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4 mt-8">
+                <div class="bg-blue-900/20 p-4 rounded">
+                  <p class="font-bold text-center">External → LoadBalancer</p>
+                </div>
+                <div class="bg-purple-900/20 p-4 rounded">
+                  <p class="font-bold text-center">Internal → ClusterIP</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Concept Check -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              🔥 Important Concept Check
+            </h3>
+
+            <div class="highlight-box">
+              <div class="text-center mb-4">
+                <p class="text-xl font-bold">If one Express Pod crashes...</p>
+                <p class="text-lg">Will users notice?</p>
+              </div>
+
+              <div class="text-center">
+                <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg mb-4">
+                  <p class="text-2xl font-bold neon-text-green">Answer: No.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div class="bg-green-900/20 p-4 rounded">
+                    <p class="font-bold">Because:</p>
+                    <div class="mt-2 space-y-2">
+                      <div class="flex items-center">
+                        <i class="fas fa-check text-green-400 mr-2"></i>
+                        <span>Service removes it from EndpointSlice</span>
+                      </div>
+                      <div class="flex items-center">
+                        <i class="fas fa-check text-green-400 mr-2"></i>
+                        <span>Load balancer routes to remaining 9 Pods</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="bg-blue-900/20 p-4 rounded">
+                    <p class="font-bold text-center">
+                      That's high availability.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-neon-blue/20 bg-black/50 mt-12">
+      <div class="container mx-auto px-4 py-8">
+        <div class="text-center">
+          <div class="flex justify-center space-x-6 mb-4">
+            <div
+              class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center"
+            >
+              <i class="fab fa-kubernetes neon-text-blue"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center"
+            >
+              <i class="fab fa-node-js neon-text-green"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-purple-900/30 flex items-center justify-center"
+            >
+              <i class="fas fa-cloud neon-text-purple"></i>
+            </div>
+          </div>
+          <p class="text-gray-400">
+            Kubernetes Services Master Guide - The Stable Face of Your Express
+            Apps
+          </p>
+          <p class="text-gray-500 text-sm mt-2">
+            Understanding Services is crucial for production-ready Kubernetes
+            applications
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Tab switching functionality
+      function switchTab(tabName) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach((content) => {
+          content.classList.remove('active');
+        });
+
+        // Deactivate all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(`${tabName}Content`).classList.add('active');
+
+        // Activate selected tab button
+        document.getElementById(`${tabName}Tab`).classList.add('active');
+      }
+
+      // Initialize first tab as active
+      document.addEventListener('DOMContentLoaded', () => {
+        switchTab('basics');
+      });
+    </script>
+  </body>
+</html>

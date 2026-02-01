@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes YAML Interactive Guide</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-purple: #bc13fe;
+        --neon-green: #39ff14;
+        --neon-pink: #ff00ff;
+        --neon-orange: #ff5e00;
+      }
+
+      body {
+        background: #0a0a0a;
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .neon-blue {
+        color: var(--neon-blue);
+      }
+      .neon-purple {
+        color: var(--neon-purple);
+      }
+      .neon-green {
+        color: var(--neon-green);
+      }
+      .neon-pink {
+        color: var(--neon-pink);
+      }
+      .neon-orange {
+        color: var(--neon-orange);
+      }
+
+      .yaml-line {
+        padding: 4px 10px;
+        margin: 2px 0;
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 14px;
+      }
+
+      .yaml-line:hover {
+        background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+      }
+
+      .yaml-line.highlighted {
+        background: rgba(0, 243, 255, 0.1);
+        border-left-color: var(--neon-blue);
+      }
+
+      .line-number {
+        display: inline-block;
+        width: 30px;
+        color: #718096;
+        text-align: right;
+        margin-right: 15px;
+        user-select: none;
+      }
+
+      .keyword {
+        color: #ff79c6;
+      }
+      .string {
+        color: #f1fa8c;
+      }
+      .number {
+        color: #bd93f9;
+      }
+      .comment {
+        color: #6272a4;
+      }
+
+      .tab-0 {
+        padding-left: 0px;
+      }
+      .tab-2 {
+        padding-left: 20px;
+      }
+      .tab-4 {
+        padding-left: 40px;
+      }
+      .tab-6 {
+        padding-left: 60px;
+      }
+      .tab-8 {
+        padding-left: 80px;
+      }
+
+      .card {
+        background: #1a1a2e;
+        border: 1px solid #2d3748;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .terminal {
+        background: #000;
+        border-radius: 8px;
+        padding: 15px;
+        font-family: 'Monaco', 'Courier New', monospace;
+      }
+
+      .terminal-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .terminal-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+
+      .dot-red {
+        background: #ff5f56;
+      }
+      .dot-yellow {
+        background: #ffbd2e;
+      }
+      .dot-green {
+        background: #27ca3f;
+      }
+
+      .k8s-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        margin: 0 5px;
+      }
+
+      .badge-deployment {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid #10b981;
+      }
+      .badge-service {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid #3b82f6;
+      }
+      .badge-pod {
+        background: rgba(244, 114, 182, 0.2);
+        border: 1px solid #f472b6;
+      }
+      .badge-ingress {
+        background: rgba(168, 85, 247, 0.2);
+        border: 1px solid #a855f7;
+      }
+      .badge-storage {
+        background: rgba(245, 158, 11, 0.2);
+        border: 1px solid #f59e0b;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="text-center mb-12 pt-8">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">
+          <span class="neon-blue">Kubernetes</span>
+          <span class="neon-purple ml-4">YAML</span>
+          <span class="neon-green ml-4">Interactive</span>
+          <span class="neon-pink ml-4">Guide</span>
+        </h1>
+        <p class="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
+          Click any line to see detailed explanations with real-world examples
+        </p>
+
+        <!-- Navigation -->
+        <div class="flex flex-wrap justify-center gap-3 mb-10">
+          <button
+            onclick="loadResource('deployment')"
+            class="px-5 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 transition-all flex items-center border border-gray-700"
+          >
+            <i class="fas fa-layer-group mr-2 text-green-400"></i>Deployment
+          </button>
+          <button
+            onclick="loadResource('service')"
+            class="px-5 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 transition-all flex items-center border border-gray-700"
+          >
+            <i class="fas fa-network-wired mr-2 text-blue-400"></i>Service
+          </button>
+          <button
+            onclick="loadResource('pod')"
+            class="px-5 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 transition-all flex items-center border border-gray-700"
+          >
+            <i class="fas fa-cube mr-2 text-pink-400"></i>Pod
+          </button>
+          <button
+            onclick="loadResource('ingress')"
+            class="px-5 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 transition-all flex items-center border border-gray-700"
+          >
+            <i class="fas fa-globe mr-2 text-purple-400"></i>Ingress
+          </button>
+          <button
+            onclick="loadResource('storage')"
+            class="px-5 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 transition-all flex items-center border border-gray-700"
+          >
+            <i class="fas fa-database mr-2 text-yellow-400"></i>Storage
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Left Column: YAML Code -->
+        <div>
+          <div class="card">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <i class="fas fa-code mr-3 neon-blue"></i>
+              <span id="resource-title">Deployment</span> YAML
+              <span id="resource-badge" class="k8s-badge badge-deployment ml-3"
+                >Deployment</span
+              >
+            </h2>
+
+            <div
+              class="bg-gray-900 rounded-lg p-4 overflow-x-auto"
+              id="yaml-container"
+            >
+              <!-- YAML code will be loaded here -->
+            </div>
+
+            <div class="mt-6 p-4 bg-gray-800 rounded-lg">
+              <h3
+                class="font-bold text-lg mb-2 flex items-center text-green-400"
+              >
+                <i class="fas fa-mouse-pointer mr-2"></i>How to Use This Guide
+              </h3>
+              <p class="text-gray-300">
+                <span class="neon-pink">Click any line</span> in the YAML above
+                to see its detailed explanation. Each line includes:
+              </p>
+              <ul class="list-disc pl-5 mt-2 text-gray-300">
+                <li>
+                  <span class="text-blue-300">Description:</span> What this line
+                  does
+                </li>
+                <li>
+                  <span class="text-blue-300">Details:</span> Technical
+                  explanation
+                </li>
+                <li>
+                  <span class="text-blue-300">Example:</span> Real-world usage
+                </li>
+                <li>
+                  <span class="text-blue-300">Analogy:</span> Easy-to-understand
+                  comparison
+                </li>
+                <li>
+                  <span class="text-blue-300">Command:</span> Actual kubectl
+                  command to try
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Quick Commands -->
+          <div class="card">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <i class="fas fa-terminal mr-3 neon-green"></i>Quick Commands
+            </h2>
+            <div class="terminal">
+              <div class="terminal-header">
+                <div class="terminal-dot dot-red"></div>
+                <div class="terminal-dot dot-yellow"></div>
+                <div class="terminal-dot dot-green"></div>
+                <span class="text-gray-400 ml-2">kubectl terminal</span>
+              </div>
+              <div class="text-green-400">
+                $
+                <span class="text-white">kubectl apply -f deployment.yaml</span>
+              </div>
+              <div class="text-gray-400 mt-1">
+                deployment.apps/express-demo-deploy created
+              </div>
+
+              <div class="text-green-400 mt-4">
+                $ <span class="text-white">kubectl get pods</span>
+              </div>
+              <div class="text-gray-400 mt-1">
+                NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE<br />
+                express-demo-deploy-abc123&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5s
+              </div>
+
+              <div class="text-green-400 mt-4">
+                $
+                <span id="current-command" class="text-white"
+                  >kubectl get deployments</span
+                >
+              </div>
+              <div class="text-gray-400 mt-1">
+                NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;UP-TO-DATE&nbsp;&nbsp;AVAILABLE&nbsp;&nbsp;AGE<br />
+                express-demo-deploy&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5m
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Explanations -->
+        <div>
+          <div class="card">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <i class="fas fa-info-circle mr-3 neon-purple"></i>
+              Line-by-Line Explanation
+            </h2>
+
+            <div id="explanation-container" class="space-y-4">
+              <div class="p-4 bg-gray-900 rounded-lg">
+                <h3 class="font-bold text-lg mb-2 text-blue-300">
+                  <i class="fas fa-hand-point-left mr-2"></i>Click a YAML line
+                  to start
+                </h3>
+                <p class="text-gray-300">
+                  Select any line from the YAML file on the left to see its
+                  detailed explanation here. Each explanation includes
+                  real-world examples and practical commands you can use.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Examples Section -->
+          <div class="card">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+              <i class="fas fa-globe mr-3 neon-orange"></i>Real-World Examples
+            </h2>
+
+            <div id="examples-container">
+              <!-- Examples will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer
+        class="mt-16 pt-8 border-t border-gray-800 text-center text-gray-500"
+      >
+        <p class="mb-2">
+          Kubernetes YAML Interactive Guide • Click lines for detailed
+          explanations
+        </p>
+        <p class="text-sm">
+          All examples based on your provided YAML configurations
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      // YAML Data with explanations
+      const resources = {
+        deployment: {
+          title: 'Deployment',
+          badge: 'badge-deployment',
+          yaml: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: express-demo-deploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: express-demo
+  template:
+    metadata:
+      labels:
+        app: express-demo
+    spec:
+      containers:
+        - name: express-container
+          image: express-demo:v2
+          ports:
+            - containerPort: 3000`,
+          explanations: {
+            1: {
+              line: 'apiVersion: apps/v1',
+              title: 'API Version',
+              description: 'Specifies which Kubernetes API to use',
+              details:
+                "Different resources live in different API groups. 'apps/v1' is for Deployment, StatefulSet, and DaemonSet resources.",
+              example:
+                "For Services, use 'apiVersion: v1'. For Ingress, use 'networking.k8s.io/v1'.",
+              analogy:
+                'Like specifying which department in a company should handle your request',
+              command: 'kubectl api-versions',
+            },
+            2: {
+              line: 'kind: Deployment',
+              title: 'Resource Type',
+              description:
+                'Defines what type of Kubernetes object this YAML creates',
+              details:
+                'A Deployment manages Pods and ReplicaSets. It ensures the specified number of Pod replicas are running.',
+              example:
+                'Other kinds: Pod, Service, ConfigMap, Secret, Ingress, PersistentVolume',
+              analogy:
+                "Like choosing 'Refrigerator' on an appliance order form",
+              command: 'kubectl explain deployment',
+            },
+            4: {
+              line: '  name: express-demo-deploy',
+              title: 'Resource Name',
+              description: 'The unique name for this Deployment',
+              details:
+                'Names must be DNS subdomain compliant: lowercase, alphanumeric, hyphens. No underscores allowed.',
+              example: 'Good: my-app, backend-api-1. Bad: My_App, backend.api',
+              analogy: 'Like naming a server in your data center',
+              command: 'kubectl get deployment express-demo-deploy',
+            },
+            7: {
+              line: '  replicas: 1',
+              title: 'Number of Replicas',
+              description: 'How many identical Pods should run',
+              details:
+                'Kubernetes ensures exactly this many Pods are running. If one crashes, a new one is created.',
+              example:
+                'Production: 3 (high availability). Development: 1. Testing: can be 0.',
+              analogy:
+                'Like ordering 3 identical pizzas - if one gets dropped, kitchen makes another',
+              command:
+                'kubectl scale deployment express-demo-deploy --replicas=3',
+            },
+            11: {
+              line: '      app: express-demo',
+              title: 'Label Selector',
+              description: 'Label used to find Pods',
+              details:
+                'The Deployment looks for Pods with these labels. Created Pods get matching labels.',
+              example: 'Common labels: app, version, env, tier, component',
+              analogy:
+                "Like a manager looking for employees wearing 'Team A' shirts",
+              command: 'kubectl get pods -l app=express-demo',
+            },
+            21: {
+              line: '        image: express-demo:v2',
+              title: 'Container Image',
+              description: 'The Docker image to run',
+              details:
+                'Format: [registry/][username/]image-name:tag. If no registry, pulls from Docker Hub.',
+              example:
+                'nginx:latest, myregistry.com/myapp:v1.2.3, gcr.io/project/image:tag',
+              analogy: 'Like specifying which DVD to play in a DVD player',
+              command:
+                'kubectl set image deployment/express-demo-deploy express-container=express-demo:v3',
+            },
+            26: {
+              line: '          - containerPort: 3000',
+              title: 'Container Port',
+              description: 'Port the application listens on',
+              details:
+                'Your Express.js app should listen on this port. Services use this to know which port to target.',
+              example:
+                'Node.js: 3000, Python Flask: 5000, Java Spring Boot: 8080',
+              analogy: "Like a store saying 'We're open at Door #3000'",
+              command:
+                'kubectl port-forward pod/express-demo-deploy-abc123 8080:3000',
+            },
+          },
+          examples: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-green-400">Updating Your App</h4>
+                            <p class="text-gray-300 mb-3">To deploy a new version:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Change image tag in deployment.yaml</span><br>
+                                <span class="text-white">image: express-demo:</span><span class="text-yellow-400">v3</span><br>
+                                <span class="text-green-400"># Apply the change</span><br>
+                                <span class="text-white">kubectl apply -f deployment.yaml</span><br>
+                                <span class="text-gray-400"># Kubernetes performs rolling update</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-blue-400">Scaling Horizontally</h4>
+                            <p class="text-gray-300 mb-3">Handle more traffic by adding replicas:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Scale to 3 instances</span><br>
+                                <span class="text-white">kubectl scale deployment express-demo-deploy --replicas=3</span><br>
+                                <span class="text-gray-400"># Check all pods are running</span><br>
+                                <span class="text-white">kubectl get pods -l app=express-demo</span><br>
+                                <span class="text-gray-400"># 3 pods should be listed</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+        },
+        service: {
+          title: 'Service',
+          badge: 'badge-service',
+          yaml: `apiVersion: v1
+kind: Service
+metadata:
+  name: express-service
+spec:
+  type: NodePort
+  selector:
+    app: express-demo
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 32000`,
+          explanations: {
+            1: {
+              line: 'apiVersion: v1',
+              title: 'Core API',
+              description: 'Services are in core Kubernetes API',
+              details:
+                'Core resources (Pod, Service, ConfigMap, Secret) use apiVersion: v1',
+              example: 'Unlike Deployments which use apps/v1',
+              analogy:
+                'Like using general office forms instead of department-specific forms',
+              command: 'kubectl explain service',
+            },
+            2: {
+              line: 'kind: Service',
+              title: 'Service Resource',
+              description: 'Creates stable network endpoint',
+              details:
+                'Provides permanent DNS name and IP for accessing Pods that may come and go',
+              example: 'Load balances traffic between multiple Pods',
+              analogy:
+                "Like a restaurant's phone number - waiters change but number stays",
+              command: 'kubectl get services',
+            },
+            8: {
+              line: '  type: NodePort',
+              title: 'Service Type',
+              description: 'How service is exposed',
+              details:
+                "NodePort makes service accessible from outside cluster on each node's IP",
+              example:
+                'ClusterIP (internal), NodePort (external), LoadBalancer (cloud load balancer)',
+              analogy: 'Like a public door vs staff-only entrance',
+              command: 'kubectl get service express-service -o wide',
+            },
+            15: {
+              line: '      port: 3000',
+              title: 'Service Port',
+              description: 'Port service listens on inside cluster',
+              details: 'Other Pods access service at service-name:port',
+              example: 'express-service:3000',
+              analogy:
+                "Like company switchboard number 'Dial 3000 for support'",
+              command: 'kubectl exec client-pod -- curl express-service:3000',
+            },
+            16: {
+              line: '      targetPort: 3000',
+              title: 'Target Port',
+              description: 'Port on Pod containers',
+              details: 'Must match containerPort in Pod/Deployment',
+              example: 'Pod listens on 8080, service targetPort: 8080',
+              analogy: 'Like receptionist transferring calls to extension 3000',
+              command: 'kubectl describe service express-service',
+            },
+            17: {
+              line: '      nodePort: 32000',
+              title: 'Node Port',
+              description: "Port exposed on node's IP",
+              details:
+                'Accessible from outside at http://[node-ip]:32000 (30000-32767 range)',
+              example: 'Development: 32000, Another app: 32001',
+              analogy:
+                'Like street address with apartment number: 123 Main St, Apt 32000',
+              command: 'curl http://192.168.1.100:32000',
+            },
+          },
+          examples: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-blue-400">Access From Outside</h4>
+                            <p class="text-gray-300 mb-3">With NodePort, access from anywhere:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Get node IP</span><br>
+                                <span class="text-white">kubectl get nodes -o wide</span><br>
+                                <span class="text-gray-400"># Look for EXTERNAL-IP or INTERNAL-IP</span><br>
+                                <span class="text-green-400"># Access your app</span><br>
+                                <span class="text-white">curl http://192.168.1.100:32000</span><br>
+                                <span class="text-gray-400"># Should see your Express app</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-purple-400">Internal Access</h4>
+                            <p class="text-gray-300 mb-3">Pods access service by name:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># From another pod</span><br>
+                                <span class="text-white">kubectl exec client-pod -- curl express-service:3000</span><br>
+                                <span class="text-gray-400">Hello from Express app! 🚀</span><br>
+                                <span class="text-green-400"># DNS works automatically</span><br>
+                                <span class="text-white">kubectl exec client-pod -- nslookup express-service</span><br>
+                                <span class="text-gray-400"># Shows service IP</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+        },
+        pod: {
+          title: 'Pod',
+          badge: 'badge-pod',
+          yaml: `apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-pod
+spec:
+  containers:
+    - name: express-app
+      image: express-demo:v2
+      ports:
+        - containerPort: 3000
+    - name: sidecar-logger
+      image: busybox
+      command:
+        [
+          'sh',
+          '-c',
+          "while true; do echo '📢 Sidecar running'; sleep 5; done",
+        ]`,
+          explanations: {
+            1: {
+              line: 'apiVersion: v1',
+              title: 'Core API',
+              description: 'Pods are core Kubernetes resources',
+              details:
+                'Use apiVersion: v1 for Pod, Service, ConfigMap, Secret, etc.',
+              example: 'Same as Service, different from Deployment (apps/v1)',
+              analogy: 'Like using basic building blocks',
+              command: 'kubectl explain pod',
+            },
+            2: {
+              line: 'kind: Pod',
+              title: 'Pod Resource',
+              description: 'Smallest deployable unit',
+              details:
+                'Group of 1+ containers with shared storage/network. Ephemeral (temporary).',
+              example:
+                'Single-container: simple app. Multi-container: app + sidecar',
+              analogy: 'Like a lunchbox with compartments',
+              command: 'kubectl get pods',
+            },
+            5: {
+              line: '  name: multi-container-pod',
+              title: 'Pod Name',
+              description: 'Unique name for this Pod',
+              details:
+                'Must be unique within namespace. Often has random suffix when created by Deployment.',
+              example: 'Manual: my-pod, multi-container-pod',
+              analogy: 'Like naming a shipping container',
+              command: 'kubectl describe pod multi-container-pod',
+            },
+            10: {
+              line: '    - name: express-app',
+              title: 'Main Container',
+              description: 'Primary application container',
+              details: 'This container runs your Express.js application',
+              example: 'Main app: web-server, api-server, database',
+              analogy: 'Like main dish in a meal',
+              command: 'kubectl logs multi-container-pod -c express-app',
+            },
+            17: {
+              line: '    - name: sidecar-logger',
+              title: 'Sidecar Container',
+              description: 'Helper container alongside main app',
+              details:
+                'Shares Pod lifecycle. Helps with logging, monitoring, proxying.',
+              example:
+                'Sidecars: logging agent, metrics exporter, service mesh proxy',
+              analogy: 'Like personal assistant traveling with executive',
+              command: 'kubectl logs multi-container-pod -c sidecar-logger',
+            },
+            24: {
+              line: '        "while true; do echo \'📢 Sidecar running\'; sleep 5; done",',
+              title: 'Infinite Loop Command',
+              description: 'Command that runs forever',
+              details:
+                'This sidecar logs every 5 seconds. Real sidecars might send logs to central system.',
+              example:
+                'Real sidecar: filebeat for logs, istio-proxy for networking',
+              analogy: 'Like heartbeat monitor beeping every 5 seconds',
+              command:
+                'kubectl exec multi-container-pod -c sidecar-logger -- ps aux',
+            },
+          },
+          examples: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-pink-400">Debugging Pods</h4>
+                            <p class="text-gray-300 mb-3">When something goes wrong:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Check pod status</span><br>
+                                <span class="text-white">kubectl describe pod multi-container-pod</span><br>
+                                <span class="text-green-400"># See logs</span><br>
+                                <span class="text-white">kubectl logs multi-container-pod -c express-app</span><br>
+                                <span class="text-white">kubectl logs multi-container-pod -c sidecar-logger</span><br>
+                                <span class="text-green-400"># Execute command in container</span><br>
+                                <span class="text-white">kubectl exec -it multi-container-pod -c express-app -- sh</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-green-400">Container Communication</h4>
+                            <p class="text-gray-300 mb-3">Containers in same Pod share localhost:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Sidecar can access main app</span><br>
+                                <span class="text-white">kubectl exec multi-container-pod -c sidecar-logger -- wget -qO- http://localhost:3000</span><br>
+                                <span class="text-gray-400">Hello from Express app! 🚀</span><br>
+                                <span class="text-green-400"># They also share volumes</span><br>
+                                <span class="text-white">kubectl exec multi-container-pod -c express-app -- touch /shared/test.txt</span><br>
+                                <span class="text-white">kubectl exec multi-container-pod -c sidecar-logger -- ls /shared</span><br>
+                                <span class="text-gray-400">test.txt</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+        },
+        ingress: {
+          title: 'Ingress',
+          badge: 'badge-ingress',
+          yaml: `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: express-app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: express.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: express-service
+                port:
+                  number: 3000`,
+          explanations: {
+            1: {
+              line: 'apiVersion: networking.k8s.io/v1',
+              title: 'Networking API',
+              description: 'Ingress uses networking API group',
+              details: 'This API group also contains NetworkPolicy resources',
+              example: 'Older clusters might use extensions/v1beta1',
+              analogy: 'Like using networking department forms',
+              command: 'kubectl explain ingress',
+            },
+            2: {
+              line: 'kind: Ingress',
+              title: 'Ingress Resource',
+              description: 'Manages external HTTP/HTTPS access',
+              details:
+                'Provides load balancing, SSL termination, name-based virtual hosting',
+              example:
+                'Routes domain.com to frontend, api.domain.com to backend',
+              analogy: 'Like reception desk at building entrance',
+              command: 'kubectl get ingress',
+            },
+            7: {
+              line: '    nginx.ingress.kubernetes.io/rewrite-target: /',
+              title: 'Rewrite Target',
+              description: 'URL path rewriting rule',
+              details:
+                'Tells nginx to rewrite URL paths before forwarding to service',
+              example: '/api/users → /users',
+              analogy: 'Like receptionist removing apartment numbers',
+              command:
+                "curl -H 'Host: express.local' http://ingress-ip/api/users",
+            },
+            12: {
+              line: '    - host: express.local',
+              title: 'Host Name',
+              description: 'Domain name for this rule',
+              details: 'HTTP Host header must match this value',
+              example: 'express.local, api.express.local, *.express.local',
+              analogy: "Like mail addressed to 'Accounting Department'",
+              command: "curl -H 'Host: express.local' http://[ingress-ip]/",
+            },
+            21: {
+              line: '                name: express-service',
+              title: 'Backend Service',
+              description: 'Service that receives traffic',
+              details: 'Must match existing Service name',
+              example: 'frontend-service, api-service, auth-service',
+              analogy: "Like directing visitors to 'Room 3000'",
+              command: 'kubectl get service express-service',
+            },
+          },
+          examples: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-purple-400">Local Development Setup</h4>
+                            <p class="text-gray-300 mb-3">To use express.local locally:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Edit hosts file</span><br>
+                                <span class="text-white">sudo nano /etc/hosts  # Linux/Mac</span><br>
+                                <span class="text-gray-400"># Add this line:</span><br>
+                                <span class="text-yellow-400">127.0.0.1   express.local</span><br>
+                                <span class="text-green-400"># For Windows:</span><br>
+                                <span class="text-white"># Edit C:\\Windows\\System32\\drivers\\etc\\hosts</span><br>
+                                <span class="text-green-400"># Access your app</span><br>
+                                <span class="text-white">curl http://express.local</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-blue-400">Multiple Paths Routing</h4>
+                            <p class="text-gray-300 mb-3">Route different paths to different services:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-gray-400">rules:</span><br>
+                                <span class="text-yellow-400">- host: express.local</span><br>
+                                <span class="text-yellow-400">  http:</span><br>
+                                <span class="text-yellow-400">    paths:</span><br>
+                                <span class="text-yellow-400">    - path: /api</span><br>
+                                <span class="text-yellow-400">      backend:</span><br>
+                                <span class="text-yellow-400">        serviceName: api-service</span><br>
+                                <span class="text-yellow-400">    - path: /admin</span><br>
+                                <span class="text-yellow-400">      backend:</span><br>
+                                <span class="text-yellow-400">        serviceName: admin-service</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+        },
+        storage: {
+          title: 'Storage',
+          badge: 'badge-storage',
+          yaml: `apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: express-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/express
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: express-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-demo-pod
+spec:
+  containers:
+    - name: express
+      image: express-demo:v2
+      volumeMounts:
+        - name: storage
+          mountPath: /data
+  volumes:
+    - name: storage
+      persistentVolumeClaim:
+        claimName: express-pvc`,
+          explanations: {
+            2: {
+              line: 'kind: PersistentVolume',
+              title: 'Persistent Volume (PV)',
+              description: 'Storage in the cluster',
+              details:
+                'Cluster resource like nodes. Exists independently of Pods.',
+              example: 'hostPath (local), NFS, cloud storage (EBS, GPD)',
+              analogy: 'Like physical hard drive in server rack',
+              command: 'kubectl get persistentvolumes',
+            },
+            8: {
+              line: '    storage: 1Gi',
+              title: 'Storage Capacity',
+              description: 'Amount of storage provided',
+              details:
+                '1Gi = 1024^3 bytes. Format: number followed by unit (Gi, Mi, Ti)',
+              example: '512Mi, 1Gi, 10Gi, 100Gi, 1Ti',
+              analogy: "Like labeling hard drive as '1TB'",
+              command: 'kubectl describe pv express-pv',
+            },
+            10: {
+              line: '  - ReadWriteOnce',
+              title: 'Access Mode',
+              description: 'How volume can be mounted',
+              details:
+                'ReadWriteOnce (RWO): one node read-write, ReadOnlyMany (ROX): many nodes read-only',
+              example: 'Database: RWO, Config files: ROX',
+              analogy: 'Like library book checkout rules',
+              command: 'kubectl explain pv.spec.accessModes',
+            },
+            14: {
+              line: 'kind: PersistentVolumeClaim',
+              title: 'Persistent Volume Claim (PVC)',
+              description: 'Request for storage',
+              details:
+                'Pods use PVCs, not PVs directly. Kubernetes binds PVC to suitable PV.',
+              example: 'PVC asks for 1Gi, finds PV with 1Gi+ capacity',
+              analogy: "Like requesting 'any 1TB hard drive' from IT",
+              command: 'kubectl get pvc',
+            },
+            32: {
+              line: '    volumeMounts:',
+              title: 'Volume Mounts',
+              description: 'Where to mount volume in container',
+              details: 'Each container can mount volumes at different paths',
+              example: 'App data: /app/data, Logs: /var/log',
+              analogy: "Like telling someone 'put files in Documents folder'",
+              command: 'kubectl exec pvc-demo-pod -- ls /data',
+            },
+            39: {
+              line: '      persistentVolumeClaim:',
+              title: 'PVC Reference',
+              description: 'Tells Pod to use PVC storage',
+              details: 'Pod gets persistent storage without knowing PV details',
+              example: 'PVC names: mysql-pvc, app-data-pvc',
+              analogy: "Like worker requesting 'office supplies'",
+              command: 'kubectl describe pod pvc-demo-pod | grep -A5 Volumes',
+            },
+          },
+          examples: `
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-yellow-400">Persistent Data</h4>
+                            <p class="text-gray-300 mb-3">Data survives pod restarts:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-green-400"># Create file in mounted volume</span><br>
+                                <span class="text-white">kubectl exec pvc-demo-pod -- sh -c "echo 'Data survives!' > /data/test.txt"</span><br>
+                                <span class="text-green-400"># Read file</span><br>
+                                <span class="text-white">kubectl exec pvc-demo-pod -- cat /data/test.txt</span><br>
+                                <span class="text-gray-400">Data survives!</span><br>
+                                <span class="text-green-400"># Delete pod</span><br>
+                                <span class="text-white">kubectl delete pod pvc-demo-pod</span><br>
+                                <span class="text-green-400"># Create new pod with same PVC</span><br>
+                                <span class="text-white">kubectl apply -f pvc-pod.yaml</span><br>
+                                <span class="text-green-400"># Data is still there! 🎉</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800 rounded-lg">
+                            <h4 class="font-bold text-lg mb-2 text-green-400">Multiple Pods Sharing</h4>
+                            <p class="text-gray-300 mb-3">Different pods can share PVC:</p>
+                            <div class="bg-black p-3 rounded font-mono text-sm">
+                                <span class="text-gray-400"># Second pod using same PVC:</span><br>
+                                <span class="text-yellow-400">volumes:</span><br>
+                                <span class="text-yellow-400">- name: shared-storage</span><br>
+                                <span class="text-yellow-400">  persistentVolumeClaim:</span><br>
+                                <span class="text-yellow-400">    claimName: express-pvc</span><br>
+                                <span class="text-green-400"># Both pods see same files</span><br>
+                                <span class="text-gray-400">pvc-demo-pod writes to /data</span><br>
+                                <span class="text-gray-400">backup-pod reads from /backup-data</span>
+                            </div>
+                        </div>
+                    </div>
+                `,
+        },
+      };
+
+      // Current state
+      let currentResource = 'deployment';
+      let currentLine = null;
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function () {
+        loadResource('deployment');
+      });
+
+      // Load a resource
+      function loadResource(resourceName) {
+        currentResource = resourceName;
+        const resource = resources[resourceName];
+
+        // Update UI
+        document.getElementById('resource-title').textContent = resource.title;
+        document.getElementById(
+          'resource-badge',
+        ).className = `k8s-badge ${resource.badge} ml-3`;
+        document.getElementById('resource-badge').textContent = resource.title;
+        document.getElementById('current-command').textContent =
+          getCommandForResource(resourceName);
+
+        // Render YAML
+        renderYaml(resource.yaml, resource.explanations);
+
+        // Update examples
+        document.getElementById('examples-container').innerHTML =
+          resource.examples;
+
+        // Reset explanation
+        document.getElementById('explanation-container').innerHTML = `
+                <div class="p-4 bg-gray-900 rounded-lg">
+                    <h3 class="font-bold text-lg mb-2 text-blue-300">
+                        <i class="fas fa-hand-point-left mr-2"></i>Click any YAML line
+                    </h3>
+                    <p class="text-gray-300">
+                        Select a line from the ${resource.title} YAML to see detailed explanation.
+                        Each line includes: Description, Details, Example, Analogy, and Command.
+                    </p>
+                </div>
+            `;
+      }
+
+      // Render YAML with line numbers
+      function renderYaml(yamlText, explanations) {
+        const container = document.getElementById('yaml-container');
+        const lines = yamlText.split('\n');
+        let html = '';
+
+        lines.forEach((line, index) => {
+          const lineNumber = index + 1;
+          const explanation = explanations[lineNumber];
+          const isHighlighted = currentLine === lineNumber;
+          const indentClass = getIndentClass(line);
+          const hasExplanation = explanation
+            ? 'cursor-pointer hover:bg-gray-800'
+            : 'text-gray-600';
+          const highlightClass = isHighlighted ? 'highlighted' : '';
+
+          html += `<div class="yaml-line ${hasExplanation} ${highlightClass} ${indentClass}" 
+                           onclick="${
+                             explanation ? `explainLine(${lineNumber})` : ''
+                           }"
+                           onmouseenter="${
+                             explanation ? `highlightLine(${lineNumber})` : ''
+                           }"
+                           onmouseleave="${
+                             explanation ? `unhighlightLine(${lineNumber})` : ''
+                           }">
+                    <span class="line-number">${lineNumber}</span>
+                    ${highlightSyntax(line)}
+                </div>`;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // Get indent class
+      function getIndentClass(line) {
+        const spaces = line.length - line.trimStart().length;
+        if (spaces >= 8) return 'tab-8';
+        if (spaces >= 6) return 'tab-6';
+        if (spaces >= 4) return 'tab-4';
+        if (spaces >= 2) return 'tab-2';
+        return 'tab-0';
+      }
+
+      // Syntax highlighting
+      function highlightSyntax(line) {
+        let result = line;
+
+        // Keywords
+        const keywords = [
+          'apiVersion',
+          'kind',
+          'metadata',
+          'spec',
+          'name',
+          'type',
+          'selector',
+          'ports',
+          'protocol',
+          'targetPort',
+          'nodePort',
+          'replicas',
+          'template',
+          'containers',
+          'image',
+          'containerPort',
+          'command',
+          'volumeMounts',
+          'mountPath',
+          'volumes',
+          'hostPath',
+          'capacity',
+          'storage',
+          'accessModes',
+          'resources',
+          'requests',
+          'persistentVolumeClaim',
+          'claimName',
+          'rules',
+          'host',
+          'http',
+          'paths',
+          'pathType',
+          'backend',
+          'service',
+          'annotations',
+        ];
+
+        keywords.forEach((keyword) => {
+          const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+          result = result.replace(
+            regex,
+            `<span class="keyword">${keyword}</span>`,
+          );
+        });
+
+        // Strings
+        result = result.replace(
+          /(['"])(.*?)\1/g,
+          '<span class="string">$1$2$1</span>',
+        );
+
+        // Numbers
+        result = result.replace(/\b(\d+)\b/g, '<span class="number">$1</span>');
+
+        // Specific values
+        const values = [
+          'apps/v1',
+          'v1',
+          'networking.k8s.io/v1',
+          'Deployment',
+          'Service',
+          'Pod',
+          'PersistentVolume',
+          'PersistentVolumeClaim',
+          'Ingress',
+          'NodePort',
+          'TCP',
+          'ReadWriteOnce',
+          'Prefix',
+          'busybox',
+          'express-demo:v2',
+          '1Gi',
+          '3000',
+          '32000',
+        ];
+
+        values.forEach((value) => {
+          const regex = new RegExp(`\\b${value}\\b`, 'g');
+          result = result.replace(
+            regex,
+            `<span class="string">${value}</span>`,
+          );
+        });
+
+        return result;
+      }
+
+      // Explain a line
+      function explainLine(lineNumber) {
+        currentLine = lineNumber;
+        const resource = resources[currentResource];
+        const explanation = resource.explanations[lineNumber];
+
+        if (!explanation) return;
+
+        // Re-render YAML with highlight
+        renderYaml(resource.yaml, resource.explanations);
+
+        // Show explanation
+        const explanationHTML = `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-xl font-bold neon-blue">Line ${lineNumber}: ${explanation.title}</h3>
+                            <p class="text-gray-300 mt-1">${explanation.description}</p>
+                        </div>
+                        <div class="text-2xl">
+                            <i class="fas fa-code"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <h4 class="font-bold text-lg mb-2 flex items-center text-blue-300">
+                            <i class="fas fa-info-circle mr-2"></i>Details
+                        </h4>
+                        <p class="text-gray-300">${explanation.details}</p>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <h4 class="font-bold text-lg mb-2 flex items-center text-green-400">
+                            <i class="fas fa-code mr-2"></i>Example
+                        </h4>
+                        <p class="text-gray-300">${explanation.example}</p>
+                    </div>
+                    
+                    <div class="p-4 bg-purple-900/20 rounded-lg">
+                        <h4 class="font-bold text-lg mb-2 flex items-center text-purple-300">
+                            <i class="fas fa-lightbulb mr-2"></i>Real-World Analogy
+                        </h4>
+                        <p class="text-gray-300">${explanation.analogy}</p>
+                    </div>
+                    
+                    <div class="p-4 bg-green-900/20 rounded-lg">
+                        <h4 class="font-bold text-lg mb-2 flex items-center text-green-300">
+                            <i class="fas fa-terminal mr-2"></i>Try This Command
+                        </h4>
+                        <div class="bg-black p-3 rounded font-mono">
+                            <span class="text-green-400">$ </span><span class="text-white">${explanation.command}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        document.getElementById('explanation-container').innerHTML =
+          explanationHTML;
+      }
+
+      // Highlight line on hover
+      function highlightLine(lineNumber) {
+        const lines = document.querySelectorAll('.yaml-line');
+        const line = lines[lineNumber - 1];
+        if (line && currentLine !== lineNumber) {
+          line.style.backgroundColor = 'rgba(0, 243, 255, 0.05)';
+          line.style.borderLeftColor = 'var(--neon-blue)';
+        }
+      }
+
+      // Unhighlight line
+      function unhighlightLine(lineNumber) {
+        const lines = document.querySelectorAll('.yaml-line');
+        const line = lines[lineNumber - 1];
+        if (line && currentLine !== lineNumber) {
+          line.style.backgroundColor = '';
+          line.style.borderLeftColor = '';
+        }
+      }
+
+      // Get command for resource
+      function getCommandForResource(resourceName) {
+        const commands = {
+          deployment: 'kubectl get deployments',
+          service: 'kubectl get services',
+          pod: 'kubectl get pods',
+          ingress: 'kubectl get ingress',
+          storage: 'kubectl get pvc',
+        };
+        return commands[resourceName] || 'kubectl get pods';
+      }
+    </script>
+  </body>
+</html>

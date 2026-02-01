@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reliable Data Transfer Notes | TCP Fundamentals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+    />
+    <style>
+      :root {
+        --neon-green: #00ff9d;
+        --neon-blue: #00e0ff;
+        --neon-purple: #b967ff;
+        --neon-pink: #ff2d95;
+        --dark-bg: #0f172a;
+        --card-bg: #1e293b;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+      }
+
+      .gradient-text {
+        background: linear-gradient(
+          135deg,
+          var(--neon-green),
+          var(--neon-blue)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .protocol-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .protocol-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 255, 157, 0.15);
+        border-color: rgba(0, 255, 157, 0.3);
+      }
+
+      .protocol-header {
+        position: relative;
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .protocol-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 16px 16px 0 0;
+      }
+
+      .rdt1-header::before {
+        background: var(--neon-green);
+      }
+      .rdt2-header::before {
+        background: var(--neon-blue);
+      }
+      .rdt21-header::before {
+        background: var(--neon-purple);
+      }
+      .rdt3-header::before {
+        background: var(--neon-pink);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .good-badge {
+        background: rgba(0, 255, 157, 0.15);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+      }
+
+      .bad-badge {
+        background: rgba(255, 45, 85, 0.15);
+        border: 1px solid #ff2d55;
+        color: #ff2d55;
+      }
+
+      .info-badge {
+        background: rgba(0, 224, 255, 0.15);
+        border: 1px solid var(--neon-blue);
+        color: var(--neon-blue);
+      }
+
+      .concept-box {
+        background: rgba(30, 41, 59, 0.5);
+        border-left: 4px solid var(--neon-green);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+
+      .comparison-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr 2fr 2fr 2fr;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        align-items: center;
+      }
+
+      .comparison-row:hover {
+        background: rgba(0, 255, 157, 0.05);
+      }
+
+      .pipeline-visual {
+        height: 120px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 12px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .packet {
+        position: absolute;
+        width: 40px;
+        height: 30px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+      }
+
+      .flow-arrow {
+        animation: flow 2s linear infinite;
+      }
+
+      @keyframes flow {
+        0% {
+          transform: translateX(-100px) scale(0.8);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(0) scale(1);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100px) scale(0.8);
+          opacity: 0;
+        }
+      }
+
+      .python-code {
+        background: #1a2332;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(0, 255, 157, 0.2);
+      }
+
+      .code-header {
+        background: rgba(0, 255, 157, 0.1);
+        padding: 0.75rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+      }
+
+      .toggle-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+
+      .toggle-content.active {
+        max-height: 500px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center justify-between flex-wrap">
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <div
+              class="w-14 h-14 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center"
+            >
+              <i class="fas fa-shield-alt text-2xl text-white"></i>
+            </div>
+            <div
+              class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center"
+            >
+              <span class="text-xs font-bold">RDT</span>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold gradient-text">
+              Reliable Data Transfer
+            </h1>
+            <p class="text-slate-400">Chapter 3.4 - From rdt1.0 to Go-Back-N</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 flex-wrap">
+          <span class="badge good-badge"
+            ><i class="fas fa-check-circle mr-2"></i>TCP Foundations</span
+          >
+          <span class="badge info-badge"
+            ><i class="fas fa-bolt mr-2"></i>Interactive</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto">
+      <!-- Core Problem Section -->
+      <section class="mb-12">
+        <div class="protocol-card">
+          <div class="protocol-header">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500/20 to-blue-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-question-circle text-2xl text-green-400"></i>
+              </div>
+              <h2 class="text-2xl font-bold">The Core Problem</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="concept-box">
+                <h3 class="font-bold text-green-400 mb-2 flex items-center">
+                  <i class="fas fa-bullseye mr-2"></i>What We Need
+                </h3>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i> No data
+                    loss
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i> No
+                    corruption
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i> In-order
+                    delivery
+                  </li>
+                </ul>
+              </div>
+              <div class="concept-box">
+                <h3 class="font-bold text-red-400 mb-2 flex items-center">
+                  <i class="fas fa-exclamation-triangle mr-2"></i>Reality Check
+                </h3>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i> IP drops
+                    packets
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i> Bits get
+                    corrupted
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i> No guarantees
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Protocol Evolution -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-code-branch mr-3 text-blue-400"></i>
+          Protocol Evolution Journey
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- rdt1.0 -->
+          <div class="protocol-card">
+            <div class="protocol-header rdt1-header">
+              <div class="flex items-center mb-2">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3"
+                >
+                  <span class="font-bold text-green-400">1.0</span>
+                </div>
+                <h3 class="text-lg font-bold">Perfect Channel</h3>
+              </div>
+              <p class="text-sm text-slate-400">"Everything works perfectly"</p>
+            </div>
+            <div class="p-4">
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-sm">No corruption</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-sm">No loss</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-times text-red-400 mr-2"></i>
+                  <span class="text-sm">No ACK/NAK</span>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-green-900/20 rounded-lg">
+                <p class="text-xs text-green-300">
+                  <i class="fas fa-lightbulb mr-1"></i>
+                  Just send → receive. No thinking needed.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- rdt2.0 -->
+          <div class="protocol-card">
+            <div class="protocol-header rdt2-header">
+              <div class="flex items-center mb-2">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3"
+                >
+                  <span class="font-bold text-blue-400">2.0</span>
+                </div>
+                <h3 class="text-lg font-bold">Bit Errors</h3>
+              </div>
+              <p class="text-sm text-slate-400">"ACK/NAK with stop-and-wait"</p>
+            </div>
+            <div class="p-4">
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-sm">Handles corruption</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-bug text-yellow-400 mr-2"></i>
+                  <span class="text-sm">ACK/NAK can corrupt</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-hourglass-half text-orange-400 mr-2"></i>
+                  <span class="text-sm">Stop-and-wait</span>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-blue-900/20 rounded-lg">
+                <p class="text-xs text-blue-300">
+                  <i class="fas fa-exclamation-triangle mr-1"></i>
+                  Fatal flaw: ACK/NAK corruption breaks everything
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- rdt2.1/2.2 -->
+          <div class="protocol-card">
+            <div class="protocol-header rdt21-header">
+              <div class="flex items-center mb-2">
+                <div
+                  class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mr-3"
+                >
+                  <span class="font-bold text-purple-400">2.1/2.2</span>
+                </div>
+                <h3 class="text-lg font-bold">Sequence Numbers</h3>
+              </div>
+              <p class="text-sm text-slate-400">
+                "1-bit sequence numbers save the day"
+              </p>
+            </div>
+            <div class="p-4">
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-hashtag text-purple-400 mr-2"></i>
+                  <span class="text-sm">Sequence numbers (0,1)</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-shield-alt text-green-400 mr-2"></i>
+                  <span class="text-sm">Duplicate detection</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-times text-red-400 mr-2"></i>
+                  <span class="text-sm">Still stop-and-wait</span>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-purple-900/20 rounded-lg">
+                <p class="text-xs text-purple-300">
+                  <i class="fas fa-star mr-1"></i>
+                  Big idea: Sequence numbers prevent duplicates
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- rdt3.0 -->
+          <div class="protocol-card">
+            <div class="protocol-header rdt3-header">
+              <div class="flex items-center mb-2">
+                <div
+                  class="w-10 h-10 rounded-full bg-pink-500/20 flex items-center justify-center mr-3"
+                >
+                  <span class="font-bold text-pink-400">3.0</span>
+                </div>
+                <h3 class="text-lg font-bold">Packet Loss</h3>
+              </div>
+              <p class="text-sm text-slate-400">"Timers for the win"</p>
+            </div>
+            <div class="p-4">
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <i class="fas fa-clock text-pink-400 mr-2"></i>
+                  <span class="text-sm">Timer + retransmit</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check text-green-400 mr-2"></i>
+                  <span class="text-sm">Handles loss</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-turtle text-orange-400 mr-2"></i>
+                  <span class="text-sm">Slow stop-and-wait</span>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-pink-900/20 rounded-lg">
+                <p class="text-xs text-pink-300">
+                  <i class="fas fa-heart mr-1"></i>
+                  Reliable! But painfully slow...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Comparison Table -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-table mr-3 text-green-400"></i>
+          Protocol Comparison Matrix
+        </h2>
+
+        <div class="protocol-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <div class="min-w-max">
+              <!-- Header -->
+              <div class="comparison-row bg-slate-800/50 font-bold">
+                <div>Feature</div>
+                <div class="text-green-400">rdt1.0</div>
+                <div class="text-blue-400">rdt2.0</div>
+                <div class="text-purple-400">rdt2.1/2.2</div>
+                <div class="text-pink-400">rdt3.0</div>
+              </div>
+
+              <!-- Rows -->
+              <div class="comparison-row">
+                <div>Handles Bit Errors</div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+              </div>
+
+              <div class="comparison-row">
+                <div>Handles ACK Loss</div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+              </div>
+
+              <div class="comparison-row">
+                <div>Handles Packet Loss</div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+              </div>
+
+              <div class="comparison-row">
+                <div>Sequence Numbers</div>
+                <div><span class="badge bad-badge">No</span></div>
+                <div><span class="badge bad-badge">No</span></div>
+                <div><span class="badge good-badge">1-bit</span></div>
+                <div><span class="badge good-badge">1-bit</span></div>
+              </div>
+
+              <div class="comparison-row">
+                <div>Timer</div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-times text-red-400"></i></div>
+                <div><i class="fas fa-check text-green-400"></i></div>
+              </div>
+
+              <div class="comparison-row">
+                <div>Speed</div>
+                <div><span class="text-green-400">Fast</span></div>
+                <div><span class="text-yellow-400">Slow</span></div>
+                <div><span class="text-yellow-400">Slow</span></div>
+                <div><span class="text-red-400">Very Slow</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- The Problem: Stop-and-Wait -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-exclamation-triangle mr-3 text-red-400"></i>
+          Why Stop-and-Wait Sucks
+        </h2>
+
+        <div class="protocol-card p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 class="text-xl font-bold text-red-400 mb-4">
+                The Math of Misery
+              </h3>
+              <div class="space-y-4">
+                <div class="p-4 bg-red-900/20 rounded-lg">
+                  <div class="flex items-center mb-2">
+                    <i class="fas fa-calculator text-red-400 mr-2"></i>
+                    <span class="font-bold">Utilization Formula</span>
+                  </div>
+                  <div class="font-mono text-sm">U = L/R ÷ (RTT + L/R)</div>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-network-wired text-blue-400 mr-3"></i>
+                    <div>
+                      <div class="font-bold">1 Gbps Fiber</div>
+                      <div class="text-sm text-slate-400">
+                        Paying for gigabit speed
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-tachometer-alt text-red-400 mr-3"></i>
+                    <div>
+                      <div class="font-bold">267 kbps Actual</div>
+                      <div class="text-sm text-slate-400">
+                        Stop-and-wait reality
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <i class="fas fa-percentage text-yellow-400 mr-3"></i>
+                    <div>
+                      <div class="font-bold">0.027% Efficiency</div>
+                      <div class="text-sm text-slate-400">Terrible waste</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-bold text-green-400 mb-4">
+                The Solution: Pipelining
+              </h3>
+              <div class="pipeline-visual">
+                <!-- Packets in flight -->
+                <div class="packet bg-green-500" style="top: 20px; left: 20px">
+                  P1
+                </div>
+                <div class="packet bg-blue-500" style="top: 20px; left: 80px">
+                  P2
+                </div>
+                <div
+                  class="packet bg-purple-500"
+                  style="top: 20px; left: 140px"
+                >
+                  P3
+                </div>
+                <div class="packet bg-pink-500" style="top: 20px; left: 200px">
+                  P4
+                </div>
+
+                <!-- ACKs flowing back -->
+                <div class="flow-arrow absolute top-60 left-20 text-green-400">
+                  <i class="fas fa-long-arrow-alt-up"></i> ACK1
+                </div>
+                <div
+                  class="flow-arrow absolute top-60 left-80 text-blue-400"
+                  style="animation-delay: 0.5s"
+                >
+                  <i class="fas fa-long-arrow-alt-up"></i> ACK2
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-green-900/20 rounded-lg">
+                <p class="text-green-300">
+                  <i class="fas fa-rocket mr-2"></i>
+                  Multiple packets in flight = Network stays busy!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Go-Back-N Section -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-forward mr-3 text-blue-400"></i>
+          Go-Back-N (GBN) Protocol
+        </h2>
+
+        <div class="protocol-card p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-blue-400 flex items-center">
+                <i class="fas fa-window-restore mr-2"></i>
+                Sliding Window
+              </h3>
+              <div class="p-4 bg-blue-900/20 rounded-lg">
+                <div class="flex space-x-2 mb-4">
+                  <span class="px-3 py-1 bg-green-900/30 rounded text-sm"
+                    >ACKed</span
+                  >
+                  <span class="px-3 py-1 bg-blue-900/30 rounded text-sm"
+                    >Sent, No ACK</span
+                  >
+                  <span class="px-3 py-1 bg-purple-900/30 rounded text-sm"
+                    >Can Send</span
+                  >
+                  <span class="px-3 py-1 bg-slate-800 rounded text-sm"
+                    >Future</span
+                  >
+                </div>
+                <div class="text-center">
+                  <div class="text-sm text-slate-400">
+                    Window Size = N packets
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-purple-400 flex items-center">
+                <i class="fas fa-redo-alt mr-2"></i>
+                Retransmission Logic
+              </h3>
+              <div class="p-4 bg-purple-900/20 rounded-lg">
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-clock text-purple-400 mr-2"></i>
+                    One timer for oldest unACKed
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-backward text-red-400 mr-2"></i>
+                    Timeout → Go back N packets
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-broadcast-tower text-blue-400 mr-2"></i>
+                    Retransmit ALL from base
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <h3 class="text-lg font-bold text-pink-400 flex items-center">
+                <i class="fas fa-user-check mr-2"></i>
+                Receiver Behavior
+              </h3>
+              <div class="p-4 bg-pink-900/20 rounded-lg">
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    In-order? Accept & deliver
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i>
+                    Out-of-order? Discard
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-reply text-blue-400 mr-2"></i>
+                    Send ACK for last correct
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- GBN Example -->
+          <div class="border-t border-slate-700 pt-6">
+            <h4 class="text-lg font-bold mb-4 text-green-400">
+              Example: Packet 3 Lost
+            </h4>
+            <div class="flex items-center justify-center space-x-4 mb-6">
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center"
+                >
+                  <span class="font-bold">1</span>
+                </div>
+                <div class="text-xs mt-1">ACKed</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center"
+                >
+                  <span class="font-bold">2</span>
+                </div>
+                <div class="text-xs mt-1">ACKed</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 rounded-lg bg-red-500 flex items-center justify-center"
+                >
+                  <span class="font-bold">3</span>
+                </div>
+                <div class="text-xs mt-1">Lost</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center"
+                >
+                  <span class="font-bold">4</span>
+                </div>
+                <div class="text-xs mt-1">Sent</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center"
+                >
+                  <span class="font-bold">5</span>
+                </div>
+                <div class="text-xs mt-1">Sent</div>
+              </div>
+            </div>
+            <div class="text-center text-sm text-slate-400">
+              <i class="fas fa-arrow-right text-red-400 mr-2"></i>
+              Timeout → Retransmit packets 3, 4, 5
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Python Examples -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fab fa-python mr-3 text-yellow-400"></i>
+          Python Examples - Feel The Protocol
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Sequence Numbers Demo -->
+          <div class="protocol-card">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-purple-400 mb-4">
+                <i class="fas fa-hashtag mr-2"></i>
+                Sequence Number Magic
+              </h3>
+              <div class="python-code">
+                <div class="code-header">
+                  <span class="font-mono text-sm">duplicate_detection.py</span>
+                  <button
+                    onclick="runCode('seqDemo')"
+                    class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-xs"
+                  >
+                    <i class="fas fa-play mr-1"></i> Run
+                  </button>
+                </div>
+                <pre class="p-4 font-mono text-sm overflow-x-auto">
+<span class="text-green-400"># Global variable to track last received sequence</span>
+last_received = <span class="text-blue-400">None</span>
+
+<span class="text-green-400">def</span> <span class="text-yellow-400">receiver</span>(packet, seq):
+    <span class="text-green-400">global</span> last_received
+    
+    print(<span class="text-orange-400">f</span><span class="text-green-300">"\nReceiver got packet: {packet} | seq={seq}"</span>)
+    
+    <span class="text-green-400">if</span> seq == last_received:
+        print(<span class="text-green-300">"Duplicate packet ❌ IGNORE"</span>)
+        <span class="text-green-400">return</span>
+    
+    print(<span class="text-green-300">"New packet 👍 Delivering"</span>)
+    last_received = seq
+
+<span class="text-green-400"># Test sequence</span>
+receiver(<span class="text-green-300">"HELLO"</span>, <span class="text-blue-400">0</span>)
+receiver(<span class="text-green-300">"HELLO"</span>, <span class="text-blue-400">0</span>)  <span class="text-gray-500"># Duplicate!</span>
+receiver(<span class="text-green-300">"WORLD"</span>, <span class="text-blue-400">1</span>)
+receiver(<span class="text-green-300">"WORLD"</span>, <span class="text-blue-400">1</span>)  <span class="text-gray-500"># Duplicate!</span></pre>
+              </div>
+              <div class="mt-4">
+                <button
+                  onclick="toggleOutput('seqOutput')"
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm w-full"
+                >
+                  <i class="fas fa-eye mr-2"></i> Show Expected Output
+                </button>
+                <div id="seqOutput" class="toggle-content mt-2">
+                  <div class="bg-slate-900 p-4 rounded-lg font-mono text-sm">
+                    Receiver got packet: HELLO | seq=0<br />
+                    New packet 👍 Delivering<br /><br />
+                    Receiver got packet: HELLO | seq=0<br />
+                    Duplicate packet ❌ IGNORE<br /><br />
+                    Receiver got packet: WORLD | seq=1<br />
+                    New packet 👍 Delivering<br /><br />
+                    Receiver got packet: WORLD | seq=1<br />
+                    Duplicate packet ❌ IGNORE
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer Demo -->
+          <div class="protocol-card">
+            <div class="p-6">
+              <h3 class="text-lg font-bold text-pink-400 mb-4">
+                <i class="fas fa-clock mr-2"></i>
+                Timer Retransmission (rdt3.0)
+              </h3>
+              <div class="python-code">
+                <div class="code-header">
+                  <span class="font-mono text-sm">timer_retransmit.py</span>
+                  <button
+                    onclick="runCode('timerDemo')"
+                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs"
+                  >
+                    <i class="fas fa-play mr-1"></i> Run
+                  </button>
+                </div>
+                <pre class="p-4 font-mono text-sm overflow-x-auto">
+<span class="text-green-400">import</span> time
+<span class="text-green-400">import</span> random
+
+<span class="text-green-400">def</span> <span class="text-yellow-400">send_packet</span>():
+    print(<span class="text-green-300">"\nSender: sending packet..."</span>)
+    <span class="text-green-400">return</span> random.choice([<span class="text-green-300">"ACK"</span>, <span class="text-green-300">"LOST"</span>])
+
+<span class="text-green-400">def</span> <span class="text-yellow-400">sender</span>():
+    result = send_packet()
+    start = time.time()
+    
+    <span class="text-green-400">while</span> <span class="text-blue-400">True</span>:
+        <span class="text-green-400">if</span> result == <span class="text-green-300">"ACK"</span>:
+            print(<span class="text-green-300">"Sender: ACK received 👍"</span>)
+            <span class="text-green-400">break</span>
+        
+        <span class="text-green-400">if</span> time.time() - start > <span class="text-blue-400">2</span>:  <span class="text-gray-500"># 2 second timeout</span>
+            print(<span class="text-green-300">"Sender: timeout ⏳ — retransmitting..."</span>)
+            <span class="text-green-400">return</span> sender()  <span class="text-gray-500"># Retransmit</span>
+
+<span class="text-green-400"># Start the sender</span>
+sender()</pre>
+              </div>
+              <div class="mt-4 p-3 bg-blue-900/20 rounded-lg">
+                <p class="text-sm text-blue-300">
+                  <i class="fas fa-info-circle mr-2"></i>
+                  This is exactly how TCP handles packet loss! Timer → Timeout →
+                  Retransmit
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Key Takeaways -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-graduation-cap mr-3 text-green-400"></i>
+          Key Takeaways
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="protocol-card p-6">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-shield-alt text-green-400"></i>
+              </div>
+              <h3 class="text-lg font-bold">Reliability Building Blocks</h3>
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-center">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                Checksums (error detection)
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-hashtag text-purple-400 mr-2"></i>
+                Sequence numbers
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-clock text-pink-400 mr-2"></i>
+                Timers
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-redo-alt text-blue-400 mr-2"></i>
+                Retransmission
+              </li>
+            </ul>
+          </div>
+
+          <div class="protocol-card p-6">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-tachometer-alt text-blue-400"></i>
+              </div>
+              <h3 class="text-lg font-bold">Performance Evolution</h3>
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-center">
+                <i class="fas fa-turtle text-red-400 mr-2"></i>
+                Stop-and-Wait (rdt1-3)
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-forward text-green-400 mr-2"></i>
+                Pipelining
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-window-restore text-purple-400 mr-2"></i>
+                Sliding Window (GBN)
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-rocket text-yellow-400 mr-2"></i>
+                Selective Repeat (next)
+              </li>
+            </ul>
+          </div>
+
+          <div class="protocol-card p-6">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-brain text-purple-400"></i>
+              </div>
+              <h3 class="text-lg font-bold">Core Concepts Mastered</h3>
+            </div>
+            <ul class="space-y-3">
+              <li class="flex items-center">
+                <i class="fas fa-code text-green-400 mr-2"></i>
+                ARQ Protocols
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-exchange-alt text-blue-400 mr-2"></i>
+                Cumulative ACKs
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-undo text-pink-400 mr-2"></i>
+                Go-Back-N logic
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-network-wired text-yellow-400 mr-2"></i>
+                TCP ancestor protocols
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 pt-8 border-t border-slate-800">
+      <div class="text-center text-slate-500">
+        <p class="mb-4">
+          <i class="fas fa-code text-green-400 mr-2"></i>
+          Interactive Notes for Computer Networks - Chapter 3.4
+        </p>
+        <p class="text-sm">
+          Understanding Reliable Data Transfer: rdt1.0 → rdt2.0 → rdt2.1 →
+          rdt3.0 → Go-Back-N
+        </p>
+        <div class="mt-4 flex justify-center space-x-4">
+          <span class="badge good-badge"
+            ><i class="fas fa-check mr-1"></i> Complete</span
+          >
+          <span class="badge info-badge"
+            ><i class="fas fa-arrow-right mr-1"></i> Next: Selective
+            Repeat</span
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script>
+      // Run code simulation
+      function runCode(demoType) {
+        const messages = {
+          seqDemo:
+            'Running sequence number demo... Watch for duplicate detection!',
+          timerDemo:
+            'Simulating timer retransmission... This is real TCP behavior!',
+        };
+
+        showNotification(messages[demoType] || 'Code running...', 'info');
+      }
+
+      // Toggle output display
+      function toggleOutput(outputId) {
+        const output = document.getElementById(outputId);
+        output.classList.toggle('active');
+      }
+
+      // Show notification
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+
+        let bgColor = 'bg-blue-900/80';
+        let icon = 'fa-info-circle';
+        let iconColor = 'text-blue-400';
+
+        if (type === 'success') {
+          bgColor = 'bg-green-900/80';
+          icon = 'fa-check-circle';
+          iconColor = 'text-green-400';
+        } else if (type === 'error') {
+          bgColor = 'bg-red-900/80';
+          icon = 'fa-exclamation-circle';
+          iconColor = 'text-red-400';
+        }
+
+        notification.className = `fixed bottom-4 right-4 p-4 rounded-lg ${bgColor} border border-slate-700 text-white shadow-lg z-50 max-w-sm transition-all duration-300`;
+        notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${icon} ${iconColor} mr-3"></i>
+                    <div class="font-medium">${message}</div>
+                </div>
+            `;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateY(10px)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Initialize Prism for syntax highlighting
+      document.addEventListener('DOMContentLoaded', function () {
+        // Highlight any code blocks
+        if (typeof Prism !== 'undefined') {
+          Prism.highlightAll();
+        }
+
+        // Add hover effects to protocol cards
+        document.querySelectorAll('.protocol-card').forEach((card) => {
+          card.addEventListener('mouseenter', function () {
+            const header = this.querySelector('.protocol-header');
+            if (header) {
+              header.style.transform = 'scale(1.02)';
+            }
+          });
+
+          card.addEventListener('mouseleave', function () {
+            const header = this.querySelector('.protocol-header');
+            if (header) {
+              header.style.transform = 'scale(1)';
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

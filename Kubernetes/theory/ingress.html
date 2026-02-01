@@ -1,0 +1,1544 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Ingress Master Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 10px rgba(185, 103, 255, 0.5);
+      }
+
+      .neon-text-orange {
+        color: var(--neon-orange);
+        text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+      }
+
+      .ingress-flow {
+        border: 2px solid var(--neon-blue);
+        border-radius: 15px;
+        padding: 20px;
+        background: rgba(0, 243, 255, 0.05);
+        margin: 20px 0;
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 15px 0;
+      }
+
+      .arrow {
+        color: var(--neon-blue);
+        font-size: 2rem;
+        margin: 0 10px;
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .comparison-table {
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        width: 100%;
+      }
+
+      .comparison-table th {
+        background: rgba(26, 26, 58, 0.8);
+        padding: 15px;
+        text-align: left;
+      }
+
+      .comparison-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .warning-box {
+        border-left: 4px solid var(--neon-orange);
+        background: rgba(255, 107, 53, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .info-box {
+        border-left: 4px solid var(--neon-blue);
+        background: rgba(0, 243, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .success-box {
+        border-left: 4px solid var(--neon-green);
+        background: rgba(0, 255, 157, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+
+      .app-box {
+        border: 2px solid;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px;
+        transition: all 0.3s ease;
+      }
+
+      .app-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 243, 255, 0.2);
+      }
+
+      .architecture-box {
+        background: rgba(26, 26, 58, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px 0;
+      }
+
+      .tab-button {
+        background: rgba(26, 26, 58, 0.8);
+        border: 1px solid var(--neon-blue);
+        transition: all 0.3s ease;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .dns-flow {
+        background: linear-gradient(
+          135deg,
+          rgba(185, 103, 255, 0.1) 0%,
+          rgba(0, 243, 255, 0.05) 100%
+        );
+        border: 2px solid var(--neon-purple);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .highlight {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 107, 53, 0.1) 0%,
+          rgba(255, 0, 255, 0.05) 100%
+        );
+        border: 2px solid var(--neon-orange);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .example-block {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: 'Courier New', monospace;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-route text-2xl neon-text-purple"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-purple">
+                Kubernetes Ingress Master Guide
+              </h1>
+              <p class="text-gray-300">One Load Balancer for All Your Apps</p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button
+              onclick="switchTab('problem')"
+              id="problemTab"
+              class="tab-button active"
+            >
+              <i class="fas fa-question-circle mr-2"></i>The Problem
+            </button>
+            <button
+              onclick="switchTab('solution')"
+              id="solutionTab"
+              class="tab-button"
+            >
+              <i class="fas fa-lightbulb mr-2"></i>Ingress Solution
+            </button>
+            <button onclick="switchTab('dns')" id="dnsTab" class="tab-button">
+              <i class="fas fa-globe mr-2"></i>DNS & Hosts
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Problem Tab -->
+      <div id="problemContent" class="tab-content active">
+        <!-- Why Ingress Exists -->
+        <div class="mb-12">
+          <div class="flex items-center mb-8">
+            <div
+              class="w-16 h-16 rounded-full bg-red-900/30 flex items-center justify-center mr-6"
+            >
+              <i
+                class="fas fa-exclamation-triangle text-3xl neon-text-orange"
+              ></i>
+            </div>
+            <div>
+              <h2 class="text-4xl font-bold neon-text-orange">
+                🧠 Why Ingress Exists (The Real Problem)
+              </h2>
+              <p class="text-gray-300 text-xl">
+                The Costly World of Multiple Load Balancers
+              </p>
+            </div>
+          </div>
+
+          <!-- Three Apps Scenario -->
+          <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <div class="app-box border-blue-500">
+              <div class="text-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-blue-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-server text-xl neon-text-blue"></i>
+                </div>
+                <h3 class="text-xl font-bold">/api</h3>
+                <p class="text-gray-400">Backend API</p>
+              </div>
+              <div class="code-block text-sm">
+                <code>app.listen(3000)</code>
+              </div>
+            </div>
+
+            <div class="app-box border-green-500">
+              <div class="text-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-user-shield text-xl neon-text-green"></i>
+                </div>
+                <h3 class="text-xl font-bold">/admin</h3>
+                <p class="text-gray-400">Admin Panel</p>
+              </div>
+              <div class="code-block text-sm">
+                <code>app.listen(3001)</code>
+              </div>
+            </div>
+
+            <div class="app-box border-purple-500">
+              <div class="text-center mb-4">
+                <div
+                  class="w-12 h-12 rounded-full bg-purple-900/30 flex items-center justify-center mx-auto mb-3"
+                >
+                  <i class="fas fa-shopping-cart text-xl neon-text-purple"></i>
+                </div>
+                <h3 class="text-xl font-bold">/shop</h3>
+                <p class="text-gray-400">Shopping Site</p>
+              </div>
+              <div class="code-block text-sm">
+                <code>app.listen(3002)</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- The Problem Visualized -->
+          <div class="ingress-flow">
+            <h3 class="text-2xl font-bold neon-text-red mb-6 text-center">
+              ❌ Without Ingress
+            </h3>
+
+            <div class="space-y-8">
+              <div class="text-center">
+                <div class="inline-block bg-red-900/20 px-6 py-3 rounded-lg">
+                  <h4 class="font-bold">You'd need:</h4>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-6">
+                <div class="text-center">
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <div class="text-3xl mb-2">3</div>
+                    <p class="font-bold">LoadBalancer Services</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <div class="text-3xl mb-2">3</div>
+                    <p class="font-bold">Cloud Load Balancers</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <div class="text-3xl mb-2">3</div>
+                    <p class="font-bold">Public IPs</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div
+                  class="inline-block bg-red-900/40 px-8 py-4 rounded-lg animate-pulse"
+                >
+                  <div class="flex items-center justify-center">
+                    <i class="fas fa-money-bill-wave text-3xl mr-3"></i>
+                    <div class="text-3xl font-bold">3 bills 💸</div>
+                  </div>
+                  <p class="text-gray-300 mt-2">That's expensive and messy</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Architecture Without Ingress -->
+          <div class="architecture-box mt-12">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              🏗 Architecture Without Ingress
+            </h3>
+
+            <div class="text-center space-y-6">
+              <div>
+                <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                  <p class="font-bold">Internet</p>
+                </div>
+                <div class="flow-arrow">
+                  <i class="arrow fas fa-arrow-down"></i>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-4">
+                <div class="text-center">
+                  <div class="inline-block bg-blue-900/30 px-4 py-3 rounded">
+                    <p class="font-bold">LoadBalancer 1</p>
+                    <p class="text-sm text-gray-400">For API</p>
+                    <p class="text-xs">IP: 34.1.1.1</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-green-900/30 px-4 py-3 rounded">
+                    <p class="font-bold">LoadBalancer 2</p>
+                    <p class="text-sm text-gray-400">For Admin</p>
+                    <p class="text-xs">IP: 34.1.1.2</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-purple-900/30 px-4 py-3 rounded">
+                    <p class="font-bold">LoadBalancer 3</p>
+                    <p class="text-sm text-gray-400">For Shop</p>
+                    <p class="text-xs">IP: 34.1.1.3</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="arrow fas fa-arrow-down"></i>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-4">
+                <div class="text-center">
+                  <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                    <p>API Service</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                    <p>Admin Service</p>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                    <p>Shop Service</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solution Tab -->
+      <div id="solutionContent" class="tab-content">
+        <!-- What Ingress Solves -->
+        <div class="mb-12">
+          <div class="flex items-center mb-8">
+            <div
+              class="w-16 h-16 rounded-full bg-green-900/30 flex items-center justify-center mr-6"
+            >
+              <i class="fas fa-rocket text-3xl neon-text-green"></i>
+            </div>
+            <div>
+              <h2 class="text-4xl font-bold neon-text-green">
+                🚀 What Ingress Solves
+              </h2>
+              <p class="text-gray-300 text-xl">
+                One Load Balancer to Rule Them All
+              </p>
+            </div>
+          </div>
+
+          <!-- Ingress Solution -->
+          <div class="success-box">
+            <h3 class="text-2xl font-bold mb-4">✅ With Ingress:</h3>
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="text-center">
+                <div class="bg-gray-800 p-4 rounded-lg">
+                  <div class="text-3xl mb-2">1</div>
+                  <p class="font-bold">LoadBalancer</p>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div class="bg-gray-800 p-4 rounded-lg">
+                  <div class="text-3xl mb-2">1</div>
+                  <p class="font-bold">Public IP</p>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <div class="bg-gray-800 p-4 rounded-lg">
+                  <div class="text-3xl mb-2">1</div>
+                  <p class="font-bold">Domain</p>
+                </div>
+              </div>
+            </div>
+            <p class="text-center mt-4 text-xl font-bold">
+              Multiple apps behind it
+            </p>
+          </div>
+
+          <!-- Routing Examples -->
+          <div class="grid md:grid-cols-2 gap-8 mt-12">
+            <div class="ingress-flow">
+              <h3 class="text-2xl font-bold neon-text-blue mb-4">
+                Path-Based Routing
+              </h3>
+              <div class="space-y-4">
+                <div class="example-block">
+                  <p class="font-bold">example.com/api</p>
+                  <p class="text-green-400">→ API service</p>
+                </div>
+                <div class="example-block">
+                  <p class="font-bold">example.com/admin</p>
+                  <p class="text-green-400">→ Admin service</p>
+                </div>
+                <div class="example-block">
+                  <p class="font-bold">example.com/shop</p>
+                  <p class="text-green-400">→ Shop service</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="ingress-flow">
+              <h3 class="text-2xl font-bold neon-text-purple mb-4">
+                Host-Based Routing
+              </h3>
+              <div class="space-y-4">
+                <div class="example-block">
+                  <p class="font-bold">api.example.com</p>
+                  <p class="text-green-400">→ API</p>
+                </div>
+                <div class="example-block">
+                  <p class="font-bold">admin.example.com</p>
+                  <p class="text-green-400">→ Admin</p>
+                </div>
+                <div class="example-block">
+                  <p class="font-bold">shop.example.com</p>
+                  <p class="text-green-400">→ Shop</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ingress Architecture -->
+          <div class="mt-12">
+            <h2 class="text-3xl font-bold neon-text-purple mb-6">
+              🏗 Ingress Architecture (Very Important)
+            </h2>
+
+            <div class="info-box">
+              <h3 class="text-xl font-bold mb-3">Ingress needs:</h3>
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <div class="text-center text-2xl mb-2">1️⃣</div>
+                    <h4 class="font-bold text-center neon-text-blue">
+                      Ingress Resource
+                    </h4>
+                    <p class="text-center text-sm mt-2">Routing Rules</p>
+                  </div>
+                  <p class="mt-3 text-sm">
+                    It says: "If request path is /api → send to api-service"
+                  </p>
+                </div>
+
+                <div>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <div class="text-center text-2xl mb-2">2️⃣</div>
+                    <h4 class="font-bold text-center neon-text-green">
+                      Ingress Controller
+                    </h4>
+                    <p class="text-center text-sm mt-2">Engine</p>
+                  </div>
+                  <p class="mt-3 text-sm">
+                    The actual worker that routes traffic
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ingress Resource vs Controller -->
+            <div class="grid md:grid-cols-2 gap-8 mt-8">
+              <div class="architecture-box">
+                <h3 class="text-xl font-bold neon-text-blue mb-4">
+                  🧩 Ingress Resource = Routing Rules
+                </h3>
+                <div class="code-block">
+                  <pre class="text-sm">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80</pre
+                  >
+                </div>
+                <p class="mt-4">
+                  <strong>Key Insight:</strong> It does NOT actually route
+                  traffic. It just defines the rules.
+                </p>
+              </div>
+
+              <div class="architecture-box">
+                <h3 class="text-xl font-bold neon-text-green mb-4">
+                  ⚙ Ingress Controller = The Worker
+                </h3>
+                <p class="mb-3">This is the actual engine.</p>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                  <div class="bg-blue-900/20 p-2 rounded text-center">
+                    <p class="text-xs">NGINX</p>
+                  </div>
+                  <div class="bg-green-900/20 p-2 rounded text-center">
+                    <p class="text-xs">Traefik</p>
+                  </div>
+                  <div class="bg-purple-900/20 p-2 rounded text-center">
+                    <p class="text-xs">HAProxy</p>
+                  </div>
+                </div>
+                <div class="code-block">
+                  <code>kubectl apply -f https://raw.githubusercontent...</code>
+                </div>
+                <p class="mt-4">
+                  This creates the actual NGINX reverse proxy inside your
+                  cluster.
+                </p>
+              </div>
+            </div>
+
+            <!-- Important Concept -->
+            <div class="warning-box mt-8">
+              <div class="flex items-center">
+                <i
+                  class="fas fa-exclamation-triangle text-2xl neon-text-orange mr-3"
+                ></i>
+                <h3 class="text-xl font-bold">🧠 Very Important Concept</h3>
+              </div>
+              <p class="mt-3">
+                <strong
+                  >Kubernetes does NOT come with built-in Ingress
+                  controller.</strong
+                >
+              </p>
+              <p class="mt-2">You must install one.</p>
+              <p class="mt-2">
+                The controller watches Ingress resources and configures itself
+                automatically.
+              </p>
+            </div>
+          </div>
+
+          <!-- Layer 7 Magic -->
+          <div class="mt-12">
+            <h3 class="text-3xl font-bold neon-text-blue mb-6">
+              🌐 Where Ingress Operates (Layer 7 Magic)
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                  <h4 class="text-xl font-bold neon-text-green mb-4">
+                    Ingress works at:
+                  </h4>
+                  <div class="text-center">
+                    <div
+                      class="inline-block bg-green-900/30 px-6 py-4 rounded-lg"
+                    >
+                      <p class="text-2xl font-bold">OSI Layer 7</p>
+                      <p class="text-sm">(Application layer)</p>
+                    </div>
+                  </div>
+                  <p class="mt-4">That means:</p>
+                  <ul class="space-y-2 mt-3">
+                    <li class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>It understands HTTP</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>It can inspect Host header</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>It can inspect Path</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>It can inspect URL</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-check text-green-400 mr-2"></i>
+                      <span>It can handle TLS</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                  <h4 class="text-xl font-bold neon-text-orange mb-4">
+                    Services cannot do this.
+                  </h4>
+                  <div class="text-center">
+                    <div
+                      class="inline-block bg-red-900/30 px-6 py-4 rounded-lg"
+                    >
+                      <p class="text-2xl font-bold">OSI Layer 4</p>
+                      <p class="text-sm">(TCP only)</p>
+                    </div>
+                  </div>
+                  <p class="mt-4">
+                    Services just forward packets. They don't understand HTTP.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison Table -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              🧠 Compare Service vs Ingress
+            </h3>
+
+            <div class="overflow-x-auto">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th class="text-center">Service</th>
+                    <th class="text-center">Ingress</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Layer</td>
+                    <td class="text-center">4 (TCP)</td>
+                    <td class="text-center">
+                      <span class="bg-green-900/30 px-3 py-1 rounded-full"
+                        >7 (HTTP)</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Multiple apps</td>
+                    <td class="text-center">
+                      <span class="bg-red-900/30 px-3 py-1 rounded-full"
+                        >❌ One LB per Service</span
+                      >
+                    </td>
+                    <td class="text-center">
+                      <span class="bg-green-900/30 px-3 py-1 rounded-full"
+                        >✅ One LB for many</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Host routing</td>
+                    <td class="text-center">
+                      <span class="bg-red-900/30 px-3 py-1 rounded-full"
+                        >❌</span
+                      >
+                    </td>
+                    <td class="text-center">
+                      <span class="bg-green-900/30 px-3 py-1 rounded-full"
+                        >✅</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Path routing</td>
+                    <td class="text-center">
+                      <span class="bg-red-900/30 px-3 py-1 rounded-full"
+                        >❌</span
+                      >
+                    </td>
+                    <td class="text-center">
+                      <span class="bg-green-900/30 px-3 py-1 rounded-full"
+                        >✅</span
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Smart routing</td>
+                    <td class="text-center">
+                      <span class="bg-red-900/30 px-3 py-1 rounded-full"
+                        >❌</span
+                      >
+                    </td>
+                    <td class="text-center">
+                      <span class="bg-green-900/30 px-3 py-1 rounded-full"
+                        >✅</span
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Real Flow With Ingress -->
+          <div class="mt-12">
+            <h3 class="text-3xl font-bold neon-text-green mb-6">
+              🎯 Real Flow With Ingress
+            </h3>
+
+            <div class="ingress-flow">
+              <div class="text-center mb-6">
+                <p class="text-xl mb-4">User hits:</p>
+                <div class="code-block text-center text-xl">
+                  <code>http://shield.mcu.com</code>
+                </div>
+              </div>
+
+              <div class="space-y-6">
+                <div class="text-center">
+                  <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                    <p class="font-bold">DNS</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">Cloud Load Balancer (port 80/443)</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">NGINX Ingress Controller</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Reads host/path rules</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="inline-block bg-orange-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Routes to correct ClusterIP Service</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div class="text-center">
+                  <div class="inline-block bg-red-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">Service routes to Pod</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Express.js Analogy -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              🧠 Example in Express Thinking
+            </h3>
+
+            <div class="code-block">
+              <pre class="text-sm">
+if (host === "shield.mcu.com") {
+   forwardTo("shield-service")
+}
+
+if (host === "hydra.mcu.com") {
+   forwardTo("hydra-service")
+}</pre
+              >
+            </div>
+            <p class="mt-4 text-center">
+              That's basically what Ingress controller is doing.
+            </p>
+          </div>
+
+          <!-- Ingress Class -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              📦 Ingress Class (Advanced but Important)
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                  <h4 class="text-xl font-bold mb-4">Ingress classes allow:</h4>
+                  <p>Multiple controllers in one cluster.</p>
+                  <div class="grid grid-cols-2 gap-2 mt-4">
+                    <div class="bg-blue-900/20 p-2 rounded text-center">
+                      <p>nginx controller</p>
+                    </div>
+                    <div class="bg-green-900/20 p-2 rounded text-center">
+                      <p>traefik controller</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                  <h4 class="text-xl font-bold mb-4">
+                    Each Ingress object specifies:
+                  </h4>
+                  <div class="code-block">
+                    <code>ingressClassName: nginx</code>
+                  </div>
+                  <p class="mt-4">
+                    If you create Ingress without matching class → controller
+                    ignores it.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Big Picture Architecture -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              🧠 Big Picture Architecture
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div class="architecture-box">
+                <h4 class="text-xl font-bold neon-text-red mb-4">
+                  Without Ingress:
+                </h4>
+                <div class="text-center space-y-4">
+                  <div>
+                    <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                      Internet
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-center">
+                      <div class="bg-red-900/30 p-2 rounded text-xs">
+                        LB (API)
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="bg-red-900/30 p-2 rounded text-xs">
+                        LB (Admin)
+                      </div>
+                    </div>
+                    <div class="text-center">
+                      <div class="bg-red-900/30 p-2 rounded text-xs">
+                        LB (Shop)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="architecture-box">
+                <h4 class="text-xl font-bold neon-text-green mb-4">
+                  With Ingress:
+                </h4>
+                <div class="text-center space-y-4">
+                  <div>
+                    <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                      Internet
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="inline-block bg-green-900/30 px-4 py-2 rounded">
+                      ONE LoadBalancer
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="inline-block bg-blue-900/30 px-4 py-2 rounded">
+                      Ingress Controller
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-center">
+                      <div class="bg-gray-800 p-2 rounded text-xs">API</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="bg-gray-800 p-2 rounded text-xs">Admin</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="bg-gray-800 p-2 rounded text-xs">Shop</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DNS & Hosts Tab -->
+      <div id="dnsContent" class="tab-content">
+        <!-- Why DNS Is Needed -->
+        <div class="mb-12">
+          <div class="flex items-center mb-8">
+            <div
+              class="w-16 h-16 rounded-full bg-blue-900/30 flex items-center justify-center mr-6"
+            >
+              <i class="fas fa-globe text-3xl neon-text-blue"></i>
+            </div>
+            <div>
+              <h2 class="text-4xl font-bold neon-text-blue">
+                🌍 Why DNS Is Needed
+              </h2>
+              <p class="text-gray-300 text-xl">
+                Connecting Domain Names to Your Apps
+              </p>
+            </div>
+          </div>
+
+          <!-- DNS Explanation -->
+          <div class="dns-flow">
+            <div class="text-center mb-6">
+              <p class="text-xl mb-4">When you type:</p>
+              <div class="code-block text-center text-2xl">
+                <code>shield.mcu.com</code>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg mb-4">
+                <p class="font-bold">Your computer asks:</p>
+                <p class="text-neon-green">"Where is shield.mcu.com?"</p>
+              </div>
+            </div>
+
+            <div class="warning-box">
+              <div class="flex items-center">
+                <i
+                  class="fas fa-exclamation-triangle text-2xl neon-text-orange mr-3"
+                ></i>
+                <h3 class="text-xl font-bold">If DNS doesn't know:</h3>
+              </div>
+              <p class="mt-2 text-center text-xl font-bold">
+                🚫 Traffic never reaches Kubernetes
+              </p>
+            </div>
+
+            <div class="success-box mt-6">
+              <h3 class="text-xl font-bold mb-4">✅ Manual DNS Setup:</h3>
+              <div class="space-y-2">
+                <div class="example-block">
+                  <code>shield.mcu.com</code>
+                  <span class="text-green-400 ml-2">→ LoadBalancer IP</span>
+                </div>
+                <div class="example-block">
+                  <code>hydra.mcu.com</code>
+                  <span class="text-green-400 ml-2">→ LoadBalancer IP</span>
+                </div>
+                <div class="example-block">
+                  <code>mcu.com</code>
+                  <span class="text-green-400 ml-2">→ LoadBalancer IP</span>
+                </div>
+              </div>
+              <p class="mt-4 text-center">Now everything flows! 🎉</p>
+            </div>
+          </div>
+
+          <!-- /etc/hosts Explanation -->
+          <div class="mt-12">
+            <h3 class="text-3xl font-bold neon-text-purple mb-6">
+              🖥 What Editing /etc/hosts Actually Does
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div>
+                <div class="code-block">
+                  <pre>
+# /etc/hosts file
+212.2.246.150 shield.mcu.com
+212.2.246.150 hydra.mcu.com
+212.2.246.150 mcu.com</pre
+                  >
+                </div>
+              </div>
+
+              <div>
+                <div class="bg-gray-800 p-6 rounded-lg">
+                  <p class="text-lg mb-4">You are telling your computer:</p>
+                  <div class="bg-black p-4 rounded mb-4">
+                    <p class="text-center font-bold italic">
+                      "Whenever I type shield.mcu.com, go to 212.2.246.150"
+                    </p>
+                  </div>
+                  <p>That IP is your Ingress load balancer.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Traffic Flow -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              🚦 Complete Traffic Flow
+            </h3>
+
+            <div class="ingress-flow">
+              <div class="text-center space-y-6">
+                <div>
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">Browser</p>
+                    <p class="text-sm">shield.mcu.com</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">LoadBalancer (Ingress)</p>
+                    <p class="text-sm">IP: 212.2.246.150</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Ingress Controller (NGINX)</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-orange-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Correct Service</p>
+                  </div>
+                  <div class="flow-arrow">
+                    <i class="arrow fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="inline-block bg-red-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">Correct Pod</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center mt-8">
+                <div
+                  class="inline-block bg-green-900/30 px-8 py-4 rounded-lg animate-pulse"
+                >
+                  <div class="text-3xl">Boom 💥</div>
+                  <p class="text-gray-300 mt-2">Now traffic flows correctly!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Behavior Examples -->
+          <div class="mt-12">
+            <h3 class="text-3xl font-bold neon-text-orange mb-6">
+              🧠 Behavior Examples
+            </h3>
+
+            <div class="space-y-8">
+              <!-- Shield Example -->
+              <div class="highlight">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-shield-alt"></i>
+                  </div>
+                  <h4 class="text-xl font-bold">🔹 Visit: shield.mcu.com</h4>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p class="font-bold mb-2">Ingress checks:</p>
+                    <div class="code-block">
+                      <code>Host: shield.mcu.com</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">Match found:</p>
+                    <div class="code-block">
+                      <code>shield.mcu.com → svc-shield</code>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Result: Shield app loads ✅</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hydra Example -->
+              <div class="highlight">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-water"></i>
+                  </div>
+                  <h4 class="text-xl font-bold">🔹 Visit: hydra.mcu.com</h4>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p class="font-bold mb-2">Ingress checks:</p>
+                    <div class="code-block">
+                      <code>Host: hydra.mcu.com</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">Match found:</p>
+                    <div class="code-block">
+                      <code>hydra.mcu.com → svc-hydra</code>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Result: Hydra app loads ✅</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Default Backend Example -->
+              <div class="highlight">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-question"></i>
+                  </div>
+                  <h4 class="text-xl font-bold">🔹 Visit: mcu.com</h4>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p class="font-bold mb-2">Ingress checks:</p>
+                    <div class="code-block">
+                      <code>Host: mcu.com Path: /</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">No rule found</p>
+                    <p>So it goes to:</p>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <div class="inline-block bg-red-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">👉 Default backend (404) ⚠</p>
+                  </div>
+                  <p class="text-sm mt-2">That's expected behavior.</p>
+                </div>
+              </div>
+
+              <!-- Path-based Example -->
+              <div class="highlight">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-full bg-purple-900/30 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-code-branch"></i>
+                  </div>
+                  <h4 class="text-xl font-bold">🔹 Visit: mcu.com/shield</h4>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <p class="font-bold mb-2">Ingress checks:</p>
+                    <div class="code-block">
+                      <code>Host: mcu.com Path: /shield</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">Match found:</p>
+                    <div class="code-block">
+                      <code>mcu.com + /shield → svc-shield</code>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="font-bold mb-2">Rewrite-target turns:</p>
+                    <div class="code-block">
+                      <code>/shield → /</code>
+                    </div>
+                    <p class="text-sm mt-2">
+                      Because your app expects / not /shield
+                    </p>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center">
+                  <div
+                    class="inline-block bg-green-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">
+                      Result: App works with path rewrite ✅
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-World Meaning -->
+          <div class="mt-12">
+            <h3 class="text-3xl font-bold neon-text-blue mb-6">
+              🎯 The Real-World Meaning
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-8">
+              <div class="bg-red-900/20 p-6 rounded-lg">
+                <h4 class="text-2xl font-bold neon-text-red mb-4">
+                  Without Ingress:
+                </h4>
+                <div class="text-center">
+                  <div class="text-5xl mb-4">1 LoadBalancer</div>
+                  <p class="text-xl">per app</p>
+                </div>
+                <div class="mt-6">
+                  <p class="font-bold">For 50 apps:</p>
+                  <div class="text-center mt-2">
+                    <div class="inline-block bg-red-900/30 px-4 py-2 rounded">
+                      <p class="text-2xl">50 LoadBalancers</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-green-900/20 p-6 rounded-lg">
+                <h4 class="text-2xl font-bold neon-text-green mb-4">
+                  With Ingress:
+                </h4>
+                <div class="text-center">
+                  <div class="text-5xl mb-4">1 LoadBalancer</div>
+                  <p class="text-xl">for 50 apps</p>
+                </div>
+                <div class="mt-6 space-y-3">
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-3"></i>
+                    <span>Huge cost saving</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-3"></i>
+                    <span>Huge simplification</span>
+                  </div>
+                  <div class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-3"></i>
+                    <span>Cleaner architecture</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visual Summary -->
+          <div class="mt-12">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              🧩 Visual Summary
+            </h3>
+
+            <div class="ingress-flow">
+              <div class="text-center space-y-6">
+                <div>
+                  <div class="inline-block bg-blue-900/30 px-6 py-3 rounded-lg">
+                    <p class="font-bold">LoadBalancer (Port 80)</p>
+                  </div>
+                </div>
+
+                <div class="flow-arrow">
+                  <i class="arrow fas fa-arrow-down"></i>
+                </div>
+
+                <div>
+                  <div
+                    class="inline-block bg-purple-900/30 px-6 py-3 rounded-lg"
+                  >
+                    <p class="font-bold">Ingress Rules</p>
+                  </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                  <div class="text-center">
+                    <div class="inline-block bg-green-900/30 px-4 py-3 rounded">
+                      <p class="font-bold">svc-shield</p>
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                    <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                      <p>shield Pod</p>
+                    </div>
+                  </div>
+
+                  <div class="text-center">
+                    <div
+                      class="inline-block bg-orange-900/30 px-4 py-3 rounded"
+                    >
+                      <p class="font-bold">svc-hydra</p>
+                    </div>
+                    <div class="flow-arrow">
+                      <i class="arrow fas fa-arrow-down"></i>
+                    </div>
+                    <div class="inline-block bg-gray-800 px-4 py-2 rounded">
+                      <p>hydra Pod</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-8 text-center">
+                <div class="inline-block bg-gray-800 px-6 py-3 rounded-lg">
+                  <p class="font-bold">
+                    Ingress is just a smart HTTP traffic router
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-neon-blue/20 bg-black/50 mt-12">
+      <div class="container mx-auto px-4 py-8">
+        <div class="text-center">
+          <div class="flex justify-center space-x-6 mb-4">
+            <div
+              class="w-10 h-10 rounded-full bg-purple-900/30 flex items-center justify-center"
+            >
+              <i class="fab fa-kubernetes neon-text-purple"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-blue-900/30 flex items-center justify-center"
+            >
+              <i class="fas fa-route neon-text-blue"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-green-900/30 flex items-center justify-center"
+            >
+              <i class="fas fa-network-wired neon-text-green"></i>
+            </div>
+          </div>
+          <p class="text-gray-400">
+            Kubernetes Ingress Master Guide - One Load Balancer for All Your
+            Apps
+          </p>
+          <p class="text-gray-500 text-sm mt-2">
+            Understanding Ingress is crucial for cost-effective and scalable
+            Kubernetes deployments
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Tab switching functionality
+      function switchTab(tabName) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach((content) => {
+          content.classList.remove('active');
+        });
+
+        // Deactivate all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(`${tabName}Content`).classList.add('active');
+
+        // Activate selected tab button
+        document.getElementById(`${tabName}Tab`).classList.add('active');
+      }
+
+      // Initialize first tab as active
+      document.addEventListener('DOMContentLoaded', () => {
+        switchTab('problem');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Express App Deployment - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background-color: var(--dark-bg);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .neon-border {
+        border: 2px solid var(--neon-blue);
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+      }
+
+      .neon-border-green {
+        border: 2px solid var(--neon-green);
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.4);
+      }
+
+      .neon-text-blue {
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px rgba(0, 243, 255, 0.8);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 10px rgba(0, 255, 157, 0.8);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 10px rgba(185, 103, 255, 0.8);
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+      }
+
+      .flow-step {
+        position: relative;
+        padding-left: 40px;
+      }
+
+      .flow-step::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--neon-blue);
+      }
+
+      .flow-step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        background: var(--neon-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+
+      .component-card {
+        transition: all 0.3s ease;
+      }
+
+      .component-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 243, 255, 0.3);
+      }
+
+      .architecture-layer {
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        position: relative;
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen gradient-bg overflow-x-hidden">
+    <!-- Header -->
+    <header
+      class="top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <i class="fas fa-node-js text-4xl neon-text-green mr-3"></i>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-blue">
+                Express.js + Kubernetes
+              </h1>
+              <p class="text-gray-300">Complete Deployment Walkthrough</p>
+            </div>
+          </div>
+          <div class="flex space-x-4">
+            <button
+              class="px-4 py-2 neon-border rounded-lg hover:bg-blue-900/30 transition"
+            >
+              <i class="fas fa-code mr-2"></i>View Code
+            </button>
+            <button
+              class="px-4 py-2 neon-border-green rounded-lg hover:bg-green-900/30 transition"
+            >
+              <i class="fas fa-play mr-2"></i>Simulate Flow
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- App Overview Section -->
+      <div class="neon-border rounded-2xl p-6 mb-8 bg-card-bg">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-14 h-14 rounded-xl bg-green-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-express text-2xl neon-text-green"></i>
+          </div>
+          <div>
+            <h2 class="text-3xl font-bold neon-text-green">
+              🟢 Step 1: Our Express App
+            </h2>
+            <p class="text-gray-300">Simple Node.js application we'll deploy</p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- App Code -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-blue mb-4">
+              <i class="fas fa-file-code mr-2"></i>app.js
+            </h3>
+            <div class="code-block p-4 rounded-lg overflow-x-auto">
+              <pre class="text-sm text-green-300">
+<span class="text-purple-300">const</span> express = <span class="text-blue-300">require</span>(<span class="text-yellow-300">"express"</span>);
+<span class="text-purple-300">const</span> app = <span class="text-blue-300">express</span>();
+
+app.<span class="text-blue-300">get</span>(<span class="text-yellow-300">"/"</span>, (req, res) => {
+  res.<span class="text-blue-300">send</span>(<span class="text-yellow-300">"Hello from Kubernetes 🚀"</span>);
+});
+
+app.<span class="text-blue-300">listen</span>(<span class="text-cyan-300">3000</span>, () => {
+  console.<span class="text-blue-300">log</span>(<span class="text-yellow-300">"Server running on port 3000"</span>);
+});</pre>
+            </div>
+          </div>
+
+          <!-- Dockerfile -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-blue mb-4">
+              <i class="fab fa-docker mr-2"></i>Dockerfile
+            </h3>
+            <div class="code-block p-4 rounded-lg">
+              <pre class="text-sm text-green-300">
+<span class="text-blue-300">FROM</span> node:18-alpine
+<span class="text-blue-300">WORKDIR</span> /app
+<span class="text-blue-300">COPY</span> package*.json ./
+<span class="text-blue-300">RUN</span> npm install
+<span class="text-blue-300">COPY</span> . .
+<span class="text-blue-300">EXPOSE</span> 3000
+<span class="text-blue-300">CMD</span> ["node", "app.js"]</pre>
+            </div>
+            <div class="mt-4 p-3 bg-green-900/20 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-arrow-right text-green-400 mr-2"></i>
+                <strong>Push to Docker Hub:</strong>
+                <code class="bg-black/50 px-2 py-1 rounded"
+                  >docker push amit/express-app:v1</code
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Architecture Layers -->
+      <div class="neon-border rounded-2xl p-6 mb-8 bg-card-bg">
+        <h2 class="text-3xl font-bold neon-text-blue mb-6">
+          <i class="fas fa-layer-group mr-2"></i>🏗 Big Picture Architecture
+        </h2>
+
+        <div class="space-y-2">
+          <div class="architecture-layer bg-blue-900/20">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-cloud"></i>
+              </div>
+              <h3 class="font-bold text-lg">Cloud (AWS / Azure / GCP)</h3>
+            </div>
+          </div>
+
+          <div class="text-center text-2xl text-gray-400">
+            <i class="fas fa-arrow-down"></i>
+          </div>
+
+          <div class="architecture-layer bg-purple-900/20">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-server"></i>
+              </div>
+              <h3 class="font-bold text-lg">Virtual Machines</h3>
+            </div>
+          </div>
+
+          <div class="text-center text-2xl text-gray-400">
+            <i class="fas fa-arrow-down"></i>
+          </div>
+
+          <div class="architecture-layer bg-green-900/20">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-sitemap"></i>
+              </div>
+              <h3 class="font-bold text-lg">Kubernetes Cluster</h3>
+              <span class="ml-4 text-sm bg-black/50 px-2 py-1 rounded"
+                >Control Plane + Worker Nodes</span
+              >
+            </div>
+          </div>
+
+          <div class="text-center text-2xl text-gray-400">
+            <i class="fas fa-arrow-down"></i>
+          </div>
+
+          <div class="architecture-layer bg-yellow-900/20">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-yellow-900 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-cube"></i>
+              </div>
+              <h3 class="font-bold text-lg">Pods</h3>
+            </div>
+          </div>
+
+          <div class="text-center text-2xl text-gray-400">
+            <i class="fas fa-arrow-down"></i>
+          </div>
+
+          <div class="architecture-layer bg-pink-900/20">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-pink-900 flex items-center justify-center mr-3"
+              >
+                <i class="fab fa-docker"></i>
+              </div>
+              <h3 class="font-bold text-lg">Containers</h3>
+            </div>
+          </div>
+
+          <div class="text-center text-2xl text-gray-400">
+            <i class="fas fa-arrow-down"></i>
+          </div>
+
+          <div class="architecture-layer bg-green-900/30 pulse">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center mr-3"
+              >
+                <i class="fab fa-node-js"></i>
+              </div>
+              <h3 class="font-bold text-lg neon-text-green">Express App</h3>
+              <span class="ml-4 text-sm bg-black/50 px-2 py-1 rounded"
+                >Port 3000</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deployment YAML -->
+      <div class="neon-border-green rounded-2xl p-6 mb-8 bg-card-bg">
+        <div class="flex items-center mb-6">
+          <div
+            class="w-14 h-14 rounded-xl bg-blue-900/30 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-code-branch text-2xl neon-text-blue"></i>
+          </div>
+          <div>
+            <h2 class="text-3xl font-bold neon-text-blue">
+              📦 Deployment Configuration
+            </h2>
+            <p class="text-gray-300">App → Container → Pod → Deployment</p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Deployment YAML -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-file-contract mr-2"></i>deployment.yaml
+            </h3>
+            <div class="code-block p-4 rounded-lg overflow-x-auto">
+              <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: apps/v1
+<span class="text-blue-300">kind</span>: Deployment
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-app
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">replicas</span>: <span class="text-cyan-300">3</span>
+  <span class="text-blue-300">selector</span>:
+    <span class="text-blue-300">matchLabels</span>:
+      <span class="text-blue-300">app</span>: express
+  <span class="text-blue-300">template</span>:
+    <span class="text-blue-300">metadata</span>:
+      <span class="text-blue-300">labels</span>:
+        <span class="text-blue-300">app</span>: express
+    <span class="text-blue-300">spec</span>:
+      <span class="text-blue-300">containers</span>:
+      - <span class="text-blue-300">name</span>: express-container
+        <span class="text-blue-300">image</span>: amit/express-app:v1
+        <span class="text-blue-300">ports</span>:
+        - <span class="text-blue-300">containerPort</span>: <span class="text-cyan-300">3000</span></pre>
+            </div>
+            <div class="mt-4 p-3 bg-blue-900/20 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-terminal text-blue-400 mr-2"></i>
+                <strong>Apply:</strong>
+                <code class="bg-black/50 px-2 py-1 rounded"
+                  >kubectl apply -f deployment.yaml</code
+                >
+              </p>
+            </div>
+          </div>
+
+          <!-- Pod Diagram -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-project-diagram mr-2"></i>Pod Structure
+            </h3>
+            <div class="space-y-4">
+              <div
+                class="border-2 border-dashed border-blue-500 rounded-lg p-4 text-center"
+              >
+                <div class="font-bold text-lg mb-2 neon-text-blue">Pod</div>
+                <div
+                  class="border-2 border-green-500 rounded p-3 mx-auto max-w-xs"
+                >
+                  <div class="font-bold mb-2 neon-text-green">Container</div>
+                  <div class="text-sm space-y-1">
+                    <div>Image: amit/express-app:v1</div>
+                    <div>Port: 3000</div>
+                    <div>Status: Running</div>
+                  </div>
+                </div>
+                <div class="text-xs text-gray-400 mt-2">
+                  Minimum unit in Kubernetes
+                </div>
+              </div>
+              <div class="bg-black/60 p-3 rounded-lg">
+                <p class="text-sm">
+                  <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                  <strong>Key Insight:</strong> We don't create Pods directly.
+                  Deployment manages them automatically.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lifecycle Flow -->
+      <div class="neon-border rounded-2xl p-6 mb-8 bg-card-bg">
+        <h2 class="text-3xl font-bold neon-text-green mb-8">
+          <i class="fas fa-sync-alt mr-2"></i>🔄 Internal Lifecycle Flow
+        </h2>
+
+        <div class="space-y-8">
+          <!-- Step 1 -->
+          <div class="flow-step">
+            <div class="flow-step-number">1</div>
+            <div class="bg-black/40 p-5 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-blue mb-2">API Server</h3>
+              <div class="grid md:grid-cols-3 gap-4">
+                <div class="bg-black/60 p-3 rounded">
+                  <i class="fas fa-sign-in-alt text-green-400 mb-2"></i>
+                  <p class="font-bold">Receives YAML</p>
+                </div>
+                <div class="bg-black/60 p-3 rounded">
+                  <i class="fas fa-user-shield text-yellow-400 mb-2"></i>
+                  <p class="font-bold">Authenticates</p>
+                </div>
+                <div class="bg-black/60 p-3 rounded">
+                  <i class="fas fa-database text-blue-400 mb-2"></i>
+                  <p class="font-bold">Sends to etcd</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="flow-step">
+            <div class="flow-step-number">2</div>
+            <div class="bg-black/40 p-5 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-purple mb-2">
+                etcd (Cluster Store)
+              </h3>
+              <div class="flex items-center">
+                <i class="fas fa-save text-2xl neon-text-purple mr-3"></i>
+                <div>
+                  <p class="font-bold">Stores Desired State:</p>
+                  <p class="text-gray-300">
+                    "I want 3 replicas of express-app"
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="flow-step">
+            <div class="flow-step-number">3</div>
+            <div class="bg-black/40 p-5 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-orange mb-2">
+                Deployment Controller
+              </h3>
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-black/60 p-3 rounded">
+                  <p class="font-bold mb-2">Observed State:</p>
+                  <p class="text-red-300">0 Pods running</p>
+                </div>
+                <div class="bg-black/60 p-3 rounded">
+                  <p class="font-bold mb-2">Desired State:</p>
+                  <p class="text-green-300">3 Pods running</p>
+                </div>
+              </div>
+              <div class="mt-3 p-3 bg-orange-900/20 rounded">
+                <p class="text-sm">
+                  <i class="fas fa-magic text-orange-400 mr-2"></i>
+                  Creates ReplicaSet → Creates 3 Pods
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="flow-step">
+            <div class="flow-step-number">4</div>
+            <div class="bg-black/40 p-5 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-green mb-2">Scheduler</h3>
+              <div class="space-y-3">
+                <p>
+                  <i class="fas fa-search text-green-400 mr-2"></i>Checks
+                  available worker nodes
+                </p>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="bg-green-900/30 p-2 rounded text-center">
+                    <p class="font-bold">Worker 1</p>
+                    <p class="text-sm">2 Pods</p>
+                  </div>
+                  <div class="bg-green-900/30 p-2 rounded text-center">
+                    <p class="font-bold">Worker 2</p>
+                    <p class="text-sm">1 Pod</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="flow-step">
+            <div class="flow-step-number">5</div>
+            <div class="bg-black/40 p-5 rounded-xl ml-4">
+              <h3 class="text-xl font-bold neon-text-blue mb-2">
+                kubelet (On Each Worker)
+              </h3>
+              <div class="space-y-2">
+                <p>
+                  <i class="fas fa-download text-blue-400 mr-2"></i>Pulls image
+                  from Docker Hub
+                </p>
+                <p>
+                  <i class="fas fa-play text-green-400 mr-2"></i>Tells
+                  containerd to start container
+                </p>
+                <p>
+                  <i class="fas fa-chart-line text-yellow-400 mr-2"></i>Reports
+                  status to API Server
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service & Networking -->
+      <div class="neon-border-green rounded-2xl p-6 mb-8 bg-card-bg">
+        <h2 class="text-3xl font-bold neon-text-blue mb-6">
+          <i class="fas fa-network-wired mr-2"></i>🌐 Service & Load Balancing
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Service YAML -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-exchange-alt mr-2"></i>Service Configuration
+            </h3>
+            <div class="code-block p-4 rounded-lg">
+              <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: v1
+<span class="text-blue-300">kind</span>: Service
+<span class="text-blue-300">metadata</span>:
+  <span class="text-blue-300">name</span>: express-service
+<span class="text-blue-300">spec</span>:
+  <span class="text-blue-300">type</span>: LoadBalancer
+  <span class="text-blue-300">selector</span>:
+    <span class="text-blue-300">app</span>: express
+  <span class="text-blue-300">ports</span>:
+  - <span class="text-blue-300">port</span>: <span class="text-cyan-300">80</span>
+    <span class="text-blue-300">targetPort</span>: <span class="text-cyan-300">3000</span></pre>
+            </div>
+          </div>
+
+          <!-- Network Flow -->
+          <div class="bg-black/50 p-6 rounded-xl">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-traffic-light mr-2"></i>Traffic Flow
+            </h3>
+            <div class="space-y-4">
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-user"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="font-bold">User Request</p>
+                  <p class="text-sm text-gray-300">http://loadbalancer-ip</p>
+                </div>
+              </div>
+
+              <div class="text-center text-2xl text-gray-400">
+                <i class="fas fa-arrow-down"></i>
+              </div>
+
+              <div class="flex items-center bg-blue-900/30 p-3 rounded">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-balance-scale"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="font-bold">kube-proxy</p>
+                  <p class="text-sm text-gray-300">
+                    Load balances across 3 Pods
+                  </p>
+                </div>
+              </div>
+
+              <div class="text-center text-2xl text-gray-400">
+                <i class="fas fa-arrow-down"></i>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div class="bg-green-900/20 p-2 rounded text-center">
+                  <i class="fab fa-node-js mb-1"></i>
+                  <p class="text-xs">Pod 1</p>
+                </div>
+                <div class="bg-green-900/20 p-2 rounded text-center">
+                  <i class="fab fa-node-js mb-1"></i>
+                  <p class="text-xs">Pod 2</p>
+                </div>
+                <div class="bg-green-900/20 p-2 rounded text-center">
+                  <i class="fab fa-node-js mb-1"></i>
+                  <p class="text-xs">Pod 3</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scenarios Table -->
+      <div class="neon-border rounded-2xl p-6 mb-8 bg-card-bg">
+        <h2 class="text-3xl font-bold neon-text-green mb-6">
+          <i class="fas fa-fire-alt mr-2"></i>🔥 Real-World Scenarios
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="border-b border-neon-blue/50">
+                <th class="text-left p-4 neon-text-purple">Scenario</th>
+                <th class="text-left p-4 neon-text-blue">What Happens</th>
+                <th class="text-left p-4 neon-text-green">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-800 hover:bg-blue-900/10">
+                <td class="p-4">
+                  <div class="flex items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-red-900/50 flex items-center justify-center mr-3"
+                    >
+                      <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div>
+                      <p class="font-bold">Self-Healing</p>
+                      <p class="text-sm text-gray-400">Worker 1 crashes</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="p-4">
+                  <ul class="space-y-1">
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-red-400 mr-2 text-xs"
+                      ></i>
+                      <span>Controller detects mismatch</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-plus-circle text-green-400 mr-2 text-xs"
+                      ></i>
+                      <span>Creates 2 new Pods on Worker 2</span>
+                    </li>
+                  </ul>
+                </td>
+                <td class="p-4">
+                  <div class="bg-green-900/20 p-2 rounded">
+                    <p class="font-bold text-green-300">System auto-heals</p>
+                    <p class="text-xs">No manual intervention</p>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="border-b border-gray-800 hover:bg-green-900/10">
+                <td class="p-4">
+                  <div class="flex items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-green-900/50 flex items-center justify-center mr-3"
+                    >
+                      <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                      <p class="font-bold">Scaling</p>
+                      <p class="text-sm text-gray-400">Traffic increases</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="p-4">
+                  <ul class="space-y-1">
+                    <li class="flex items-center">
+                      <i class="fas fa-edit text-blue-400 mr-2 text-xs"></i>
+                      <span>Change replicas: 3 → 6</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-plus text-green-400 mr-2 text-xs"></i>
+                      <span>Creates 3 new Pods</span>
+                    </li>
+                  </ul>
+                </td>
+                <td class="p-4">
+                  <div class="bg-blue-900/20 p-2 rounded">
+                    <p class="font-bold text-blue-300">Auto-scaling</p>
+                    <p class="text-xs">No manual VM login</p>
+                  </div>
+                </td>
+              </tr>
+
+              <tr class="hover:bg-purple-900/10">
+                <td class="p-4">
+                  <div class="flex items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-purple-900/50 flex items-center justify-center mr-3"
+                    >
+                      <i class="fas fa-sync"></i>
+                    </div>
+                    <div>
+                      <p class="font-bold">Rolling Update</p>
+                      <p class="text-sm text-gray-400">Deploy v2</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="p-4">
+                  <ul class="space-y-1">
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-code-branch text-purple-400 mr-2 text-xs"
+                      ></i>
+                      <span>Change image: v1 → v2</span>
+                    </li>
+                    <li class="flex items-center">
+                      <i
+                        class="fas fa-exchange-alt text-green-400 mr-2 text-xs"
+                      ></i>
+                      <span>Replace Pods one by one</span>
+                    </li>
+                  </ul>
+                </td>
+                <td class="p-4">
+                  <div class="bg-purple-900/20 p-2 rounded">
+                    <p class="font-bold text-purple-300">Zero downtime</p>
+                    <p class="text-xs">Users unaffected</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Component Roles Table -->
+      <div class="neon-border-green rounded-2xl p-6 bg-card-bg">
+        <h2 class="text-3xl font-bold neon-text-blue mb-6">
+          <i class="fas fa-cogs mr-2"></i>🏗 Who Does What
+        </h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="border-b border-neon-green/50">
+                <th class="text-left p-4 neon-text-purple">Component</th>
+                <th class="text-left p-4 neon-text-blue">
+                  Role in Express Example
+                </th>
+                <th class="text-left p-4 neon-text-green">Icon</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">API Server</td>
+                <td class="p-4">Receives YAML, authenticates requests</td>
+                <td class="p-4">
+                  <i class="fas fa-door-open text-2xl neon-text-blue"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">etcd</td>
+                <td class="p-4">Stores desired state (3 replicas)</td>
+                <td class="p-4">
+                  <i class="fas fa-database text-2xl neon-text-purple"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">Deployment Controller</td>
+                <td class="p-4">Ensures replica count matches</td>
+                <td class="p-4">
+                  <i class="fas fa-cogs text-2xl neon-text-orange"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">Scheduler</td>
+                <td class="p-4">Chooses worker node for each Pod</td>
+                <td class="p-4">
+                  <i class="fas fa-tasks text-2xl neon-text-green"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">kubelet</td>
+                <td class="p-4">Starts container on worker node</td>
+                <td class="p-4">
+                  <i class="fas fa-play-circle text-2xl neon-text-blue"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">containerd</td>
+                <td class="p-4">Runs container (Docker alternative)</td>
+                <td class="p-4">
+                  <i class="fab fa-docker text-2xl neon-text-cyan"></i>
+                </td>
+              </tr>
+              <tr class="border-b border-gray-800">
+                <td class="p-4 font-bold">kube-proxy</td>
+                <td class="p-4">Routes traffic to Pods</td>
+                <td class="p-4">
+                  <i class="fas fa-network-wired text-2xl neon-text-green"></i>
+                </td>
+              </tr>
+              <tr>
+                <td class="p-4 font-bold">Cloud Controller</td>
+                <td class="p-4">Creates cloud load balancer (AWS/GCP/Azure)</td>
+                <td class="p-4">
+                  <i class="fas fa-cloud text-2xl neon-text-purple"></i>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-neon-blue/30 pt-8 pb-6">
+      <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-3 gap-8">
+          <div>
+            <div class="flex items-center mb-4">
+              <i class="fab fa-kubernetes text-3xl neon-text-blue mr-3"></i>
+              <i class="fab fa-node-js text-3xl neon-text-green"></i>
+            </div>
+            <p class="text-gray-400">
+              Express.js + Kubernetes deployment explained with real examples
+            </p>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-purple mb-4">Core Concepts</h4>
+            <ul class="space-y-2">
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Declarative Model</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Desired State Reconciliation</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-check text-green-400 mr-2"></i>
+                <span>Self-Healing</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-blue mb-4">Quick Commands</h4>
+            <div class="space-y-2">
+              <code class="block bg-black/50 px-3 py-1 rounded text-sm"
+                >kubectl apply -f deployment.yaml</code
+              >
+              <code class="block bg-black/50 px-3 py-1 rounded text-sm"
+                >kubectl get pods</code
+              >
+              <code class="block bg-black/50 px-3 py-1 rounded text-sm"
+                >kubectl scale deployment express-app --replicas=6</code
+              >
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="mt-8 pt-6 border-t border-gray-800 text-center text-gray-500 text-sm"
+        >
+          <p>
+            🎯 <strong>Golden Rule:</strong> You declare WHAT you want,
+            Kubernetes figures out HOW to make it happen
+          </p>
+          <p class="mt-2">
+            Dark Neon Theme • Responsive Design • Complete Kubernetes
+            Walkthrough
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Interactive simulation
+      document.addEventListener('DOMContentLoaded', function () {
+        const simulateBtn = document.querySelector('button:has(.fa-play)');
+        const pods = document.querySelectorAll('.bg-green-900\\/20');
+
+        simulateBtn.addEventListener('click', function () {
+          // Simulate pod scaling
+          pods.forEach((pod, index) => {
+            setTimeout(() => {
+              pod.classList.add('pulse');
+              setTimeout(() => {
+                pod.classList.remove('pulse');
+              }, 1000);
+            }, index * 300);
+          });
+
+          // Show success message
+          const message = document.createElement('div');
+          message.className =
+            'fixed top-20 right-4 bg-green-900/80 text-white p-4 rounded-lg shadow-lg z-50';
+          message.innerHTML =
+            '<i class="fas fa-rocket mr-2"></i> Simulating Kubernetes deployment flow...';
+          document.body.appendChild(message);
+
+          setTimeout(() => {
+            message.remove();
+          }, 3000);
+        });
+
+        // Highlight code blocks on hover
+        const codeBlocks = document.querySelectorAll('.code-block');
+        codeBlocks.forEach((block) => {
+          block.addEventListener('mouseenter', () => {
+            block.style.transform = 'scale(1.02)';
+            block.style.transition = 'transform 0.2s';
+          });
+          block.addEventListener('mouseleave', () => {
+            block.style.transform = 'scale(1)';
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

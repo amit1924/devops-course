@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>💾 hostPath - Kubernetes Node Storage Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      h1 {
+        font-size: 2.5rem !important;
+      }
+      h2 {
+        font-size: 2rem !important;
+      }
+      h3 {
+        font-size: 1.75rem !important;
+      }
+      h4 {
+        font-size: 1.5rem !important;
+      }
+      p,
+      li {
+        font-size: 1.25rem !important;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #f59e0b, #d97706, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .volume-card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px auto;
+        max-width: 100%;
+      }
+
+      .volume-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(245, 158, 11, 0.2);
+        border-color: #f59e0b;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+        padding: 25px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(245, 158, 11, 0.15);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 6px solid #f59e0b;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        word-break: break-word;
+        padding-right: 110px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 8px 0;
+        color: #e2e8f0;
+        font-size: 1.1rem;
+      }
+
+      .terminal-prompt {
+        color: #f59e0b;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-info {
+        color: #3b82f6;
+      }
+
+      .terminal-warning {
+        color: #f59e0b;
+      }
+
+      .storage-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        margin: 25px 0;
+        border: 3px solid #334155;
+        position: relative;
+        min-height: 350px;
+      }
+
+      .storage-flow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      .storage-node {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid;
+        transition: all 0.3s ease;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .storage-node:hover {
+        transform: translateY(-5px);
+      }
+
+      .node-pod {
+        border-color: #3b82f6;
+      }
+
+      .node-hostpath {
+        border-color: #f59e0b;
+      }
+
+      .node-host {
+        border-color: #8b5cf6;
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #10b981;
+        font-size: 1.5rem;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.15),
+          rgba(37, 99, 235, 0.15)
+        );
+        border-left: 5px solid #3b82f6;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.15)
+        );
+        border-left: 5px solid #10b981;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15),
+          rgba(217, 119, 6, 0.15)
+        );
+        border-left: 5px solid #f59e0b;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .danger-box {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.15),
+          rgba(220, 38, 38, 0.15)
+        );
+        border-left: 5px solid #ef4444;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .demo-btn {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .demo-btn:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+      }
+
+      .demo-btn.primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+
+      .demo-btn.primary:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+      }
+
+      .demo-btn.blue {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+      }
+
+      .demo-btn.blue:hover {
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      }
+
+      .demo-btn.purple {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      }
+
+      .demo-btn.purple:hover {
+        background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 5px;
+      }
+
+      .status-success {
+        background: rgba(16, 185, 129, 0.25);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.5);
+      }
+
+      .status-warning {
+        background: rgba(245, 158, 11, 0.25);
+        color: #f59e0b;
+        border: 2px solid rgba(245, 158, 11, 0.5);
+      }
+
+      .status-danger {
+        background: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        border: 2px solid rgba(239, 68, 68, 0.5);
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 15px;
+        overflow: hidden;
+        font-size: 1.2rem;
+      }
+
+      .comparison-table th {
+        background: rgba(245, 158, 11, 0.3);
+        padding: 20px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 3px solid #334155;
+        font-size: 1.3rem;
+      }
+
+      .comparison-table td {
+        padding: 18px 20px;
+        border-bottom: 2px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(245, 158, 11, 0.15);
+      }
+
+      .node-diagram {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 30px 0;
+        position: relative;
+      }
+
+      .node-server {
+        width: 200px;
+        height: 200px;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #f59e0b;
+        position: relative;
+        z-index: 2;
+      }
+
+      .node-pods {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 20px;
+        top: -100px;
+        z-index: 1;
+      }
+
+      .pod-circle {
+        width: 100px;
+        height: 100px;
+        background: rgba(59, 130, 246, 0.3);
+        border-radius: 50%;
+        border: 2px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .mount-line {
+        position: absolute;
+        width: 2px;
+        height: 60px;
+        background: #f59e0b;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .storage-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 25px 0;
+      }
+
+      .storage-type-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 25px;
+        border: 2px solid;
+        text-align: center;
+      }
+
+      .type-hostpath {
+        border-color: #f59e0b;
+      }
+
+      .type-ephemeral {
+        border-color: #ef4444;
+      }
+
+      .type-persistent {
+        border-color: #10b981;
+      }
+
+      .touch-target {
+        min-height: 60px;
+        min-width: 60px;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 2rem !important;
+        }
+        h2 {
+          font-size: 1.75rem !important;
+        }
+        h3 {
+          font-size: 1.5rem !important;
+        }
+        h4 {
+          font-size: 1.3rem !important;
+        }
+        p,
+        li {
+          font-size: 1.1rem !important;
+        }
+
+        .volume-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+
+        .code-container {
+          padding: 20px;
+          padding-right: 90px;
+          font-size: 1rem;
+        }
+
+        .code-text {
+          font-size: 1rem;
+          padding-right: 80px;
+        }
+
+        .copy-btn {
+          padding: 10px 20px;
+          font-size: 1rem;
+          min-height: 45px;
+        }
+
+        .demo-btn {
+          padding: 14px 24px;
+          font-size: 1.1rem;
+          min-height: 55px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .demo-controls {
+          flex-direction: column;
+        }
+
+        .storage-flow {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .flow-arrow {
+          transform: rotate(90deg);
+          margin: 10px 0;
+        }
+
+        .node-pods {
+          position: relative;
+          top: 0;
+          margin-bottom: 20px;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .node-server {
+          margin-top: 20px;
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .highlight {
+        background: rgba(245, 158, 11, 0.2);
+        padding: 3px 8px;
+        border-radius: 5px;
+        color: #f59e0b;
+      }
+
+      .data-survives {
+        animation: survive 2s ease-in-out infinite;
+      }
+
+      @keyframes survive {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+        50% {
+          transform: scale(1.1);
+          box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+      }
+
+      .blink {
+        animation: blink 1.5s infinite;
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="volume-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            💾 hostPath - Kubernetes Node Storage Guide
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Mount Node Filesystem Directly Into Pods! 🔗
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 text-lg"
+            >
+              <i class="fas fa-server mr-2"></i>Node Storage
+            </span>
+            <span
+              class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30 text-lg"
+            >
+              <i class="fas fa-folder-open mr-2"></i>Direct Mount
+            </span>
+            <span
+              class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full border border-green-500/30 text-lg"
+            >
+              <i class="fas fa-shield-alt mr-2"></i>Pod Delete → Data Stays
+            </span>
+            <span
+              class="px-5 py-3 bg-red-500/20 text-red-300 rounded-full border border-red-500/30 text-lg"
+            >
+              <i class="fas fa-exclamation-triangle mr-2"></i>Node Delete → Data
+              Gone
+            </span>
+          </div>
+
+          <div class="storage-visual">
+            <div class="storage-flow">
+              <div class="storage-node node-pod">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-cube"></i>
+                </div>
+                <h4 class="font-bold text-blue-300 text-xl">Pod</h4>
+                <p class="text-slate-300 text-sm">Your Container</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-warning">
+                    <i class="fas fa-link mr-2"></i>Mounts /host-data
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="storage-node node-hostpath">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-folder-tree"></i>
+                </div>
+                <h4 class="font-bold text-amber-300 text-xl">hostPath</h4>
+                <p class="text-slate-300 text-sm">Storage Volume</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-warning">
+                    <i class="fas fa-bridge mr-2"></i>Bridge
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="storage-node node-host">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-hdd"></i>
+                </div>
+                <h4 class="font-bold text-purple-300 text-xl">Node Disk</h4>
+                <p class="text-slate-300 text-sm">/data/host-demo</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-success">
+                    <i class="fas fa-check mr-2"></i>Permanent Storage
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-6">
+              <div class="text-slate-400">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Pod → hostPath → Node Filesystem</strong> - Direct
+                storage access!
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Your Successful Execution -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-trophy mr-3"></i>✅ Your Successful Execution
+        </h2>
+
+        <div class="terminal-output">
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f
+            hostpath-pod.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod/hostpath-demo-pod created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl exec -it
+            hostpath-demo-pod -- sh
+          </div>
+          <div class="terminal-line ml-4">/ # cd /host-data</div>
+          <div class="terminal-line ml-4">
+            /host-data # echo "Hello Amit from hostPath 😎" > amit.txt
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            /host-data # cat amit.txt
+          </div>
+          <div class="terminal-line ml-8 terminal-success">
+            Hello Amit from hostPath 😎
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> minikube ssh
+          </div>
+          <div class="terminal-line ml-4">
+            docker@minikube:~$ ls /data/host-demo
+          </div>
+          <div class="terminal-line ml-8 terminal-success">amit.txt</div>
+          <div class="terminal-line ml-4">
+            docker@minikube:~$ cat /data/host-demo/amit.txt
+          </div>
+          <div class="terminal-line ml-8 terminal-success">
+            Hello Amit from hostPath 😎
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl delete pod
+            hostpath-demo-pod
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod "hostpath-demo-pod" deleted
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> minikube ssh
+          </div>
+          <div class="terminal-line ml-4">
+            docker@minikube:~$ ls /data/host-demo
+          </div>
+          <div class="terminal-line ml-8 terminal-success">amit.txt</div>
+          <div class="terminal-line ml-4">
+            docker@minikube:~$ cat /data/host-demo/amit.txt
+          </div>
+          <div class="terminal-line ml-8 terminal-success">
+            Hello Amit from hostPath 😎
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <div class="text-center">
+            <div class="text-4xl mb-3 data-survives">🔥</div>
+            <h4 class="font-bold text-green-300 mb-2">
+              FILE SURVIVED POD DELETION!
+            </h4>
+            <p class="text-slate-300">
+              Data is stored on the <strong>Minikube node filesystem</strong>,
+              not in the pod! 🎉
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- What is hostPath? -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-brain mr-3"></i>🧠 What is hostPath?
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="p-6 bg-amber-500/10 rounded border border-amber-500/30">
+            <div class="text-center mb-4">
+              <div class="text-5xl mb-3">🔗</div>
+              <h3 class="font-bold text-amber-300 text-xl mb-2">
+                hostPath Definition
+              </h3>
+            </div>
+            <p class="text-slate-300 mb-4">
+              <span class="highlight">hostPath</span> = Mount a folder from your
+              Kubernetes node (Minikube VM / Host) directly into a Pod.
+            </p>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">
+                Node Disk (Real machine storage) ↓ mounted into Pod / Container
+                folder
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 rounded border border-blue-500/30">
+            <div class="text-center mb-4">
+              <div class="text-5xl mb-3">💡</div>
+              <h3 class="font-bold text-blue-300 text-xl mb-2">Key Insight</h3>
+            </div>
+            <ul class="text-slate-300 space-y-3">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mr-2 mt-1"></i>
+                <span
+                  ><strong>✔️ Data lives on the NODE</strong> filesystem</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mr-2 mt-1"></i>
+                <span>Even if Pod deletes → data stays 👍</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mr-2 mt-1"></i>
+                <span>But if Node dies → data gone ❌</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="warning-box">
+          <h4 class="font-bold text-amber-300 mb-3">
+            <i class="fas fa-exclamation-triangle mr-2"></i>⚠️ When to Use
+            hostPath
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 bg-amber-500/10 rounded">
+              <h5 class="font-bold text-green-300 mb-2">✅ Good For:</h5>
+              <ul class="text-slate-300 text-sm space-y-1">
+                <li>• Local learning & testing</li>
+                <li>• Development clusters</li>
+                <li>• Single-node setups</li>
+                <li>• Accessing host logs</li>
+                <li>• System-level monitoring</li>
+              </ul>
+            </div>
+            <div class="p-4 bg-red-500/10 rounded">
+              <h5 class="font-bold text-red-300 mb-2">❌ Not For:</h5>
+              <ul class="text-slate-300 text-sm space-y-1">
+                <li>• Multi-node production</li>
+                <li>• Cloud deployments</li>
+                <li>• Database persistent storage</li>
+                <li>• Critical user data</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Create Project Folder -->
+      <section class="step-card p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-folder-plus mr-3"></i>🏗️ Create New Folder For
+            Practice
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              Keep your learning clean and organized! Just like you successfully
+              did:
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="createFolder">
+              cd ~/Desktop/Courses/Kubernetes mkdir hostpath-demo cd
+              hostpath-demo
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('createFolder')"
+              >
+                <i class="fas fa-copy"></i> Copy Commands
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Directory created: hostpath-demo/
+            </div>
+            <div class="terminal-line terminal-success">
+              <i class="fas fa-check-circle mr-2"></i>
+              Ready for hostPath experiments! 🚀
+            </div>
+          </div>
+
+          <div class="node-diagram mt-6">
+            <div class="node-pods">
+              <div class="pod-circle">
+                <div class="text-2xl mb-1">📁</div>
+                <div class="text-xs">Desktop/</div>
+                <div class="text-xs">Courses/</div>
+                <div class="text-xs font-bold text-green-300">Kubernetes/</div>
+              </div>
+            </div>
+            <div class="mount-line"></div>
+            <div class="node-server">
+              <div class="text-4xl mb-2">💻</div>
+              <div class="text-lg font-bold text-amber-300">Your Computer</div>
+              <div class="text-sm text-slate-400 mt-2">
+                hostpath-demo folder
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 1: Create hostPath Pod -->
+      <section class="step-card p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-rocket mr-3"></i>✅ Step 1 — Create hostPath Pod
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-code mr-2"></i>
+              Create the hostpath-pod.yaml file:
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="hostpathPod">
+              apiVersion: v1 kind: Pod metadata: name: hostpath-demo-pod spec:
+              containers: - name: node-app image: busybox command: ["sh", "-c",
+              "while true; do sleep 10; done"] volumeMounts: - name:
+              host-storage mountPath: /host-data volumes: - name: host-storage
+              hostPath: path: /data/host-demo type: DirectoryOrCreate
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('hostpathPod')"
+              >
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div class="p-4 bg-slate-800/50 rounded">
+              <h4 class="font-bold text-amber-300 mb-2">📁 Explanation:</h4>
+              <ul class="text-slate-300 text-sm space-y-2">
+                <li>
+                  <span class="highlight">path: /data/host-demo</span> - Node
+                  directory
+                </li>
+                <li>
+                  <span class="highlight">DirectoryOrCreate</span> - Auto-create
+                  if missing
+                </li>
+                <li>
+                  <span class="highlight">mountPath: /host-data</span> -
+                  Container mount point
+                </li>
+                <li>
+                  <span class="highlight">busybox</span> - Lightweight container
+                  image
+                </li>
+              </ul>
+            </div>
+            <div class="p-4 bg-slate-800/50 rounded">
+              <h4 class="font-bold text-green-300 mb-2">🎯 What Happens:</h4>
+              <ul class="text-slate-300 text-sm space-y-2">
+                <li>
+                  Kubernetes creates
+                  <span class="highlight">/data/host-demo</span> on node
+                </li>
+                <li>
+                  Mounted into container at
+                  <span class="highlight">/host-data</span>
+                </li>
+                <li>Any file writes go to <strong>node filesystem</strong></li>
+                <li>Data survives pod restart/deletion</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="terminal-output mt-6">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              hostpath-pod.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              pod/hostpath-demo-pod created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              NAME READY STATUS RESTARTS AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              hostpath-demo-pod 1/1 Running 0 5s
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Write Data -->
+      <section class="step-card p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-edit mr-3"></i>🧪 Step 2 — Write Data From INSIDE
+            Container
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-terminal mr-2"></i>
+              Enter the pod and create a test file in the mounted directory:
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="writeData">
+              # Enter the pod kubectl exec -it hostpath-demo-pod -- sh # Inside
+              pod: cd /host-data echo "Hello Amit from hostPath 😎" > amit.txt
+              ls cat amit.txt # Exit exit
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('writeData')"
+              >
+                <i class="fas fa-copy"></i> Copy Commands
+              </button>
+            </div>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn" onclick="runDemo('enterPod')">
+              <i class="fas fa-sign-in-alt mr-2"></i> Enter Pod
+            </button>
+            <button class="demo-btn primary" onclick="runDemo('writeFile')">
+              <i class="fas fa-file-edit mr-2"></i> Write File
+            </button>
+            <button class="demo-btn blue" onclick="runDemo('readFile')">
+              <i class="fas fa-eye mr-2"></i> Read File
+            </button>
+          </div>
+
+          <div id="demoOutput" class="terminal-output">
+            <div class="terminal-line terminal-info">
+              <i class="fas fa-mouse-pointer mr-2"></i>
+              Click buttons above to simulate the demo steps
+            </div>
+          </div>
+
+          <div class="storage-visual mt-6">
+            <div class="text-center mb-4">
+              <h3 class="text-xl font-bold text-amber-300">
+                📝 Data Flow Visualization
+              </h3>
+              <p class="text-slate-300">
+                Watch how data flows from pod to node!
+              </p>
+            </div>
+
+            <div class="flex flex-col items-center">
+              <div class="relative w-full max-w-md">
+                <!-- Pod -->
+                <div
+                  class="p-4 bg-blue-500/20 rounded-lg border border-blue-500 mb-4"
+                >
+                  <div class="flex items-center">
+                    <div class="text-3xl mr-3">🐳</div>
+                    <div>
+                      <div class="font-bold text-blue-300">Pod Container</div>
+                      <div class="text-sm text-slate-300">
+                        Writing to /host-data
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2 p-2 bg-blue-500/10 rounded">
+                    <div class="text-sm font-mono">amit.txt content:</div>
+                    <div class="text-green-300">
+                      "Hello Amit from hostPath 😎"
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex justify-center mb-4">
+                  <div class="text-2xl text-amber-300">
+                    <i class="fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <!-- hostPath Volume -->
+                <div
+                  class="p-4 bg-amber-500/20 rounded-lg border border-amber-500 mb-4"
+                >
+                  <div class="flex items-center">
+                    <div class="text-3xl mr-3">🔗</div>
+                    <div>
+                      <div class="font-bold text-amber-300">
+                        hostPath Volume
+                      </div>
+                      <div class="text-sm text-slate-300">
+                        Bridge between pod and node
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex justify-center mb-4">
+                  <div class="text-2xl text-amber-300">
+                    <i class="fas fa-arrow-down"></i>
+                  </div>
+                </div>
+
+                <!-- Node Filesystem -->
+                <div
+                  class="p-4 bg-purple-500/20 rounded-lg border border-purple-500"
+                >
+                  <div class="flex items-center">
+                    <div class="text-3xl mr-3">💾</div>
+                    <div>
+                      <div class="font-bold text-purple-300">
+                        Node Filesystem
+                      </div>
+                      <div class="text-sm text-slate-300">
+                        /data/host-demo/amit.txt
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2 p-2 bg-purple-500/10 rounded">
+                    <div class="text-sm font-mono">
+                      File permanently stored!
+                    </div>
+                    <div class="text-green-300 blink">
+                      Data survives pod deletion
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="success-box mt-6">
+            <div class="flex items-center">
+              <div class="text-3xl mr-3">🎉</div>
+              <div>
+                <h4 class="font-bold text-green-300">
+                  FILE STORED SUCCESSFULLY!
+                </h4>
+                <p class="text-slate-300">
+                  Your data is now on the node filesystem, not just in the
+                  container!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Prove Data on Node -->
+      <section class="step-card p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-red-300 mb-4">
+            <i class="fas fa-fire mr-3"></i>🔥 Step 3 — Prove Data is REALLY on
+            Node
+          </h2>
+
+          <div class="warning-box">
+            <p class="text-slate-300">
+              <i class="fas fa-microscope mr-2"></i>
+              This is the <strong>CRITICAL PROOF</strong> that data is on the
+              node, not just in the container!
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="checkNode">
+              # Enter Minikube node directly minikube ssh # Inside Minikube VM:
+              ls /data/host-demo cat /data/host-demo/amit.txt # Exit exit
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('checkNode')"
+              >
+                <i class="fas fa-copy"></i> Copy Commands
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube ssh
+            </div>
+            <div class="terminal-line ml-4">
+              docker@minikube:~$ ls /data/host-demo
+            </div>
+            <div class="terminal-line ml-8 terminal-success">amit.txt</div>
+            <div class="terminal-line ml-4">
+              docker@minikube:~$ cat /data/host-demo/amit.txt
+            </div>
+            <div class="terminal-line ml-8 terminal-success">
+              Hello Amit from hostPath 😎
+            </div>
+            <div class="terminal-line ml-4">docker@minikube:~$ exit</div>
+            <div class="terminal-line terminal-success">logout</div>
+          </div>
+
+          <div class="success-box mt-6">
+            <div class="text-center">
+              <div class="text-5xl mb-3">💥</div>
+              <h4 class="font-bold text-green-300 mb-2">
+                hostPath SUCCESS VERIFIED!
+              </h4>
+              <p class="text-slate-300">
+                The file exists on the
+                <strong>Minikube node filesystem</strong>, proving hostPath
+                works! 🎯
+              </p>
+            </div>
+          </div>
+
+          <div class="node-diagram mt-6">
+            <div
+              class="flex flex-col md:flex-row items-center justify-center gap-8"
+            >
+              <div class="text-center">
+                <div class="pod-circle mb-2">
+                  <div class="text-3xl">🐳</div>
+                </div>
+                <div class="text-sm font-bold text-blue-300">Pod Container</div>
+                <div class="text-xs text-slate-400">/host-data/amit.txt</div>
+              </div>
+
+              <div class="text-3xl text-amber-300">
+                <i class="fas fa-arrows-alt-h"></i>
+              </div>
+
+              <div class="text-center">
+                <div
+                  class="w-24 h-24 bg-amber-500/20 rounded-lg border-2 border-amber-500 flex items-center justify-center mb-2"
+                >
+                  <div class="text-3xl">🔗</div>
+                </div>
+                <div class="text-sm font-bold text-amber-300">
+                  hostPath Bridge
+                </div>
+                <div class="text-xs text-slate-400">Two-way sync</div>
+              </div>
+
+              <div class="text-3xl text-amber-300">
+                <i class="fas fa-arrows-alt-h"></i>
+              </div>
+
+              <div class="text-center">
+                <div
+                  class="w-24 h-24 bg-purple-500/20 rounded-lg border-2 border-purple-500 flex items-center justify-center mb-2"
+                >
+                  <div class="text-3xl">💾</div>
+                </div>
+                <div class="text-sm font-bold text-purple-300">
+                  Node Filesystem
+                </div>
+                <div class="text-xs text-slate-400">
+                  /data/host-demo/amit.txt
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Delete Pod & Verify -->
+      <section class="step-card p-6">
+        <div class="step-badge">5</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-bomb mr-3"></i>💣 Step 4 — Delete Pod & Check Data
+            Survives
+          </h2>
+
+          <div class="danger-box">
+            <p class="text-slate-300">
+              <i class="fas fa-skull-crossbones mr-2"></i>
+              The <strong>ULTIMATE TEST</strong> - Delete the pod completely and
+              verify data survives!
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="deletePod">
+              # Delete the pod kubectl delete pod hostpath-demo-pod # Wait for
+              deletion kubectl get pods # Check node again minikube ssh ls
+              /data/host-demo cat /data/host-demo/amit.txt exit
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('deletePod')"
+              >
+                <i class="fas fa-copy"></i> Copy Commands
+              </button>
+            </div>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn" onclick="runDemo('deletePodDemo')">
+              <i class="fas fa-trash mr-2"></i> Delete Pod
+            </button>
+            <button
+              class="demo-btn primary"
+              onclick="runDemo('verifySurvival')"
+            >
+              <i class="fas fa-shield-alt mr-2"></i> Verify Data
+            </button>
+          </div>
+
+          <div class="storage-visual mt-6" id="survivalTest">
+            <div class="text-center mb-4">
+              <h3 class="text-xl font-bold text-amber-300">🧪 Survival Test</h3>
+              <p class="text-slate-300">Does data survive pod deletion?</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div class="p-4 bg-slate-800/50 rounded">
+                <div class="text-3xl mb-2" id="podStatus">🐳</div>
+                <div class="text-slate-300">Pod Status</div>
+                <div class="text-green-400 mt-2" id="podText">Running</div>
+              </div>
+              <div class="p-4 bg-slate-800/50 rounded">
+                <div class="text-3xl mb-2" id="dataStatus">💾</div>
+                <div class="text-slate-300">Data Status</div>
+                <div class="text-green-400 mt-2" id="dataText">Stored</div>
+              </div>
+              <div class="p-4 bg-slate-800/50 rounded">
+                <div class="text-3xl mb-2" id="nodeStatus">🏠</div>
+                <div class="text-slate-300">Node Status</div>
+                <div class="text-blue-400 mt-2" id="nodeText">Active</div>
+              </div>
+            </div>
+
+            <div class="mt-6 text-center">
+              <div class="inline-block p-4 bg-slate-800/70 rounded-lg">
+                <div class="text-2xl mb-2">📁 Node Directory Contents:</div>
+                <div class="code-container" style="padding: 15px; margin: 0">
+                  <div class="code-text" id="nodeContents">
+                    /data/host-demo/ ├── amit.txt └── (other future files)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="terminal-output mt-6">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl delete pod
+              hostpath-demo-pod
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              pod "hostpath-demo-pod" deleted
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube ssh
+            </div>
+            <div class="terminal-line ml-4">
+              docker@minikube:~$ ls /data/host-demo
+            </div>
+            <div class="terminal-line ml-8 terminal-success">amit.txt</div>
+            <div class="terminal-line ml-4">
+              docker@minikube:~$ cat /data/host-demo/amit.txt
+            </div>
+            <div class="terminal-line ml-8 terminal-success">
+              Hello Amit from hostPath 😎
+            </div>
+            <div class="terminal-line ml-4 terminal-warning">
+              docker@minikube:~$ exit
+            </div>
+          </div>
+
+          <div class="success-box mt-6">
+            <div class="text-center">
+              <div class="text-4xl mb-3 pulse">🎉</div>
+              <h4 class="font-bold text-green-300 mb-2">
+                FILE STILL EXISTS AFTER POD DELETION!
+              </h4>
+              <p class="text-slate-300">
+                This proves:
+                <strong>hostPath = stored on NODE filesystem</strong> 👍
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Key Differences -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-balance-scale mr-3"></i>🧠 KEY Difference (Very
+          Important)
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Storage Type</th>
+                <th>Data Survives Pod Delete?</th>
+                <th>Where Stored</th>
+                <th>Use Case</th>
+                <th>Production Ready?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="font-bold text-red-300">emptyDir</span></td>
+                <td><span class="text-red-400">❌ No</span></td>
+                <td>RAM / temp disk</td>
+                <td>Cache, temp files</td>
+                <td><span class="text-red-400">Limited</span></td>
+              </tr>
+              <tr>
+                <td><span class="font-bold text-amber-300">hostPath</span></td>
+                <td>
+                  <span class="text-green-400">✔ Yes (while node exists)</span>
+                </td>
+                <td>Node filesystem</td>
+                <td>Dev, single-node</td>
+                <td><span class="text-amber-400">Not for multi-node</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300">PVC (Persistent)</span>
+                </td>
+                <td><span class="text-green-400">✔✔ Yes (always)</span></td>
+                <td>Kubernetes managed disk</td>
+                <td>Database, user data</td>
+                <td><span class="text-green-400">✅ Yes</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <div class="storage-type-card type-ephemeral">
+            <div class="text-4xl mb-3">⚡</div>
+            <h4 class="font-bold text-red-300">emptyDir</h4>
+            <p class="text-slate-300 mb-3">Temporary storage</p>
+            <div class="status-indicator status-danger">Dies with pod</div>
+          </div>
+
+          <div class="storage-type-card type-hostpath">
+            <div class="text-4xl mb-3">🏠</div>
+            <h4 class="font-bold text-amber-300">hostPath</h4>
+            <p class="text-slate-300 mb-3">Node filesystem</p>
+            <div class="status-indicator status-warning">
+              Survives pod, not node
+            </div>
+          </div>
+
+          <div class="storage-type-card type-persistent">
+            <div class="text-4xl mb-3">🛡️</div>
+            <h4 class="font-bold text-green-300">PVC</h4>
+            <p class="text-slate-300 mb-3">Persistent storage</p>
+            <div class="status-indicator status-success">
+              Survives everything
+            </div>
+          </div>
+        </div>
+
+        <div class="warning-box mt-6">
+          <h4 class="font-bold text-amber-300 mb-3">
+            <i class="fas fa-exclamation-circle mr-2"></i>⚠️ Critical
+            Understanding
+          </h4>
+          <p class="text-slate-300">
+            <strong>hostPath is NOT for production multi-node clusters!</strong>
+            Why?
+          </p>
+          <ul class="text-slate-300 mt-2 ml-4 space-y-2">
+            <li>
+              • If pod moves to another node → data lost (different filesystem)
+            </li>
+            <li>• No data replication across nodes</li>
+            <li>• Security risks (pods can access host filesystem)</li>
+            <li>• Node failure = permanent data loss</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Real World Use Cases -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-globe-americas mr-3"></i>🌍 Real World Use Cases for
+          hostPath
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-6 bg-slate-800/50 rounded border border-blue-500/30">
+            <h3 class="text-xl font-bold text-blue-300 mb-4">
+              🛠️ Development & Testing
+            </h3>
+            <ul class="text-slate-300 space-y-3">
+              <li class="flex items-start">
+                <i class="fas fa-code text-green-400 mr-2 mt-1"></i>
+                <span>Local development with persistent data</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-vial text-green-400 mr-2 mt-1"></i>
+                <span>Testing volume mounting logic</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-school text-green-400 mr-2 mt-1"></i>
+                <span>Learning Kubernetes storage concepts</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-bug text-green-400 mr-2 mt-1"></i>
+                <span>Debugging file system issues</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 rounded border border-amber-500/30">
+            <h3 class="text-xl font-bold text-amber-300 mb-4">
+              📊 System Monitoring
+            </h3>
+            <ul class="text-slate-300 space-y-3">
+              <li class="flex items-start">
+                <i class="fas fa-chart-line text-green-400 mr-2 mt-1"></i>
+                <span>Accessing host system logs (/var/log)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-temperature-high text-green-400 mr-2 mt-1"></i>
+                <span>Reading host metrics (/proc, /sys)</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-shield-alt text-green-400 mr-2 mt-1"></i>
+                <span>Security scanning tools</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-network-wired text-green-400 mr-2 mt-1"></i>
+                <span>Network monitoring daemons</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-container mt-6">
+          <div class="code-text">
+            # Example: Monitoring pod accessing host logs apiVersion: v1 kind:
+            Pod metadata: name: log-monitor spec: containers: - name:
+            log-collector image: fluentd volumeMounts: - name: host-logs
+            mountPath: /var/log/host volumes: - name: host-logs hostPath: path:
+            /var/log type: Directory
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="volume-card p-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-heart mr-3"></i>❤️ Summary
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <h3 class="text-xl font-bold text-amber-300 mb-3">
+              🎯 What You Learned Today
+            </h3>
+            <ul class="text-slate-300 space-y-3">
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                <span>What <strong>hostPath</strong> is and how it works</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                <span
+                  >How to mount <strong>real system storage</strong> into
+                  containers</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                <span>Writing & reading files from pod → node</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                <span>Verifying data on <strong>Minikube machine</strong></span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-400 mr-2 mt-1"></i>
+                <span
+                  >Proving data <strong>survives pod deletion</strong> 💪</span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold text-blue-300 mb-3">
+              📁 Files Created
+            </h3>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">
+                📦 hostpath-demo/ └── 📄 hostpath-pod.yaml
+              </div>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-bold text-green-300 mb-2">📍 Node Location:</h4>
+              <div class="code-container" style="padding: 10px">
+                <div class="code-text">
+                  Minikube Node: /data/host-demo/amit.txt
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box">
+          <div class="flex flex-col md:flex-row items-center">
+            <div class="text-5xl mr-4 mb-4 md:mb-0">🔥</div>
+            <div>
+              <h4 class="font-bold text-green-300 mb-2">
+                This is real DevOps volume knowledge! 🔥
+              </h4>
+              <p class="text-slate-300">
+                You now understand <strong>hostPath volumes</strong> - a crucial
+                concept for any Kubernetes engineer working with local
+                development, testing, or system-level containers.
+              </p>
+              <p class="text-slate-300 mt-2">
+                Remember:
+                <strong>hostPath for development, PVC for production!</strong>
+                🚀
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-8">
+          <button class="demo-btn pulse" onclick="resetDemo()">
+            <i class="fas fa-redo mr-2"></i> Run Demo Again
+          </button>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-10 mb-6 text-slate-400">
+        <p class="mb-4">
+          <i class="fas fa-code mr-2"></i>Mastered Kubernetes hostPath Volumes
+        </p>
+        <div class="flex justify-center gap-4 text-xl">
+          <span class="px-4 py-2 bg-amber-500/20 rounded-full text-amber-300">
+            <i class="fas fa-server mr-2"></i>Node Storage
+          </span>
+          <span class="px-4 py-2 bg-green-500/20 rounded-full text-green-300">
+            <i class="fas fa-check-circle mr-2"></i>Data Persistence
+          </span>
+          <span class="px-4 py-2 bg-blue-500/20 rounded-full text-blue-300">
+            <i class="fas fa-graduation-cap mr-2"></i>Learning Complete
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy code function
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        const text = element.textContent;
+
+        navigator.clipboard.writeText(text).then(() => {
+          const button = event.target.closest('.copy-btn');
+          const originalText = button.innerHTML;
+
+          button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          button.classList.add('copied');
+
+          setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        });
+      }
+
+      // Demo simulation
+      const demoSteps = {
+        enterPod: {
+          output: [
+            '$ kubectl exec -it hostpath-demo-pod -- sh',
+            '',
+            '/ #',
+            '# Successfully entered the pod container!',
+          ],
+          updateUI: function () {
+            document.getElementById('podStatus').textContent = '🔍';
+            document.getElementById('podText').textContent = 'Entered';
+            document.getElementById('podText').className = 'text-blue-400 mt-2';
+          },
+        },
+        writeFile: {
+          output: [
+            '/ # cd /host-data',
+            "/host-data # echo 'Hello Amit from hostPath 😎' > amit.txt",
+            '/host-data # ls',
+            'amit.txt',
+            '',
+            '# File created in mounted directory!',
+          ],
+          updateUI: function () {
+            document.getElementById('dataStatus').textContent = '📝';
+            document.getElementById('dataText').textContent = 'Writing...';
+            document.getElementById('dataText').className =
+              'text-amber-400 mt-2';
+            document.getElementById('nodeContents').textContent =
+              '/data/host-demo/\n├── amit.txt\n└── (file being written)';
+          },
+        },
+        readFile: {
+          output: [
+            '/host-data # cat amit.txt',
+            'Hello Amit from hostPath 😎',
+            '/host-data # exit',
+            '',
+            '# File read successfully! Data is in container.',
+          ],
+          updateUI: function () {
+            document.getElementById('dataStatus').textContent = '✅';
+            document.getElementById('dataText').textContent = 'Verified';
+            document.getElementById('dataText').className =
+              'text-green-400 mt-2';
+          },
+        },
+        deletePodDemo: {
+          output: [
+            '$ kubectl delete pod hostpath-demo-pod',
+            "pod 'hostpath-demo-pod' deleted",
+            '',
+            '# Pod deleted! But where is the data?...',
+          ],
+          updateUI: function () {
+            document.getElementById('podStatus').textContent = '💀';
+            document.getElementById('podText').textContent = 'Deleted';
+            document.getElementById('podText').className = 'text-red-400 mt-2';
+            document.getElementById('dataStatus').className =
+              'text-3xl mb-2 blink';
+          },
+        },
+        verifySurvival: {
+          output: [
+            '$ minikube ssh',
+            'docker@minikube:~$ ls /data/host-demo',
+            'amit.txt',
+            'docker@minikube:~$ cat /data/host-demo/amit.txt',
+            'Hello Amit from hostPath 😎',
+            '',
+            '🔥 DATA SURVIVED POD DELETION! 🔥',
+          ],
+          updateUI: function () {
+            document.getElementById('podStatus').textContent = '💀';
+            document.getElementById('podText').textContent = 'Deleted';
+            document.getElementById('podText').className = 'text-red-400 mt-2';
+            document.getElementById('dataStatus').textContent = '💾';
+            document.getElementById('dataText').textContent = 'SAFE on Node';
+            document.getElementById('dataText').className =
+              'text-green-400 mt-2';
+            document.getElementById('nodeStatus').textContent = '✅';
+            document.getElementById('nodeText').textContent = 'Data Intact';
+            document.getElementById('nodeText').className =
+              'text-green-400 mt-2';
+            document.getElementById('nodeContents').textContent =
+              '/data/host-demo/\n├── amit.txt\n└── Data survives!';
+          },
+        },
+      };
+
+      function runDemo(step) {
+        const demo = demoSteps[step];
+        const outputDiv = document.getElementById('demoOutput');
+
+        // Clear and show new output
+        outputDiv.innerHTML = demo.output
+          .map((line) => {
+            if (line.startsWith('$')) {
+              return `<div class="terminal-line"><span class="terminal-prompt">$</span> ${line.substring(
+                2,
+              )}</div>`;
+            } else if (line.startsWith('/') || line.startsWith('docker@')) {
+              return `<div class="terminal-line ml-4">${line}</div>`;
+            } else if (line.startsWith('#')) {
+              return `<div class="terminal-line ml-4 terminal-info">${line}</div>`;
+            } else if (line.includes('🔥')) {
+              return `<div class="terminal-line ml-4 terminal-success pulse">${line}</div>`;
+            } else if (
+              line.includes('created') ||
+              line.includes('SURVIVED') ||
+              line.includes('😎')
+            ) {
+              return `<div class="terminal-line ml-4 terminal-success">${line}</div>`;
+            } else if (line.includes('deleted')) {
+              return `<div class="terminal-line ml-4 terminal-error">${line}</div>`;
+            } else if (line) {
+              return `<div class="terminal-line ml-4">${line}</div>`;
+            } else {
+              return `<div class="terminal-line"></div>`;
+            }
+          })
+          .join('');
+
+        // Update UI visualization
+        if (demo.updateUI) {
+          demo.updateUI();
+        }
+
+        // Scroll to demo output
+        outputDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      function resetDemo() {
+        // Reset all UI elements
+        document.getElementById('podStatus').textContent = '🐳';
+        document.getElementById('podText').textContent = 'Running';
+        document.getElementById('podText').className = 'text-green-400 mt-2';
+
+        document.getElementById('dataStatus').textContent = '💾';
+        document.getElementById('dataStatus').className = 'text-3xl mb-2';
+        document.getElementById('dataText').textContent = 'Stored';
+        document.getElementById('dataText').className = 'text-green-400 mt-2';
+
+        document.getElementById('nodeStatus').textContent = '🏠';
+        document.getElementById('nodeText').textContent = 'Active';
+        document.getElementById('nodeText').className = 'text-blue-400 mt-2';
+
+        document.getElementById('nodeContents').textContent =
+          '/data/host-demo/\n├── amit.txt\n└── (other future files)';
+
+        // Reset demo output
+        document.getElementById('demoOutput').innerHTML = `
+                <div class="terminal-line terminal-info">
+                    <i class="fas fa-redo mr-2"></i>
+                    Demo reset! Click buttons to run steps again
+                </div>
+            `;
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function () {
+        // Make all interactive elements touch-friendly
+        const interactiveElements = document.querySelectorAll(
+          'button, .copy-btn, .demo-btn',
+        );
+        interactiveElements.forEach((el) => {
+          el.classList.add('touch-target');
+        });
+
+        // Initialize demo
+        runDemo('enterPod');
+      });
+    </script>
+  </body>
+</html>

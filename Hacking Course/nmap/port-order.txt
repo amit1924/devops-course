@@ -1,0 +1,193 @@
+🎯 Lesson — Which Ports to Scan & In What Order
+
+Until now you learned:
+
+how to choose targets
+
+how to discover hosts
+
+how to choose scan techniques
+
+Now the question is:
+👉 “Out of 65,535 ports… WHICH ones should I scan? And HOW fast / in what order?”
+
+By default:
+
+nmap <target>
+
+
+scans:
+✔️ Top 1000 most common TCP ports
+
+But YOU can control everything 😎
+
+🟢 1️⃣ -p — Choose EXACT Ports to Scan
+
+This is the most powerful option in this section.
+
+✔️ Scan single port
+nmap -p 80 192.168.1.10
+
+✔️ Scan multiple ports
+nmap -p 22,80,443 192.168.1.10
+
+✔️ Scan a range
+nmap -p 1-1000 192.168.1.10
+
+✔️ Scan ALL 65535 ports
+nmap -p- 192.168.1.10
+
+
+🔥 This is the FULL brutal scan
+
+🔵 2️⃣ Scan TCP + UDP together
+
+Normally Nmap only scans TCP.
+So to scan UDP too:
+
+nmap -sU -sS -p U:53,161,T:22,80 192.168.1.10
+
+
+Breakdown:
+
+U: = UDP ports
+
+T: = TCP ports
+
+Example meaning:
+
+Scan UDP ports 53, 161
+
+Scan TCP ports 22, 80
+
+Without protocol prefix:
+👉 Same ports get added to ALL protocol scans
+
+🟡 3️⃣ Scan Ports by NAME 😎
+
+Instead of numbers, you can use service names.
+
+Example:
+
+nmap -p ftp,http 192.168.1.10
+
+
+Or wildcard:
+
+nmap -p http* 192.168.1.10
+
+
+This uses nmap-services database.
+
+🧠 4️⃣ Intelligent Range Port Selection
+
+Cool trick:
+
+-p [-1024]
+
+
+Meaning:
+👉 Scan only ports <= 1024 that exist in service database
+
+But usually we use numeric ports — this is extra power.
+
+🚫 5️⃣ --exclude-ports
+
+Sometimes you DON’T want to scan certain ports.
+
+Example:
+
+nmap -p- --exclude-ports 80,443 192.168.1.10
+
+
+Meaning:
+
+Scan ALL ports
+
+Except 80 & 443
+
+Works for:
+✔️ TCP
+✔️ UDP
+✔️ SCTP
+✔️ IP Protocol scans (-sO)
+
+⚡ 6️⃣ Fast Scan -F
+
+Default = 1000 ports
+Fast Mode = only top 100 ports
+
+nmap -F 192.168.1.10
+
+
+Use when:
+✔️ You want a quick idea
+✔️ You’re scanning a big network
+✔️ Time matters
+
+🔀 7️⃣ Random vs Sequential Scan Order
+
+By default:
+👉 Nmap randomizes port order
+Why?
+✔️ Avoids triggering simple IDS
+✔️ Avoids pattern detection
+✔️ Avoids scan throttling
+
+But if you want sequential:
+
+nmap -r 192.168.1.10
+
+
+Meaning:
+→ Scan ports from lowest to highest in straight order.
+
+Use sequential when:
+✔️ Debugging
+✔️ Research
+✔️ Testing rate behavior
+
+🎯 8️⃣ --top-ports — Smartest Feature
+
+Want only most commonly used ports?
+
+nmap --top-ports 20 192.168.1.10
+
+
+Scans:
+👉 Top 20 most active ports in real-world traffic
+
+Another example:
+
+nmap --top-ports 100 192.168.1.10
+
+
+This is AWESOME for:
+✔️ Pentesting
+✔️ Quick recon
+✔️ Practical real scans
+
+📊 9️⃣ --port-ratio
+
+This is more nerdy / advanced.
+
+Every port has a popularity score in nmap database.
+You can say:
+
+nmap --port-ratio 0.5 192.168.1.10
+
+
+Meaning:
+👉 Scan ONLY ports that are used more than 50% of the time globally
+
+Useful but advanced.
+You’ll use top-ports more in real life.
+
+| Option          | Meaning             |
+| --------------- | ------------------- |
+| -p              | choose ports        |
+| -p-             | all 65535 ports     |
+| -F              | fast 100 ports      |
+| -r              | sequential          |
+| --top-ports N   | most common N ports |
+| --exclude-ports | skip certain ports  |

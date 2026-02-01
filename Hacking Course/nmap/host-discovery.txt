@@ -1,0 +1,221 @@
+🎯 Lesson — Host Discovery (How Nmap Finds “Who Is Alive”)
+
+Before scanning ports, Nmap first asks:
+
+👉 “Out of all these IPs, which ones are actually ON?”
+
+Because:
+
+scanning millions of dead IPs = 😴 slow + useless
+
+finding only alive devices = ⚡ fast + smart
+
+This stage is also called:
+
+Ping Scan
+
+Host Discovery
+
+Let’s understand cleanly.
+
+🟢 1️⃣ What happens by DEFAULT?
+
+If you don’t give any special discovery options, Nmap automatically sends:
+
+ICMP Echo (like normal ping)
+
+TCP SYN to port 443
+
+TCP ACK to port 80
+
+ICMP timestamp
+
+Meaning:
+👉 If a device replies to ANY of these → it is alive 👍
+
+On local network:
+
+Nmap uses ARP scan
+
+Because ARP is 100% accurate locally and faster
+
+So default is already smart.
+
+🧪 2️⃣ Different Levels of Host Discovery
+
+There are 3 main styles:
+
+✔️ A) List Scan (Only List, Send Nothing)
+
+Command:
+
+nmap -sL <target>
+
+
+This:
+
+❌ sends NO packets
+
+✅ just prints list of targets + DNS names
+
+Good for:
+
+checking if your target list is correct
+
+verifying domains
+
+planning scan
+
+But:
+❌ Does NOT tell who is alive
+
+✔️ B) Ping Scan (Find Alive Hosts — No Port Scan)
+
+Command:
+
+nmap -sn <target>
+
+
+This is SUPER IMPORTANT.
+It:
+
+✔️ finds alive machines
+
+❌ does NOT scan ports
+
+Useful for:
+
+network inventory
+
+counting active devices
+
+light, quiet recon
+
+This is what most admins use.
+
+Default probes in -sn:
+
+ICMP Echo
+
+TCP SYN 443
+
+TCP ACK 80
+
+ICMP timestamp
+
+ARP on local network
+
+👉 If blocked by firewall, you can customize probes (coming below)
+
+✔️ C) No Ping (Assume EVERY Host Is Alive)
+
+Command:
+
+nmap -Pn <target>
+
+
+Meaning:
+
+Skip host discovery completely
+
+Treat every IP as alive
+
+Go straight to heavy scanning
+
+Useful when:
+
+firewall blocks ping
+
+you KNOW targets are alive
+
+internet targets hide ping response
+
+⚠️ Downside:
+
+SLOW
+
+scans even dead hosts
+
+Bonus:
+
+nmap -Pn -sn
+
+
+Skips everything but still runs scripts if needed.
+
+🔥 3️⃣ Powerful Custom Discovery Options (-P*)
+
+When firewall blocks default ping, we use smarter probes.
+
+1️⃣ TCP SYN Ping
+nmap -PS80,443 <target>
+
+
+Sends SYN packets.
+If RST or SYN/ACK returns → host alive.
+
+Great when:
+
+ICMP blocked
+
+SYN allowed
+
+2️⃣ TCP ACK Ping
+nmap -PA80,443 <target>
+
+
+Bypasses some firewalls that block SYN but allow ACK.
+
+Tip:
+👉 Many pentesters send BOTH
+
+nmap -PS -PA <target>
+
+3️⃣ UDP Ping
+nmap -PU <target>
+
+
+Useful when:
+
+TCP firewalled
+
+UDP responses more likely
+
+Normally slower.
+
+4️⃣ ICMP Ping Types
+
+Normal ping:
+
+nmap -PE <target>
+
+
+Timestamp ping:
+
+nmap -PP <target>
+
+
+Address mask ping:
+
+nmap -PM <target>
+
+
+Great for:
+
+internal networks
+
+admin monitoring
+
+But internet targets often block ICMP.
+5️⃣ SCTP Ping (rare)
+nmap -PY <target>
+
+
+Used in telecom systems mostly.
+
+6️⃣ IP Protocol Ping
+nmap -PO <target>
+
+
+Advanced, rarely needed.
+Can detect devices even when normal ping fails.

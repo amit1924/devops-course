@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TCP Advanced: GBN, Selective Repeat & Fast Retransmit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-green: #00ff9d;
+        --neon-blue: #00e0ff;
+        --neon-purple: #b967ff;
+        --neon-pink: #ff2d95;
+        --neon-orange: #ff6b35;
+        --dark-bg: #0f172a;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+      }
+
+      .gradient-text {
+        background: linear-gradient(
+          135deg,
+          var(--neon-green),
+          var(--neon-blue)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .concept-card {
+        background: #1e293b;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .concept-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 255, 157, 0.15);
+        border-color: rgba(0, 255, 157, 0.3);
+      }
+
+      .protocol-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+      }
+
+      .protocol-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+      }
+
+      .gbn-header::before {
+        background: var(--neon-blue);
+      }
+      .sr-header::before {
+        background: var(--neon-purple);
+      }
+      .fast-header::before {
+        background: var(--neon-green);
+      }
+      .rtt-header::before {
+        background: var(--neon-orange);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      .good-badge {
+        background: rgba(0, 255, 157, 0.15);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+      }
+
+      .bad-badge {
+        background: rgba(255, 45, 85, 0.15);
+        border: 1px solid #ff2d55;
+        color: #ff2d55;
+      }
+
+      .info-badge {
+        background: rgba(0, 224, 255, 0.15);
+        border: 1px solid var(--neon-blue);
+        color: var(--neon-blue);
+      }
+
+      .warning-badge {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid var(--neon-orange);
+        color: var(--neon-orange);
+      }
+
+      .window-visual {
+        height: 180px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 12px;
+        position: relative;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .packet-box {
+        position: absolute;
+        width: 50px;
+        height: 40px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .packet-box:hover {
+        transform: scale(1.1);
+        z-index: 10;
+      }
+
+      .packet-acked {
+        background: #10b981;
+        border: 2px solid #10b981;
+      }
+      .packet-sent {
+        background: #3b82f6;
+        border: 2px solid #3b82f6;
+      }
+      .packet-lost {
+        background: #ef4444;
+        border: 2px solid #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .packet-buffered {
+        background: #8b5cf6;
+        border: 2px solid #8b5cf6;
+      }
+      .packet-future {
+        background: #6b7280;
+        border: 2px dashed #6b7280;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      .comparison-table th {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .comparison-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(0, 255, 157, 0.05);
+      }
+
+      .timeline {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        padding: 2rem 0;
+      }
+
+      .timeline::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--neon-green), transparent);
+        transform: translateY(-50%);
+      }
+
+      .timeline-point {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        width: 100px;
+      }
+
+      .timeline-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--neon-green);
+        margin: 0 auto 10px;
+        border: 3px solid #1e293b;
+      }
+
+      .expandable {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+
+      .expandable.expanded {
+        max-height: 500px;
+      }
+
+      .rtt-formula {
+        background: rgba(255, 107, 53, 0.1);
+        border-left: 4px solid var(--neon-orange);
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <div
+              class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center"
+            >
+              <i class="fas fa-exchange-alt text-2xl text-white"></i>
+            </div>
+            <div
+              class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center"
+            >
+              <span class="text-xs font-bold">TCP</span>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold gradient-text">
+              Advanced TCP Concepts
+            </h1>
+            <p class="text-slate-400">
+              GBN vs Selective Repeat • Fast Retransmit • RTT Estimation
+            </p>
+          </div>
+        </div>
+        <div class="hidden md:flex space-x-2">
+          <span class="badge info-badge"
+            ><i class="fas fa-window-restore mr-1"></i> Window = 4</span
+          >
+          <span class="badge good-badge"
+            ><i class="fas fa-bolt mr-1"></i> Fast</span
+          >
+          <span class="badge warning-badge"
+            ><i class="fas fa-brain mr-1"></i> Hybrid</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto">
+      <!-- Go-Back-N Visual Demo -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-backward mr-3 text-blue-400"></i>
+          Go-Back-N: Window Size = 4
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header gbn-header">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div
+                  class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-train text-blue-400 text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-bold">
+                    Train Analogy: When One Coach Derails...
+                  </h3>
+                  <p class="text-slate-400">
+                    "Send that coach again AND every coach after it"
+                  </p>
+                </div>
+              </div>
+              <button
+                onclick="startGBNAnimation()"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg"
+              >
+                <i class="fas fa-play mr-2"></i> Animate
+              </button>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <!-- Step-by-Step Visualization -->
+            <div class="mb-8">
+              <h4 class="text-lg font-bold text-green-400 mb-4">
+                Step-by-Step Story
+              </h4>
+              <div class="timeline mb-8">
+                <div class="timeline-point">
+                  <div class="timeline-dot bg-blue-500"></div>
+                  <div class="text-sm font-bold">Send 4 Packets</div>
+                  <div class="text-xs text-slate-400">Window full</div>
+                </div>
+                <div class="timeline-point">
+                  <div class="timeline-dot bg-green-500"></div>
+                  <div class="text-sm font-bold">ACK0, ACK1</div>
+                  <div class="text-xs text-slate-400">Success</div>
+                </div>
+                <div class="timeline-point">
+                  <div class="timeline-dot bg-red-500"></div>
+                  <div class="text-sm font-bold">pkt2 ❌ LOST</div>
+                  <div class="text-xs text-slate-400">Disaster!</div>
+                </div>
+                <div class="timeline-point">
+                  <div class="timeline-dot bg-red-500"></div>
+                  <div class="text-sm font-bold">Timeout 💣</div>
+                  <div class="text-xs text-slate-400">Go Back!</div>
+                </div>
+                <div class="timeline-point">
+                  <div class="timeline-dot bg-green-500"></div>
+                  <div class="text-sm font-bold">Resend 2-5</div>
+                  <div class="text-xs text-slate-400">Finally works</div>
+                </div>
+              </div>
+
+              <div class="window-visual mb-4" id="gbnWindow">
+                <!-- Packets will be dynamically added -->
+              </div>
+
+              <div class="flex justify-center space-x-4 mb-6">
+                <button
+                  onclick="showStep(1)"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+                >
+                  Step 1: Send Window
+                </button>
+                <button
+                  onclick="showStep(2)"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded"
+                >
+                  Step 2: ACK0, ACK1
+                </button>
+                <button
+                  onclick="showStep(3)"
+                  class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"
+                >
+                  Step 3: pkt2 Lost
+                </button>
+                <button
+                  onclick="showStep(4)"
+                  class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded"
+                >
+                  Step 4: Timeout
+                </button>
+              </div>
+            </div>
+
+            <!-- Receiver Behavior -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-blue-900/20 p-4 rounded-lg">
+                <h4 class="font-bold text-blue-400 mb-3 flex items-center">
+                  <i class="fas fa-user-check mr-2"></i>
+                  Receiver Logic
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                    pkt0 arrives → Deliver → Send ACK0
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                    pkt1 arrives → Deliver → Send ACK1
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-times-circle text-red-400 mr-2"></i>
+                    pkt2 ❌ Lost
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-ban text-yellow-400 mr-2"></i>
+                    pkt3 arrives → OUT OF ORDER → DISCARD
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-redo-alt text-blue-400 mr-2"></i>
+                    Keep sending: ACK1, ACK1, ACK1...
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-red-900/20 p-4 rounded-lg">
+                <h4 class="font-bold text-red-400 mb-3 flex items-center">
+                  <i class="fas fa-exclamation-triangle mr-2"></i>
+                  Problem With GBN
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center">
+                    <i class="fas fa-wifi-slash text-red-400 mr-2"></i>
+                    Only 1 packet lost
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-sync-alt text-yellow-400 mr-2"></i>
+                    Must resend MANY packets
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-money-bill-wave text-orange-400 mr-2"></i>
+                    Wastes bandwidth badly
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-tachometer-alt text-blue-400 mr-2"></i>
+                    Terrible for high-speed networks
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selective Repeat -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-brain mr-3 text-purple-400"></i>
+          Selective Repeat: The Smarter Upgrade 🔥
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header sr-header">
+            <div class="flex items-center">
+              <div
+                class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-boxes text-purple-400 text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">
+                  Where GBN discards good packets... SR is smarter
+                </h3>
+                <p class="text-slate-400">
+                  "Store now, deliver later when gap fills"
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <!-- SR Visualization -->
+              <div>
+                <h4 class="text-lg font-bold text-purple-400 mb-4">
+                  SR Smart Behavior
+                </h4>
+                <div class="window-visual mb-4" id="srWindow">
+                  <!-- SR packets will be dynamically added -->
+                </div>
+
+                <div class="flex justify-center mb-6">
+                  <button
+                    onclick="startSRAnimation()"
+                    class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg"
+                  >
+                    <i class="fas fa-play-circle mr-2"></i> Show SR Magic
+                  </button>
+                </div>
+              </div>
+
+              <!-- SR Logic -->
+              <div>
+                <h4 class="text-lg font-bold text-green-400 mb-4">
+                  SR Receiver Logic
+                </h4>
+                <div class="space-y-4">
+                  <div class="p-3 bg-green-900/20 rounded-lg">
+                    <div class="flex items-center mb-2">
+                      <i class="fas fa-inbox text-green-400 mr-2"></i>
+                      <span class="font-bold">pkt2 lost ❌</span>
+                    </div>
+                    <div class="text-sm">SR says: "Wait patiently..."</div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 rounded bg-purple-500 flex items-center justify-center mr-3"
+                      >
+                        <span class="font-bold text-white">3</span>
+                      </div>
+                      <div>
+                        <div class="font-medium">pkt3 arrives</div>
+                        <div class="text-xs text-slate-400">
+                          ✔ Store in buffer | ✔ Send ACK3
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 rounded bg-purple-500 flex items-center justify-center mr-3"
+                      >
+                        <span class="font-bold text-white">4</span>
+                      </div>
+                      <div>
+                        <div class="font-medium">pkt4 arrives</div>
+                        <div class="text-xs text-slate-400">
+                          ✔ Store in buffer | ✔ Send ACK4
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 rounded bg-purple-500 flex items-center justify-center mr-3"
+                      >
+                        <span class="font-bold text-white">5</span>
+                      </div>
+                      <div>
+                        <div class="font-medium">pkt5 arrives</div>
+                        <div class="text-xs text-slate-400">
+                          ✔ Store in buffer | ✔ Send ACK5
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="p-3 bg-blue-900/20 rounded-lg mt-4">
+                      <div class="flex items-center">
+                        <i class="fas fa-magic text-blue-400 mr-2"></i>
+                        <span class="font-bold">pkt2 finally arrives! 🎉</span>
+                      </div>
+                      <div class="text-sm mt-1">
+                        Now deliver: pkt2 → pkt3 → pkt4 → pkt5
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SR Caveat -->
+            <div
+              class="mt-8 p-4 bg-yellow-900/20 border border-yellow-800/50 rounded-lg"
+            >
+              <div class="flex items-center mb-2">
+                <i class="fas fa-exclamation-circle text-yellow-400 mr-2"></i>
+                <h4 class="font-bold text-yellow-400">Important SR Caveat!</h4>
+              </div>
+              <p class="text-sm">
+                Sequence number space must be BIGGER. Window size must be ≤ half
+                sequence number space. Otherwise confusion: "Is this a new
+                packet or retransmission?"
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fast Retransmit -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-bolt mr-3 text-green-400"></i>
+          Fast Retransmit: TCP's Speed Trick ⚡
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header fast-header">
+            <div class="flex items-center">
+              <div
+                class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-running text-green-400 text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">
+                  "3 Duplicate ACKs = Retransmit NOW!"
+                </h3>
+                <p class="text-slate-400">
+                  Why wait for timeout when you can be smart?
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <!-- Fast Retransmit Logic -->
+              <div>
+                <h4 class="text-lg font-bold text-green-400 mb-4">
+                  The Magic Sequence
+                </h4>
+                <div class="space-y-4">
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mr-3"
+                    >
+                      <span class="font-bold text-red-400">1</span>
+                    </div>
+                    <div>
+                      <div class="font-bold">Packet 3 Lost ❌</div>
+                      <div class="text-sm text-slate-400">
+                        But packets 4, 5, 6, 7 arrive
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mr-3"
+                    >
+                      <span class="font-bold text-yellow-400">2</span>
+                    </div>
+                    <div>
+                      <div class="font-bold">Receiver sends ACK2</div>
+                      <div class="text-sm text-slate-400">
+                        "I have up to 2, want 3 next"
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mr-3"
+                    >
+                      <span class="font-bold text-yellow-400">3</span>
+                    </div>
+                    <div>
+                      <div class="font-bold">Duplicate ACK2 arrives</div>
+                      <div class="text-sm text-slate-400">
+                        Packet 4 triggers ACK2 again
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center mr-3"
+                    >
+                      <span class="font-bold text-yellow-400">4</span>
+                    </div>
+                    <div>
+                      <div class="font-bold">Second duplicate ACK2</div>
+                      <div class="text-sm text-slate-400">
+                        Packet 5 triggers ACK2
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3"
+                    >
+                      <span class="font-bold text-green-400">5</span>
+                    </div>
+                    <div>
+                      <div class="font-bold">THIRD duplicate ACK2! 🚀</div>
+                      <div class="text-sm text-slate-400">
+                        SENDER: "Confirmed loss! Retransmit pkt3 NOW!"
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Why 3 Duplicate ACKs -->
+              <div>
+                <h4 class="text-lg font-bold text-blue-400 mb-4">
+                  Why Exactly 3 Duplicate ACKs?
+                </h4>
+                <div class="space-y-3">
+                  <div class="p-3 bg-blue-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-question text-blue-400 mr-2"></i>
+                      <span class="font-bold">1 duplicate ACK</span>
+                    </div>
+                    <div class="text-sm mt-1">
+                      Could be packet reordering (normal)
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-yellow-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-question text-yellow-400 mr-2"></i>
+                      <span class="font-bold">2 duplicate ACKs</span>
+                    </div>
+                    <div class="text-sm mt-1">Still could be coincidence</div>
+                  </div>
+
+                  <div class="p-3 bg-green-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                      <span class="font-bold">3 duplicate ACKs</span>
+                    </div>
+                    <div class="text-sm mt-1">
+                      ✅ STRONG PROOF: Packet is really lost!
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-purple-900/20 rounded-lg">
+                  <div class="flex items-center">
+                    <i class="fas fa-star text-purple-400 mr-2"></i>
+                    <span class="font-bold">Real-Life Impact</span>
+                  </div>
+                  <div class="text-sm mt-1">
+                    Without fast retransmit: Feel pauses/lag<br />
+                    With fast retransmit: Downloads feel smooth
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Old vs New Comparison -->
+            <div class="border-t border-slate-700 pt-6">
+              <h4 class="text-lg font-bold text-orange-400 mb-4">
+                Old Way vs Fast Retransmit
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 bg-red-900/20 rounded-lg">
+                  <div class="flex items-center mb-3">
+                    <i class="fas fa-hourglass-half text-red-400 mr-2"></i>
+                    <h5 class="font-bold">Without Fast Retransmit</h5>
+                  </div>
+                  <ul class="space-y-2 text-sm">
+                    <li class="flex items-center">
+                      <i class="fas fa-clock text-red-400 mr-2"></i>
+                      Wait for timeout 🌚
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-clock text-red-400 mr-2"></i>
+                      Wait more 🌝
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-bomb text-red-400 mr-2"></i>
+                      Timeout 🔥
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-sync-alt text-red-400 mr-2"></i>
+                      THEN resend 😩
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="p-4 bg-green-900/20 rounded-lg">
+                  <div class="flex items-center mb-3">
+                    <i class="fas fa-bolt text-green-400 mr-2"></i>
+                    <h5 class="font-bold">With Fast Retransmit</h5>
+                  </div>
+                  <ul class="space-y-2 text-sm">
+                    <li class="flex items-center">
+                      <i class="fas fa-exclamation text-green-400 mr-2"></i>
+                      See duplicate ACKs
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-chevron-right text-green-400 mr-2"></i>
+                      3rd duplicate arrives
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-rocket text-green-400 mr-2"></i>
+                      IMMEDIATE retransmit 🚀
+                    </li>
+                    <li class="flex items-center">
+                      <i class="fas fa-smile text-green-400 mr-2"></i>
+                      Much faster! 😎
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RTT Estimation & Timeout -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-chart-line mr-3 text-orange-400"></i>
+          TCP RTT Estimation & Timeout ⏱️
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header rtt-header">
+            <div class="flex items-center">
+              <div
+                class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-stopwatch text-orange-400 text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">
+                  "What is 'reasonable time' to wait for ACK?"
+                </h3>
+                <p class="text-slate-400">
+                  TCP's genius adaptive timeout calculation
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <!-- RTT Measurement -->
+              <div>
+                <h4 class="text-lg font-bold text-orange-400 mb-4">
+                  Measuring SampleRTT
+                </h4>
+                <div class="space-y-4">
+                  <div class="flex items-center">
+                    <div
+                      class="w-16 h-16 rounded-lg bg-orange-500/20 flex items-center justify-center mr-4"
+                    >
+                      <i
+                        class="fas fa-satellite-dish text-orange-400 text-2xl"
+                      ></i>
+                    </div>
+                    <div>
+                      <div class="font-bold">RTT = Round-Trip Time</div>
+                      <div class="text-sm text-slate-400">
+                        Time from send segment → receive ACK back
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-4 bg-slate-800/50 rounded-lg">
+                    <div class="font-mono text-sm">
+                      <span class="text-orange-400">SampleRTT</span> =
+                      time_ack_received - time_sent
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-blue-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i
+                        class="fas fa-exclamation-triangle text-blue-400 mr-2"
+                      ></i>
+                      <span class="font-bold">RTT is NOT constant!</span>
+                    </div>
+                    <div class="text-sm mt-1">
+                      Sometimes fast ⚡, sometimes slow 🐢, sometimes random 🚧
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- The Genius Formula -->
+              <div>
+                <h4 class="text-lg font-bold text-green-400 mb-4">
+                  The Genius Formula
+                </h4>
+                <div class="space-y-3">
+                  <div class="rtt-formula">
+                    <div class="text-green-300 font-bold">EstimatedRTT</div>
+                    <div class="text-white">
+                      = (1 − α)*EstimatedRTT + α*SampleRTT
+                    </div>
+                    <div class="text-blue-300 text-sm mt-1">
+                      α = 0.125 (recent RTT matters more)
+                    </div>
+                  </div>
+
+                  <div class="rtt-formula">
+                    <div class="text-purple-300 font-bold">DevRTT</div>
+                    <div class="text-white">
+                      = (1 − β)*DevRTT + β*|SampleRTT − EstimatedRTT|
+                    </div>
+                    <div class="text-blue-300 text-sm mt-1">
+                      β = 0.25 (how much RTT fluctuates)
+                    </div>
+                  </div>
+
+                  <div class="rtt-formula bg-green-900/20 border-green-800">
+                    <div class="text-yellow-300 font-bold">TimeoutInterval</div>
+                    <div class="text-white">= EstimatedRTT + 4 * DevRTT</div>
+                    <div class="text-blue-300 text-sm mt-1">
+                      🔥 Adaptive timeout that grows with instability!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Exponential Backoff -->
+            <div class="border-t border-slate-700 pt-6">
+              <h4 class="text-lg font-bold text-red-400 mb-4">
+                After Timeout: Exponential Backoff
+              </h4>
+              <div class="space-y-4">
+                <div class="p-4 bg-red-900/20 rounded-lg">
+                  <div class="flex items-center mb-2">
+                    <i class="fas fa-chart-line text-red-400 mr-2"></i>
+                    <span class="font-bold"
+                      >Repeated loss = congestion = be polite! 😅</span
+                    >
+                  </div>
+                  <div class="grid grid-cols-4 gap-2 text-center mt-3">
+                    <div class="p-2 bg-red-800/30 rounded">0.75 sec</div>
+                    <div class="p-2 bg-red-800/30 rounded">1.5 sec</div>
+                    <div class="p-2 bg-red-800/30 rounded">3.0 sec</div>
+                    <div class="p-2 bg-red-800/30 rounded">6.0 sec</div>
+                  </div>
+                  <div class="text-center text-sm text-slate-400 mt-2">
+                    Doubling timeout to avoid network collapse
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="p-3 bg-blue-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-heart text-blue-400 mr-2"></i>
+                      <span class="font-bold">Slows down</span>
+                    </div>
+                    <div class="text-xs mt-1">Instead of spamming network</div>
+                  </div>
+
+                  <div class="p-3 bg-green-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-shield-alt text-green-400 mr-2"></i>
+                      <span class="font-bold">Avoids collapse</span>
+                    </div>
+                    <div class="text-xs mt-1">
+                      Gives network time to breathe
+                    </div>
+                  </div>
+
+                  <div class="p-3 bg-purple-900/20 rounded-lg">
+                    <div class="flex items-center">
+                      <i class="fas fa-brain text-purple-400 mr-2"></i>
+                      <span class="font-bold">TCP Intelligence</span>
+                    </div>
+                    <div class="text-xs mt-1">Congestion control built-in</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final Comparison Table -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-6 flex items-center">
+          <i class="fas fa-balance-scale mr-3 text-blue-400"></i>
+          Final Comparison: GBN vs Selective Repeat vs TCP Hybrid
+        </h2>
+
+        <div class="concept-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="comparison-table min-w-full">
+              <thead>
+                <tr class="bg-slate-800/50">
+                  <th class="text-left">Feature</th>
+                  <th class="text-center text-blue-400">Go-Back-N</th>
+                  <th class="text-center text-purple-400">Selective Repeat</th>
+                  <th class="text-center text-green-400">Real TCP (Hybrid)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="font-bold">Receiver Behavior</td>
+                  <td class="text-center">❌ Discards out-of-order</td>
+                  <td class="text-center">✔ Buffers out-of-order</td>
+                  <td class="text-center">✔ Buffers + Smarter</td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">Retransmission</td>
+                  <td class="text-center">Resend ALL from base</td>
+                  <td class="text-center">Only missing packets</td>
+                  <td class="text-center">Only missing + Fast Retransmit</td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">ACK Type</td>
+                  <td class="text-center">Cumulative ACK</td>
+                  <td class="text-center">Individual ACKs</td>
+                  <td class="text-center">Cumulative + Selective</td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">Timer Usage</td>
+                  <td class="text-center">1 timer for oldest</td>
+                  <td class="text-center">Multiple timers</td>
+                  <td class="text-center">1 timer + Fast Retransmit</td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">Efficiency</td>
+                  <td class="text-center">
+                    <span class="badge bad-badge">Low</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge good-badge">High</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge good-badge">Very High</span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">Complexity</td>
+                  <td class="text-center">
+                    <span class="badge good-badge">Simple</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge warning-badge">Complex</span>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge warning-badge">Most Complex</span>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="font-bold">Real Usage</td>
+                  <td class="text-center">TCP ancestor concept</td>
+                  <td class="text-center">Modern protocols</td>
+                  <td class="text-center">Internet standard</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Key Insight -->
+        <div
+          class="mt-6 p-6 bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-800/50 rounded-xl"
+        >
+          <div class="flex items-center">
+            <div
+              class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-lightbulb text-2xl text-white"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-green-300">
+                ⭐ Real TCP = GBN Brain + SR Efficiency + Fast Retransmit Speed
+              </h3>
+              <p class="text-slate-300 mt-2">
+                TCP is smarter than both pure protocols: uses cumulative ACKs
+                like GBN, buffers like SR, and adds Fast Retransmit for
+                lightning-fast recovery. Your browser, YouTube, WhatsApp, and
+                games all use this hybrid magic!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 pt-8 border-t border-slate-800">
+      <div class="text-center text-slate-500">
+        <div class="mb-4 flex justify-center space-x-4">
+          <span class="badge info-badge">
+            <i class="fas fa-wifi mr-1"></i> TCP in Action
+          </span>
+          <span class="badge good-badge">
+            <i class="fas fa-check-circle mr-1"></i> Concepts Mastered
+          </span>
+          <span class="badge warning-badge">
+            <i class="fas fa-arrow-right mr-1"></i> Next: TCP Congestion Control
+          </span>
+        </div>
+        <p class="text-sm">
+          Interactive Guide to TCP Advanced Concepts • GBN • Selective Repeat •
+          Fast Retransmit • RTT Estimation
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // GBN Window Visualization
+      function createGBNWindow() {
+        const window = document.getElementById('gbnWindow');
+        window.innerHTML = '';
+
+        // Create packet boxes
+        for (let i = 0; i < 8; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'packet-box';
+          packet.textContent = `pkt${i}`;
+          packet.id = `gbn-pkt${i}`;
+
+          // Position packets
+          const left = 20 + i * 70;
+          const top = 70;
+
+          packet.style.left = `${left}px`;
+          packet.style.top = `${top}px`;
+
+          // Default state
+          if (i < 4) {
+            packet.classList.add('packet-sent');
+          } else {
+            packet.classList.add('packet-future');
+          }
+
+          window.appendChild(packet);
+        }
+
+        // Add labels
+        const labels = document.createElement('div');
+        labels.className = 'absolute bottom-4 left-0 right-0 text-center';
+        labels.innerHTML = `
+                <div class="text-sm text-slate-400">
+                    Window Size = 4 packets | <span class="text-blue-400">Sent</span> | <span class="text-gray-400">Future</span>
+                </div>
+            `;
+        window.appendChild(labels);
+      }
+
+      // SR Window Visualization
+      function createSRWindow() {
+        const window = document.getElementById('srWindow');
+        window.innerHTML = '';
+
+        // Create packet boxes
+        for (let i = 0; i < 8; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'packet-box';
+          packet.textContent = `pkt${i}`;
+          packet.id = `sr-pkt${i}`;
+
+          // Position packets in two rows
+          const left = 20 + i * 70;
+          const top = i < 4 ? 40 : 100;
+
+          packet.style.left = `${left}px`;
+          packet.style.top = `${top}px`;
+
+          // Default state
+          if (i < 4) {
+            packet.classList.add('packet-sent');
+          } else {
+            packet.classList.add('packet-future');
+          }
+
+          window.appendChild(packet);
+        }
+
+        // Add receiver buffer visualization
+        const buffer = document.createElement('div');
+        buffer.className =
+          'absolute bottom-4 left-4 bg-purple-900/30 p-2 rounded-lg';
+        buffer.innerHTML = `
+                <div class="text-xs font-bold text-purple-300">Receiver Buffer</div>
+                <div class="text-xs text-slate-400 mt-1">Empty</div>
+            `;
+        buffer.id = 'sr-buffer';
+        window.appendChild(buffer);
+      }
+
+      // Animation functions
+      let currentStep = 0;
+
+      function showStep(step) {
+        currentStep = step;
+
+        // Reset all packets
+        for (let i = 0; i < 8; i++) {
+          const packet = document.getElementById(`gbn-pkt${i}`);
+          if (packet) {
+            packet.className = 'packet-box packet-future';
+            if (i < 4) {
+              packet.classList.add('packet-sent');
+            }
+          }
+        }
+
+        // Apply step-specific changes
+        switch (step) {
+          case 1:
+            // Initial state - already set
+            showNotification(
+              'Step 1: Sender sends 4 packets (window full)',
+              'info',
+            );
+            break;
+
+          case 2:
+            // ACK0, ACK1
+            document.getElementById('gbn-pkt0').className =
+              'packet-box packet-acked';
+            document.getElementById('gbn-pkt1').className =
+              'packet-box packet-acked';
+            showNotification(
+              'Step 2: ACK0 and ACK1 received successfully',
+              'success',
+            );
+            break;
+
+          case 3:
+            // pkt2 lost
+            document.getElementById('gbn-pkt0').className =
+              'packet-box packet-acked';
+            document.getElementById('gbn-pkt1').className =
+              'packet-box packet-acked';
+            document.getElementById('gbn-pkt2').className =
+              'packet-box packet-lost';
+            document.getElementById('gbn-pkt3').className =
+              'packet-box packet-sent';
+            showNotification(
+              'Step 3: Packet 2 LOST! ❌ Receiver discards pkt3 (out-of-order)',
+              'error',
+            );
+            break;
+
+          case 4:
+            // Timeout and retransmit
+            for (let i = 0; i < 6; i++) {
+              const packet = document.getElementById(`gbn-pkt${i}`);
+              if (i < 2) {
+                packet.className = 'packet-box packet-acked';
+              } else if (i >= 2 && i <= 5) {
+                packet.className = 'packet-box packet-lost';
+                packet.style.animationDelay = `${(i - 2) * 0.3}s`;
+              }
+            }
+            showNotification(
+              'Step 4: TIMEOUT! 💣 Go-Back-N: Resend packets 2, 3, 4, 5...',
+              'warning',
+            );
+            break;
+        }
+      }
+
+      function startGBNAnimation() {
+        createGBNWindow();
+        setTimeout(() => showStep(1), 500);
+        setTimeout(() => showStep(2), 1500);
+        setTimeout(() => showStep(3), 2500);
+        setTimeout(() => showStep(4), 3500);
+      }
+
+      function startSRAnimation() {
+        createSRWindow();
+
+        // Animate SR behavior
+        setTimeout(() => {
+          document.getElementById('sr-pkt0').className =
+            'packet-box packet-acked';
+          document.getElementById('sr-pkt1').className =
+            'packet-box packet-acked';
+          document.getElementById('sr-pkt2').className =
+            'packet-box packet-lost';
+        }, 500);
+
+        setTimeout(() => {
+          document.getElementById('sr-pkt3').className =
+            'packet-box packet-buffered';
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="text-xs font-bold text-purple-300">Receiver Buffer</div>
+                    <div class="text-xs text-green-300 mt-1">pkt3 (buffered)</div>
+                `;
+        }, 1500);
+
+        setTimeout(() => {
+          document.getElementById('sr-pkt4').className =
+            'packet-box packet-buffered';
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="text-xs font-bold text-purple-300">Receiver Buffer</div>
+                    <div class="text-xs text-green-300 mt-1">pkt3, pkt4 (buffered)</div>
+                `;
+        }, 2000);
+
+        setTimeout(() => {
+          document.getElementById('sr-pkt5').className =
+            'packet-box packet-buffered';
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="text-xs font-bold text-purple-300">Receiver Buffer</div>
+                    <div class="text-xs text-green-300 mt-1">pkt3, pkt4, pkt5 (buffered)</div>
+                `;
+        }, 2500);
+
+        setTimeout(() => {
+          // pkt2 arrives
+          document.getElementById('sr-pkt2').className =
+            'packet-box packet-acked';
+
+          // Deliver all buffered packets
+          for (let i = 2; i <= 5; i++) {
+            setTimeout(() => {
+              document.getElementById(`sr-pkt${i}`).className =
+                'packet-box packet-acked';
+            }, (i - 2) * 500);
+          }
+
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="text-xs font-bold text-purple-300">Receiver Buffer</div>
+                    <div class="text-xs text-green-300 mt-1">🎉 All delivered!</div>
+                `;
+
+          showNotification(
+            'Selective Repeat Magic! 🎯 pkt2 arrives → Deliver pkt2,3,4,5 in order',
+            'success',
+          );
+        }, 3500);
+      }
+
+      // Show notification
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+
+        let bgColor = 'bg-blue-900/90';
+        let icon = 'fa-info-circle';
+        let iconColor = 'text-blue-400';
+
+        if (type === 'success') {
+          bgColor = 'bg-green-900/90';
+          icon = 'fa-check-circle';
+          iconColor = 'text-green-400';
+        } else if (type === 'error') {
+          bgColor = 'bg-red-900/90';
+          icon = 'fa-exclamation-circle';
+          iconColor = 'text-red-400';
+        } else if (type === 'warning') {
+          bgColor = 'bg-yellow-900/90';
+          icon = 'fa-exclamation-triangle';
+          iconColor = 'text-yellow-400';
+        }
+
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg ${bgColor} border border-slate-700 text-white shadow-lg z-50 max-w-sm transition-all duration-300`;
+        notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${icon} ${iconColor} mr-3"></i>
+                    <div class="font-medium">${message}</div>
+                </div>
+            `;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(10px)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Initialize on load
+      document.addEventListener('DOMContentLoaded', function () {
+        createGBNWindow();
+        createSRWindow();
+
+        // Add click handlers to expandable sections
+        document.querySelectorAll('[onclick^="toggle"]').forEach((button) => {
+          button.addEventListener('click', function () {
+            const targetId = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+            const target = document.getElementById(targetId);
+            target.classList.toggle('expanded');
+
+            const icon = this.querySelector('i');
+            if (target.classList.contains('expanded')) {
+              icon.className = 'fas fa-eye-slash mr-2';
+            } else {
+              icon.className = 'fas fa-eye mr-2';
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

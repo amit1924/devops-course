@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🏗️ Kubernetes Architecture - Complete Visual Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #00d8ff, #9d4edd, #00d8ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .architecture-card {
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .architecture-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(157, 78, 221, 0.15);
+        border-color: #9d4edd;
+      }
+
+      .component-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 12px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        padding: 20px;
+        margin: 10px 0;
+      }
+
+      .component-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+      }
+
+      .flow-container {
+        position: relative;
+        min-height: 400px;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px 0;
+        overflow: auto;
+      }
+
+      .node-box {
+        position: absolute;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        min-width: 180px;
+        transition: all 0.3s ease;
+        z-index: 2;
+        cursor: pointer;
+      }
+
+      .node-box:hover {
+        transform: scale(1.05);
+        z-index: 10;
+      }
+
+      .control-plane {
+        background: linear-gradient(
+          135deg,
+          rgba(157, 78, 221, 0.9),
+          rgba(139, 92, 246, 0.9)
+        );
+        border: 2px solid #9d4edd;
+        color: white;
+      }
+
+      .worker-node {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.9),
+          rgba(37, 99, 235, 0.9)
+        );
+        border: 2px solid #3b82f6;
+        color: white;
+      }
+
+      .pod-box {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.9),
+          rgba(21, 128, 61, 0.9)
+        );
+        border: 2px solid #22c55e;
+        color: white;
+        font-size: 0.9rem;
+      }
+
+      .flow-line {
+        position: absolute;
+        background: linear-gradient(90deg, #9d4edd, #3b82f6, #22c55e);
+        height: 3px;
+        border-radius: 3px;
+        z-index: 1;
+      }
+
+      .flow-line.vertical {
+        width: 3px;
+        height: auto;
+        background: linear-gradient(180deg, #9d4edd, #3b82f6, #22c55e);
+      }
+
+      .flow-arrow {
+        position: absolute;
+        color: #f59e0b;
+        font-size: 1.5rem;
+        z-index: 3;
+        animation: bounce 2s infinite;
+      }
+
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(10px);
+        }
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-break: break-word;
+        padding-right: 100px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .comparison-table th {
+        background: rgba(157, 78, 221, 0.3);
+        padding: 15px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 2px solid #334155;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(157, 78, 221, 0.1);
+      }
+
+      .step-flow {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 30px 0;
+        position: relative;
+      }
+
+      .step {
+        background: rgba(59, 130, 246, 0.2);
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px;
+        width: 80%;
+        position: relative;
+        z-index: 2;
+      }
+
+      .step-number {
+        position: absolute;
+        left: -30px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 30px;
+        height: 30px;
+        background: #3b82f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+      }
+
+      .step-connector {
+        position: absolute;
+        left: -15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #3b82f6;
+        z-index: 1;
+      }
+
+      .analogy-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1),
+          rgba(217, 119, 6, 0.1)
+        );
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .interactive-diagram {
+        position: relative;
+        height: 500px;
+        background: rgba(15, 23, 42, 0.3);
+        border-radius: 12px;
+        margin: 30px 0;
+        overflow: hidden;
+        border: 2px dashed #334155;
+      }
+
+      .click-info {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(30, 41, 59, 0.95);
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
+        padding: 15px;
+        max-width: 300px;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Mobile-specific improvements */
+      @media (max-width: 767px) {
+        .architecture-card,
+        .component-card {
+          padding: 15px !important;
+          margin: 8px 0;
+        }
+
+        .code-container {
+          padding: 15px;
+          padding-right: 80px;
+        }
+
+        .code-text {
+          font-size: 0.85rem;
+          padding-right: 70px;
+        }
+
+        .copy-btn {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+
+        .flow-container {
+          min-height: 300px;
+          font-size: 0.9rem;
+        }
+
+        .node-box {
+          min-width: 140px;
+          padding: 10px;
+          font-size: 0.85rem;
+        }
+
+        .interactive-diagram {
+          height: 400px;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Pulsing animation for active nodes */
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          box-shadow: 0 0 5px currentColor;
+        }
+        50% {
+          box-shadow: 0 0 20px currentColor;
+        }
+      }
+
+      .pulse-glow {
+        animation: pulse-glow 2s infinite;
+      }
+
+      /* Scroll animations */
+      .fade-in {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.6s ease;
+      }
+
+      .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Click Info Panel -->
+      <div id="clickInfo" class="click-info">
+        <div id="infoContent"></div>
+        <button
+          onclick="hideInfo()"
+          class="mt-2 w-full py-2 bg-red-500/20 text-red-300 rounded-lg"
+        >
+          Close
+        </button>
+      </div>
+
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="architecture-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🏗️ Kubernetes Architecture Masterclass
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Complete Visual Guide with Interactive Flow Diagrams
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30"
+            >
+              <i class="fas fa-brain mr-2"></i>Control Plane
+            </span>
+            <span
+              class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30"
+            >
+              <i class="fas fa-server mr-2"></i>Worker Nodes
+            </span>
+            <span
+              class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full border border-green-500/30"
+            >
+              <i class="fas fa-cubes mr-2"></i>Pods & Containers
+            </span>
+          </div>
+
+          <div class="analogy-box">
+            <p class="text-slate-300">
+              <i class="fas fa-chess-king text-yellow-400 mr-2"></i>
+              <strong>Think of Kubernetes as a Kingdom:</strong> Control Plane
+              is the King, Worker Nodes are the Army, and Pods are the Workers!
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Why Kubernetes? -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-question-circle mr-3"></i>🤔 Why Kubernetes? The
+          Problem It Solves
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="component-card">
+            <h3 class="font-bold text-red-300 mb-4">
+              <i class="fas fa-times-circle mr-2"></i>Before Kubernetes (Chaos)
+            </h3>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-server text-red-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>One Server Fails</strong><br />
+                  <span class="text-sm">Entire application goes down</span>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-users text-red-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Traffic Spike</strong><br />
+                  <span class="text-sm"
+                    >Server crashes, manual scaling needed</span
+                  >
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-wrench text-red-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Updates</strong><br />
+                  <span class="text-sm">Downtime during deployment</span>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-hand-paper text-red-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Manual Management</strong><br />
+                  <span class="text-sm">Everything done manually</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="component-card">
+            <h3 class="font-bold text-green-300 mb-4">
+              <i class="fas fa-check-circle mr-2"></i>With Kubernetes (Order)
+            </h3>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-heartbeat text-green-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Auto-Healing</strong><br />
+                  <span class="text-sm"
+                    >Crashed apps restart automatically</span
+                  >
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-expand-alt text-green-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Auto-Scaling</strong><br />
+                  <span class="text-sm"
+                    >Scale based on traffic automatically</span
+                  >
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-sync-alt text-green-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Zero Downtime Deployments</strong><br />
+                  <span class="text-sm"
+                    >Update apps without stopping service</span
+                  >
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-robot text-green-400 mt-1 mr-2"></i>
+                <div>
+                  <strong>Automated Management</strong><br />
+                  <span class="text-sm">Kubernetes manages everything</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="mt-6 p-4 bg-gradient-to-r from-blue-900/20 to-green-900/20 rounded-lg"
+        >
+          <h3 class="font-bold text-white mb-3">
+            <i class="fas fa-bullseye mr-2"></i>🎯 Kubernetes in One Sentence
+          </h3>
+          <p class="text-slate-300 text-lg">
+            <strong
+              >Kubernetes is an automatic manager for your containerized
+              applications</strong
+            >
+            that handles deployment, scaling, healing, and networking so you can
+            focus on writing code.
+          </p>
+        </div>
+      </section>
+
+      <!-- Big Picture Architecture -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-project-diagram mr-3"></i>🏰 Kubernetes Architecture
+          - Big Picture
+        </h2>
+
+        <!-- Interactive Diagram -->
+        <div class="interactive-diagram" id="mainDiagram">
+          <!-- This will be populated by JavaScript -->
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">👑</div>
+            <h4 class="font-bold text-purple-300">Control Plane</h4>
+            <p class="text-slate-300 text-sm">The Brain / King</p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">⚔️</div>
+            <h4 class="font-bold text-blue-300">Worker Nodes</h4>
+            <p class="text-slate-300 text-sm">The Army / Soldiers</p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded">
+            <div class="text-2xl mb-3">🧩</div>
+            <h4 class="font-bold text-green-300">Pods</h4>
+            <p class="text-slate-300 text-sm">The Workers / Tasks</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Control Plane Deep Dive -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-brain mr-3"></i>🧠 Control Plane - The Brain of
+          Kubernetes
+        </h2>
+
+        <div class="flow-container">
+          <!-- Control Plane Components will be positioned here by JS -->
+        </div>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Analogy</th>
+                <th>Responsibility</th>
+                <th>Real Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="font-bold text-blue-300">API Server</span></td>
+                <td>Gatekeeper / Reception</td>
+                <td>Entry point for all commands</td>
+                <td>When you run <code>kubectl apply</code></td>
+              </tr>
+              <tr>
+                <td><span class="font-bold text-green-300">etcd</span></td>
+                <td>Database / Memory</td>
+                <td>Stores cluster state</td>
+                <td>Remembers what should be running</td>
+              </tr>
+              <tr>
+                <td><span class="font-bold text-amber-300">Scheduler</span></td>
+                <td>Job Allocator / Manager</td>
+                <td>Decides where Pods run</td>
+                <td>"Put this Pod on Node2"</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-red-300">Controller Manager</span>
+                </td>
+                <td>System Police / Supervisor</td>
+                <td>Ensures desired state</td>
+                <td>Restarts crashed Pods</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Worker Nodes Deep Dive -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+          <i class="fas fa-server mr-3"></i>⚙️ Worker Nodes - The Muscle of
+          Kubernetes
+        </h2>
+
+        <div class="flow-container" id="workerDiagram">
+          <!-- Worker Node Components will be positioned here by JS -->
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div class="component-card">
+            <h4 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-robot mr-2"></i>Kubelet
+            </h4>
+            <p class="text-slate-300 text-sm">
+              The "node agent" that communicates with Control Plane and ensures
+              containers are running.
+            </p>
+          </div>
+
+          <div class="component-card">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-docker mr-2"></i>Container Runtime
+            </h4>
+            <p class="text-slate-300 text-sm">
+              Runs containers (Docker, containerd, CRI-O). Actually starts/stops
+              containers.
+            </p>
+          </div>
+
+          <div class="component-card">
+            <h4 class="font-bold text-purple-300 mb-3">
+              <i class="fas fa-network-wired mr-2"></i>Kube Proxy
+            </h4>
+            <p class="text-slate-300 text-sm">
+              Handles networking rules, load balancing, and service discovery.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Complete Flow Diagram -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-sitemap mr-3"></i>🔄 Complete Kubernetes Flow - Step
+          by Step
+        </h2>
+
+        <div class="step-flow">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h4 class="font-bold text-blue-300 mb-2">Developer Command</h4>
+            <div class="code-container">
+              <div class="code-text" id="flowStep1">
+                kubectl apply -f app-deployment.yaml
+              </div>
+              <div class="copy-btn-wrapper">
+                <button
+                  class="copy-btn no-select"
+                  onclick="copyCode('flowStep1')"
+                >
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <h4 class="font-bold text-purple-300 mb-2">
+              API Server Receives Request
+            </h4>
+            <p class="text-slate-300">
+              Validates request and stores desired state in etcd
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <h4 class="font-bold text-green-300 mb-2">
+              Controller Manager Notices Change
+            </h4>
+            <p class="text-slate-300">
+              "Hey! Desired state changed! Need to create 3 Pods!"
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">4</div>
+            <h4 class="font-bold text-amber-300 mb-2">
+              Scheduler Finds Best Nodes
+            </h4>
+            <p class="text-slate-300">
+              "Node2 has available CPU and RAM. Assign Pods there!"
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">5</div>
+            <h4 class="font-bold text-blue-300 mb-2">
+              Kubelet Runs Containers
+            </h4>
+            <p class="text-slate-300">
+              On Node2, Kubelet starts containers via Container Runtime
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">6</div>
+            <h4 class="font-bold text-purple-300 mb-2">
+              Kube Proxy Sets Up Networking
+            </h4>
+            <p class="text-slate-300">
+              Creates network rules, load balancing, service discovery
+            </p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">7</div>
+            <h4 class="font-bold text-green-300 mb-2">Continuous Monitoring</h4>
+            <p class="text-slate-300">
+              Controller Manager constantly checks: "Is reality = desired?" If
+              not → Fix it!
+            </p>
+          </div>
+
+          <div class="step-connector"></div>
+        </div>
+      </section>
+
+      <!-- Real Example -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-code mr-3"></i>🧪 Real Example - Deploying a Web App
+        </h2>
+
+        <div class="code-container">
+          <div class="code-text" id="deploymentYaml">
+            apiVersion: apps/v1 kind: Deployment metadata: name: web-app spec:
+            replicas: 3 selector: matchLabels: app: web-app template: metadata:
+            labels: app: web-app spec: containers: - name: nginx image:
+            nginx:latest ports: - containerPort: 80 --- apiVersion: v1 kind:
+            Service metadata: name: web-app-service spec: selector: app: web-app
+            ports: - port: 80 targetPort: 80 type: LoadBalancer
+          </div>
+          <div class="copy-btn-wrapper">
+            <button
+              class="copy-btn no-select"
+              onclick="copyCode('deploymentYaml')"
+            >
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="component-card">
+            <h4 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-play-circle mr-2"></i>What Happens When You Apply
+              This?
+            </h4>
+            <ol class="space-y-2 text-slate-300">
+              <li>1. API Server receives YAML</li>
+              <li>2. etcd stores "need 3 web-app Pods"</li>
+              <li>3. Scheduler finds 3 nodes</li>
+              <li>4. Kubelets start nginx containers</li>
+              <li>5. Service creates load balancer</li>
+              <li>6. Your app is now live!</li>
+            </ol>
+          </div>
+
+          <div class="component-card">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-magic mr-2"></i>Auto-Healing in Action
+            </h4>
+            <p class="text-slate-300 text-sm">If one Pod crashes:</p>
+            <ol class="space-y-2 text-slate-300 mt-2">
+              <li>• Controller Manager notices</li>
+              <li>• "Hey! Only 2 Pods running!"</li>
+              <li>• Creates new Pod automatically</li>
+              <li>• Always maintains 3 Pods</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Memory Hooks & Revision -->
+      <section class="architecture-card p-5 md:p-6 mb-8 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-bookmark mr-3"></i>🎯 Memory Hooks & Revision Cheat
+          Sheet
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">🏰</div>
+            <h4 class="font-bold text-purple-300 mb-2">Kingdom Analogy</h4>
+            <ul class="text-slate-300 text-sm space-y-1">
+              <li>King = Control Plane</li>
+              <li>Soldiers = Worker Nodes</li>
+              <li>Workers = Pods</li>
+            </ul>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">🚪</div>
+            <h4 class="font-bold text-blue-300 mb-2">API Server</h4>
+            <p class="text-slate-300 text-sm">
+              Gatekeeper<br />All traffic goes through
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">💾</div>
+            <h4 class="font-bold text-green-300 mb-2">etcd</h4>
+            <p class="text-slate-300 text-sm">
+              Kubernetes Memory<br />Stores everything
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">👮‍♂️</div>
+            <h4 class="font-bold text-red-300 mb-2">Controller</h4>
+            <p class="text-slate-300 text-sm">
+              System Police<br />Makes reality = desired
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">📊</div>
+            <h4 class="font-bold text-amber-300 mb-2">Scheduler</h4>
+            <p class="text-slate-300 text-sm">
+              Job Allocator<br />Where to run Pods?
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">🛠️</div>
+            <h4 class="font-bold text-blue-300 mb-2">Kubelet</h4>
+            <p class="text-slate-300 text-sm">
+              Worker Supervisor<br />Runs containers
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">🌐</div>
+            <h4 class="font-bold text-purple-300 mb-2">Kube Proxy</h4>
+            <p class="text-slate-300 text-sm">
+              Traffic Manager<br />Networking rules
+            </p>
+          </div>
+
+          <div class="text-center p-4 bg-slate-800/50 rounded-lg">
+            <div class="text-3xl mb-3">📦</div>
+            <h4 class="font-bold text-green-300 mb-2">Pod</h4>
+            <p class="text-slate-300 text-sm">
+              Smallest Unit<br />1+ containers
+            </p>
+          </div>
+        </div>
+
+        <div
+          class="mt-6 p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg"
+        >
+          <h3 class="font-bold text-white mb-3">
+            <i class="fas fa-lightbulb mr-2"></i>Quick Revision Summary
+          </h3>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Kubernetes</strong> = Container orchestration
+                platform</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Control Plane</strong> = Brain (makes decisions)</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                ><strong>Worker Nodes</strong> = Muscle (executes work)</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span><strong>Pods</strong> = Smallest deployable units</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+              <span
+                >Everything communicates via <strong>API Server</strong></span
+              >
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Interactive Quiz -->
+      <section class="architecture-card p-5 md:p-6 fade-in">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-gamepad mr-3"></i>🎮 Interactive Quiz - Test Your
+          Knowledge
+        </h2>
+
+        <div id="quizContainer" class="space-y-4">
+          <!-- Quiz questions will be populated by JavaScript -->
+        </div>
+
+        <div
+          class="mt-6 p-4 bg-gradient-to-r from-green-900/20 to-emerald-900/20 rounded-lg"
+        >
+          <h3 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-graduation-cap mr-2"></i>Ready for the Next Lesson?
+          </h3>
+          <p class="text-slate-300">
+            You've mastered Kubernetes Architecture! Next, let's dive into:
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <button
+              onclick="selectTopic('pods')"
+              class="p-4 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg transition"
+            >
+              <div class="font-bold text-blue-300">🧩 Pods Deep Dive</div>
+              <div class="text-slate-400 text-sm">
+                YAML examples, multi-container pods
+              </div>
+            </button>
+            <button
+              onclick="selectTopic('services')"
+              class="p-4 bg-purple-500/20 hover:bg-purple-500/30 rounded-lg transition"
+            >
+              <div class="font-bold text-purple-300">
+                🌐 Services & Networking
+              </div>
+              <div class="text-slate-400 text-sm">
+                Load balancing, service discovery
+              </div>
+            </button>
+            <button
+              onclick="selectTopic('deployments')"
+              class="p-4 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition"
+            >
+              <div class="font-bold text-green-300">
+                🚀 Deployments & Scaling
+              </div>
+              <div class="text-slate-400 text-sm">
+                Rolling updates, auto-scaling
+              </div>
+            </button>
+            <button
+              onclick="selectTopic('project')"
+              class="p-4 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition"
+            >
+              <div class="font-bold text-amber-300">🏆 Real Project</div>
+              <div class="text-slate-400 text-sm">Complete app deployment</div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-lg">
+            You've just mastered Kubernetes Architecture! 🎓
+          </p>
+          <p class="text-slate-500 text-sm mt-2">
+            Every expert was once a beginner. You're on the right path! 🚀
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full">
+            <i class="fas fa-brain mr-2"></i>Architecture Mastered
+          </span>
+          <span class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full">
+            <i class="fas fa-sitemap mr-2"></i>Flow Understood
+          </span>
+          <span class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full">
+            <i class="fas fa-check-circle mr-2"></i>Ready for Next Lesson
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Show info panel when clicking on diagram elements
+      function showInfo(title, description) {
+        const infoPanel = document.getElementById('clickInfo');
+        const infoContent = document.getElementById('infoContent');
+
+        infoContent.innerHTML = `
+                <h4 class="font-bold text-lg mb-2">${title}</h4>
+                <p class="text-slate-300">${description}</p>
+            `;
+
+        infoPanel.style.display = 'block';
+      }
+
+      function hideInfo() {
+        document.getElementById('clickInfo').style.display = 'none';
+      }
+
+      // Create main architecture diagram
+      function createMainDiagram() {
+        const diagram = document.getElementById('mainDiagram');
+        diagram.innerHTML = '';
+
+        // Control Plane
+        const controlPlane = document.createElement('div');
+        controlPlane.className = 'node-box control-plane';
+        controlPlane.style.top = '50px';
+        controlPlane.style.left = '50%';
+        controlPlane.style.transform = 'translateX(-50%)';
+        controlPlane.innerHTML = `
+                <div class="text-xl mb-2">👑</div>
+                <div class="font-bold">Control Plane</div>
+                <div class="text-sm">The Brain / King</div>
+            `;
+        controlPlane.onclick = () =>
+          showInfo(
+            'Control Plane',
+            'The brain of Kubernetes. Makes all decisions. Contains: API Server, etcd, Scheduler, Controller Manager.',
+          );
+        diagram.appendChild(controlPlane);
+
+        // Worker Nodes
+        const nodes = [
+          { name: 'Worker Node 1', top: 250, left: '20%' },
+          { name: 'Worker Node 2', top: 250, left: '50%' },
+          { name: 'Worker Node 3', top: 250, left: '80%' },
+        ];
+
+        nodes.forEach((node, index) => {
+          const nodeBox = document.createElement('div');
+          nodeBox.className = 'node-box worker-node';
+          nodeBox.style.top = `${node.top}px`;
+          nodeBox.style.left = node.left;
+          nodeBox.style.transform = 'translateX(-50%)';
+          nodeBox.innerHTML = `
+                    <div class="text-xl mb-2">⚙️</div>
+                    <div class="font-bold">${node.name}</div>
+                    <div class="text-sm">Runs Pods & Containers</div>
+                `;
+          nodeBox.onclick = () =>
+            showInfo(
+              'Worker Node',
+              'The muscle that executes work. Contains: Kubelet, Container Runtime, Kube Proxy.',
+            );
+          diagram.appendChild(nodeBox);
+
+          // Connection lines from Control Plane to Worker Nodes
+          const line = document.createElement('div');
+          line.className = 'flow-line';
+          line.style.top = '150px';
+          line.style.left = '50%';
+          line.style.width = '0px';
+          line.style.height = `${node.top - 150}px`;
+          line.style.transform = `rotate(${
+            index === 0 ? '-30deg' : index === 1 ? '0deg' : '30deg'
+          })`;
+          line.style.transformOrigin = 'top center';
+          diagram.appendChild(line);
+
+          // Pods inside each node
+          for (let i = 0; i < 3; i++) {
+            const pod = document.createElement('div');
+            pod.className = 'node-box pod-box';
+            pod.style.top = `${node.top + 100 + i * 40}px`;
+            pod.style.left = node.left;
+            pod.style.transform = 'translateX(-50%)';
+            pod.style.width = '140px';
+            pod.innerHTML = `
+                        <div class="text-sm">Pod ${i + 1}</div>
+                        <div class="text-xs">Container running</div>
+                    `;
+            pod.onclick = () =>
+              showInfo(
+                'Pod',
+                'Smallest deployable unit in Kubernetes. Can contain 1 or more containers.',
+              );
+            diagram.appendChild(pod);
+          }
+        });
+
+        // Add arrows
+        const arrow = document.createElement('div');
+        arrow.className = 'flow-arrow';
+        arrow.innerHTML = '↓';
+        arrow.style.top = '200px';
+        arrow.style.left = '50%';
+        arrow.style.transform = 'translateX(-50%)';
+        diagram.appendChild(arrow);
+      }
+
+      // Create Control Plane diagram
+      function createControlPlaneDiagram() {
+        const container = document.querySelector('.flow-container');
+        container.innerHTML = '';
+
+        const components = [
+          {
+            name: 'API Server',
+            top: 50,
+            left: '50%',
+            icon: '🚪',
+            color: 'blue',
+          },
+          { name: 'etcd', top: 150, left: '30%', icon: '💾', color: 'green' },
+          {
+            name: 'Controller Manager',
+            top: 150,
+            left: '50%',
+            icon: '👮‍♂️',
+            color: 'red',
+          },
+          {
+            name: 'Scheduler',
+            top: 150,
+            left: '70%',
+            icon: '📊',
+            color: 'amber',
+          },
+        ];
+
+        components.forEach((comp) => {
+          const box = document.createElement('div');
+          box.className = `node-box control-plane`;
+          box.style.top = `${comp.top}px`;
+          box.style.left = comp.left;
+          box.style.transform = 'translateX(-50%)';
+          box.style.background = `linear-gradient(135deg, var(--tw-${comp.color}-500), var(--tw-${comp.color}-700))`;
+          box.innerHTML = `
+                    <div class="text-xl mb-2">${comp.icon}</div>
+                    <div class="font-bold">${comp.name}</div>
+                `;
+          box.onclick = () =>
+            showInfo(comp.name, getComponentDescription(comp.name));
+          container.appendChild(box);
+
+          // Connect API Server to other components
+          if (comp.name !== 'API Server') {
+            const line = document.createElement('div');
+            line.className = 'flow-line';
+            line.style.top = '90px';
+            line.style.left = '50%';
+            line.style.width = '0px';
+            line.style.height = `${comp.top - 90}px`;
+            line.style.transform = `rotate(${
+              comp.left === '30%'
+                ? '-30deg'
+                : comp.left === '70%'
+                ? '30deg'
+                : '0deg'
+            })`;
+            line.style.transformOrigin = 'top center';
+            container.appendChild(line);
+          }
+        });
+      }
+
+      // Create Worker Node diagram
+      function createWorkerDiagram() {
+        const container = document.getElementById('workerDiagram');
+        container.innerHTML = '';
+
+        const components = [
+          { name: 'Kubelet', top: 50, left: '30%', icon: '🛠️', color: 'blue' },
+          {
+            name: 'Container Runtime',
+            top: 50,
+            left: '50%',
+            icon: '🐳',
+            color: 'green',
+          },
+          {
+            name: 'Kube Proxy',
+            top: 50,
+            left: '70%',
+            icon: '🌐',
+            color: 'purple',
+          },
+        ];
+
+        components.forEach((comp) => {
+          const box = document.createElement('div');
+          box.className = `node-box worker-node`;
+          box.style.top = `${comp.top}px`;
+          box.style.left = comp.left;
+          box.style.transform = 'translateX(-50%)';
+          box.innerHTML = `
+                    <div class="text-xl mb-2">${comp.icon}</div>
+                    <div class="font-bold">${comp.name}</div>
+                `;
+          box.onclick = () =>
+            showInfo(comp.name, getComponentDescription(comp.name));
+          container.appendChild(box);
+        });
+
+        // Pods section
+        const podBox = document.createElement('div');
+        podBox.className = 'node-box pod-box';
+        podBox.style.top = '200px';
+        podBox.style.left = '50%';
+        podBox.style.transform = 'translateX(-50%)';
+        podBox.style.width = '200px';
+        podBox.innerHTML = `
+                <div class="text-lg mb-2">📦 Running Pods</div>
+                <div class="text-sm">• Web App Pod</div>
+                <div class="text-sm">• Database Pod</div>
+                <div class="text-sm">• Cache Pod</div>
+            `;
+        container.appendChild(podBox);
+
+        // Connection lines
+        const line = document.createElement('div');
+        line.className = 'flow-line';
+        line.style.top = '100px';
+        line.style.left = '50%';
+        line.style.height = '100px';
+        line.style.transform = 'translateX(-50%)';
+        container.appendChild(line);
+      }
+
+      // Component descriptions
+      function getComponentDescription(name) {
+        const descriptions = {
+          'API Server':
+            'Central entry point. All kubectl commands go here first. Validates and processes requests.',
+          etcd: 'Distributed key-value store. Stores all cluster data. Think of it as Kubernetes memory.',
+          'Controller Manager':
+            'Ensures actual state matches desired state. If something breaks, it fixes it.',
+          Scheduler:
+            'Decides which node should run a Pod based on resource availability and constraints.',
+          Kubelet:
+            'Agent that runs on each node. Communicates with Control Plane and runs containers.',
+          'Container Runtime':
+            'Software that runs containers (Docker, containerd, CRI-O).',
+          'Kube Proxy':
+            'Manages network rules. Handles load balancing and service discovery.',
+        };
+        return descriptions[name] || 'No description available.';
+      }
+
+      // Create quiz
+      function createQuiz() {
+        const container = document.getElementById('quizContainer');
+        const questions = [
+          {
+            question: 'What is the Kubernetes Control Plane?',
+            options: [
+              'The brain that makes decisions',
+              'The workers that run containers',
+              'The network between containers',
+              'The storage system',
+            ],
+            correct: 0,
+          },
+          {
+            question: 'Which component stores cluster state?',
+            options: ['API Server', 'etcd', 'Scheduler', 'Kubelet'],
+            correct: 1,
+          },
+          {
+            question: 'What does the Scheduler do?',
+            options: [
+              'Runs containers on nodes',
+              'Decides where to place Pods',
+              'Manages network traffic',
+              'Stores configuration',
+            ],
+            correct: 1,
+          },
+          {
+            question: 'What runs on each Worker Node?',
+            options: [
+              'Kubelet, Container Runtime, Kube Proxy',
+              'API Server, etcd, Controller Manager',
+              'Only Docker containers',
+              'Just the operating system',
+            ],
+            correct: 0,
+          },
+        ];
+
+        questions.forEach((q, index) => {
+          const questionDiv = document.createElement('div');
+          questionDiv.className = 'component-card';
+          questionDiv.innerHTML = `
+                    <h4 class="font-bold text-blue-300 mb-3">Question ${
+                      index + 1
+                    }: ${q.question}</h4>
+                    <div class="space-y-2">
+                        ${q.options
+                          .map(
+                            (option, i) => `
+                            <button onclick="checkAnswer(${index}, ${i})" 
+                                    class="w-full text-left p-3 bg-slate-800/50 hover:bg-slate-800 rounded-lg transition answer-btn" 
+                                    data-q="${index}" data-a="${i}">
+                                ${option}
+                            </button>
+                        `,
+                          )
+                          .join('')}
+                    </div>
+                    <div class="mt-3 text-sm text-slate-400 result" id="result${index}"></div>
+                `;
+          container.appendChild(questionDiv);
+        });
+      }
+
+      // Check quiz answer
+      function checkAnswer(questionIndex, answerIndex) {
+        const buttons = document.querySelectorAll(
+          `[data-q="${questionIndex}"]`,
+        );
+        const result = document.getElementById(`result${questionIndex}`);
+
+        // Reset all buttons for this question
+        buttons.forEach((btn) => {
+          btn.classList.remove('bg-green-500/20', 'bg-red-500/20');
+          btn.classList.add('bg-slate-800/50');
+        });
+
+        // Mark selected answer
+        buttons[answerIndex].classList.remove('bg-slate-800/50');
+
+        const questions = [
+          { correct: 0 },
+          { correct: 1 },
+          { correct: 1 },
+          { correct: 0 },
+        ];
+
+        if (answerIndex === questions[questionIndex].correct) {
+          buttons[answerIndex].classList.add('bg-green-500/20');
+          result.innerHTML =
+            '<span class="text-green-400">✅ Correct! Well done!</span>';
+        } else {
+          buttons[answerIndex].classList.add('bg-red-500/20');
+          buttons[questions[questionIndex].correct].classList.add(
+            'bg-green-500/20',
+          );
+          result.innerHTML = `<span class="text-red-400">❌ Incorrect. The correct answer is: ${
+            buttons[questions[questionIndex].correct].textContent
+          }</span>`;
+        }
+      }
+
+      // Select next topic
+      function selectTopic(topic) {
+        const topics = {
+          pods: '🧩 Pods Deep Dive',
+          services: '🌐 Services & Networking',
+          deployments: '🚀 Deployments & Scaling',
+          project: '🏆 Real Project',
+        };
+
+        alert(
+          `Great choice! Next lesson: ${topics[topic]}\n\nLet's continue learning! 🚀`,
+        );
+      }
+
+      // Initialize when page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        createMainDiagram();
+        createControlPlaneDiagram();
+        createWorkerDiagram();
+        createQuiz();
+
+        // Make buttons touch-friendly
+        document.querySelectorAll('.copy-btn, button').forEach((btn) => {
+          btn.classList.add('touch-target');
+        });
+
+        // Add scroll animations
+        const observerOptions = {
+          threshold: 0.1,
+          rootMargin: '0px 0px -50px 0px',
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        }, observerOptions);
+
+        document
+          .querySelectorAll('.fade-in')
+          .forEach((el) => observer.observe(el));
+      });
+
+      // Add CSS variables for colors
+      const style = document.createElement('style');
+      style.textContent = `
+            :root {
+                --tw-blue-500: #3b82f6;
+                --tw-blue-700: #1d4ed8;
+                --tw-green-500: #10b981;
+                --tw-green-700: #047857;
+                --tw-red-500: #ef4444;
+                --tw-red-700: #b91c1c;
+                --tw-amber-500: #f59e0b;
+                --tw-amber-700: #b45309;
+                --tw-purple-500: #8b5cf6;
+                --tw-purple-700: #7c3aed;
+            }
+        `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🚀 Docker Bind Mounts - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f0f23 0%,
+          #1a1a2e 50%,
+          #16213e 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #00dbde, #ff6b6b, #00dbde);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .concept-card {
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .concept-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(255, 107, 107, 0.15);
+        border-color: #ff6b6b;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .step-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(255, 107, 107, 0.1);
+      }
+
+      .step-number {
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        z-index: 2;
+      }
+
+      .command-container {
+        background: #0f172a;
+        border-left: 4px solid #ff6b6b;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .command-text {
+        color: #ffffff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-break: break-word;
+        padding-right: 100px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #ff6b6b 0%, #cc5555 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #ff7b7b 0%, #dd6666 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #47b881 0%, #2d7a59 100%);
+      }
+
+      .copy-btn i {
+        margin-right: 5px;
+        font-size: 0.9rem;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .status-success {
+        background: #47b881;
+        box-shadow: 0 0 10px #47b881;
+      }
+
+      .status-warning {
+        background: #ffaa00;
+        box-shadow: 0 0 10px #ffaa00;
+      }
+
+      .status-danger {
+        background: #ff6b6b;
+        box-shadow: 0 0 10px #ff6b6b;
+      }
+
+      .terminal-output {
+        font-family: 'JetBrains Mono', monospace;
+        background: #1a202c;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 10px 0;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        padding: 3px 0;
+        color: #e2e8f0;
+      }
+
+      .terminal-comment {
+        color: #94a3b8;
+        font-style: italic;
+      }
+
+      .terminal-prompt {
+        color: #47b881;
+        font-weight: bold;
+      }
+
+      .mount-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .mount-icon {
+        font-size: 4rem;
+        color: #ff6b6b;
+        margin-bottom: 10px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      .badge-primary {
+        background: rgba(0, 219, 222, 0.2);
+        color: #00dbde;
+        border: 1px solid rgba(0, 219, 222, 0.4);
+      }
+
+      .badge-warning {
+        background: rgba(255, 170, 0, 0.2);
+        color: #ffaa00;
+        border: 1px solid rgba(255, 170, 0, 0.4);
+      }
+
+      .badge-danger {
+        background: rgba(255, 107, 107, 0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.4);
+      }
+
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      @media (min-width: 768px) {
+        .comparison-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .comparison-card {
+        background: rgba(30, 41, 59, 0.7);
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .comparison-card:hover {
+        transform: translateY(-3px);
+      }
+
+      .volume-card {
+        border: 2px solid #00dbde;
+      }
+
+      .bind-card {
+        border: 2px solid #ff6b6b;
+      }
+
+      .highlight-box {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 107, 107, 0.1),
+          rgba(255, 142, 83, 0.1)
+        );
+        border-left: 4px solid #ff6b6b;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      /* Mobile-specific improvements */
+      @media (max-width: 767px) {
+        .concept-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 8px 0;
+        }
+
+        .command-container {
+          padding: 15px;
+          padding-right: 80px;
+        }
+
+        .command-text {
+          font-size: 0.85rem;
+          padding-right: 70px;
+        }
+
+        .copy-btn-wrapper {
+          top: 8px;
+          right: 8px;
+        }
+
+        .copy-btn {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+
+        .copy-btn i {
+          font-size: 0.8rem;
+          margin-right: 4px;
+        }
+
+        .step-number {
+          width: 35px;
+          height: 35px;
+          font-size: 1rem;
+          left: 15px;
+          top: -10px;
+        }
+
+        .mount-icon {
+          font-size: 3rem;
+        }
+
+        .comparison-grid {
+          gap: 15px;
+        }
+      }
+
+      /* Small mobile devices */
+      @media (max-width: 480px) {
+        .command-text {
+          font-size: 0.8rem;
+          padding-right: 60px;
+        }
+
+        .copy-btn {
+          padding: 5px 10px;
+          font-size: 0.75rem;
+          min-height: 30px;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #1e293b;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+      }
+
+      /* Prevent text selection on interactive elements */
+      .no-select {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      /* Flow visualization */
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+
+      .flow-icon {
+        font-size: 1.5rem;
+        color: #ff6b6b;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div
+          class="inline-block p-1 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mb-6"
+        >
+          <div class="bg-slate-900 px-6 md:px-8 py-4 md:py-6 rounded-full">
+            <h1
+              class="text-2xl md:text-4xl lg:text-5xl font-bold gradient-text mb-3 md:mb-4"
+            >
+              🚀 Docker Bind Mounts - Complete Guide
+            </h1>
+            <p class="text-base md:text-lg lg:text-xl text-slate-300">
+              Control Your Storage Like a Pro Developer
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-2 md:gap-3 mb-6">
+          <span class="badge badge-primary">
+            <i class="fas fa-folder-open mr-2"></i>Bind Mounts
+          </span>
+          <span class="badge badge-warning">
+            <i class="fas fa-code mr-2"></i>Development
+          </span>
+          <span class="badge badge-danger">
+            <i class="fas fa-linux mr-2"></i>Host Control
+          </span>
+        </div>
+      </header>
+
+      <!-- Concept Explanation -->
+      <section class="concept-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-4">
+          <i class="fas fa-lightbulb mr-3"></i>From Volumes to Bind Mounts
+        </h2>
+        <p class="text-lg md:text-xl text-slate-300 mb-6">
+          You mastered named volumes, so next is bind mounts.<br />
+          Think of it like this:
+        </p>
+
+        <div class="comparison-grid mb-6">
+          <div class="comparison-card volume-card">
+            <div class="text-center mb-4">
+              <div class="mount-icon">
+                <i class="fas fa-database"></i>
+              </div>
+              <h3 class="text-xl font-bold text-cyan-300">Volume</h3>
+              <p class="text-slate-400 text-sm">Docker manages storage</p>
+            </div>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-check text-cyan-400 mt-1 mr-2"></i>
+                <span>Best for production</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-cyan-400 mt-1 mr-2"></i>
+                <span>Docker manages everything</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-times text-red-400 mt-1 mr-2"></i>
+                <span>Can't see files directly</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="flow-arrow">
+            <i class="fas fa-arrow-right flow-icon"></i>
+          </div>
+
+          <div class="comparison-card bind-card">
+            <div class="text-center mb-4">
+              <div class="mount-icon">
+                <i class="fas fa-folder"></i>
+              </div>
+              <h3 class="text-xl font-bold text-red-300">Bind Mount</h3>
+              <p class="text-slate-400 text-sm">YOU control storage</p>
+            </div>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-check text-red-400 mt-1 mr-2"></i>
+                <span>Perfect for development</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-red-400 mt-1 mr-2"></i>
+                <span>Real folder on your machine</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-red-400 mt-1 mr-2"></i>
+                <span>See/edit DB files directly</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="highlight-box">
+          <div class="flex items-start">
+            <i class="fas fa-rocket text-red-400 text-xl mr-3 mt-1"></i>
+            <div>
+              <h4 class="font-bold text-red-300 mb-2">
+                Perfect for Local Development
+              </h4>
+              <p class="text-slate-300">
+                Because you can see/edit DB files directly on your host machine.
+                No more guessing what's inside your database!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- What We'll Do -->
+      <section class="step-card p-5 md:p-6 mb-8">
+        <div class="step-number">🎯</div>
+        <div class="pt-8">
+          <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-4">
+            <i class="fas fa-puzzle-piece mr-3"></i>🧩 What we'll do
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div class="bg-slate-800/50 rounded-lg p-4">
+              <h4 class="font-bold text-green-300 mb-3">Step-by-Step Plan:</h4>
+              <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                <li>Create a folder on your Linux machine</li>
+                <li>Bind-mount it into MongoDB</li>
+                <li>Verify data persists</li>
+                <li>Understand difference vs volumes</li>
+              </ol>
+            </div>
+
+            <div class="bg-slate-800/50 rounded-lg p-4">
+              <h4 class="font-bold text-red-300 mb-3">Key Learning:</h4>
+              <ul class="space-y-2 text-slate-300">
+                <li class="flex items-start">
+                  <i class="fas fa-laptop-code text-red-400 mt-1 mr-2"></i>
+                  <span>Direct host folder access</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-eye text-red-400 mt-1 mr-2"></i>
+                  <span>See real database files</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-sync-alt text-red-400 mt-1 mr-2"></i>
+                  <span>Instant file changes</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="text-center mt-6">
+            <p class="text-xl text-slate-300 font-bold">
+              Let's go step-by-step 👇
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Steps -->
+      <div class="space-y-8 md:space-y-10">
+        <!-- Step 1 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">1</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-green-300 mb-4">
+              <i class="fas fa-check-circle mr-3"></i>✅ Step-1: Create a folder
+              on your machine
+            </h2>
+            <p class="text-slate-300 mb-6">
+              Run on host (NOT inside container) - This is YOUR folder
+            </p>
+
+            <div class="command-container">
+              <div class="command-text" id="code1">mkdir -p ~/mongo-data</div>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('code1')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="highlight-box">
+              <h4 class="font-bold text-slate-200 mb-2">
+                Verify Folder Creation:
+              </h4>
+              <div class="command-container">
+                <div class="command-text" id="code2">ls ~/mongo-data</div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('code2')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+
+              <div class="terminal-output mt-3">
+                <div class="terminal-line">
+                  <span class="terminal-prompt">$</span> ls ~/mongo-data
+                </div>
+                <div class="terminal-line terminal-comment">
+                  # It should be empty initially
+                </div>
+              </div>
+
+              <div class="mt-3 flex items-center text-green-400">
+                <span class="status-indicator status-success"></span>
+                <span>Empty folder ready for MongoDB data</span>
+              </div>
+            </div>
+
+            <div class="mount-visual mt-6">
+              <div class="text-center">
+                <div class="mount-icon">
+                  <i class="fas fa-folder-plus"></i>
+                </div>
+                <p class="text-slate-300 mt-2">
+                  Host Folder: <code class="text-red-300">~/mongo-data</code>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">2</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-red-300 mb-4">
+              <i class="fas fa-stop-circle mr-3"></i>🛑 Step-2: Make sure no
+              mongo container exists
+            </h2>
+            <p class="text-slate-300 mb-6">
+              Clean up any existing MongoDB containers to avoid conflicts
+            </p>
+
+            <div class="command-container">
+              <div class="command-text" id="code3">
+                docker stop mongo-db 2>/dev/null || true docker rm mongo-db
+                2>/dev/null || true
+              </div>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('code3')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="highlight-box">
+              <h4 class="font-bold text-slate-200 mb-2">
+                Verify No Containers Remain:
+              </h4>
+              <div class="command-container">
+                <div class="command-text" id="code4">docker ps -a</div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('code4')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+
+              <div class="terminal-output mt-3">
+                <div class="terminal-line">
+                  <span class="terminal-prompt">$</span> docker ps -a
+                </div>
+                <div class="terminal-line">
+                  CONTAINER ID IMAGE COMMAND CREATED STATUS PORTS NAMES
+                </div>
+                <div class="terminal-line terminal-comment">
+                  # No mongo-db should remain
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">3</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-amber-300 mb-4">
+              <i class="fas fa-rocket mr-3"></i>🚀 Step-3: Run Mongo with Bind
+              Mount
+            </h2>
+
+            <div
+              class="bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-700/30 rounded-lg p-4 mb-6"
+            >
+              <div class="flex items-start">
+                <i
+                  class="fas fa-exclamation-circle text-red-400 text-xl mr-3 mt-1"
+                ></i>
+                <div>
+                  <h4 class="font-bold text-red-300 mb-2">IMPORTANT CONCEPT</h4>
+                  <p class="text-slate-300">
+                    <code class="text-amber-300">/data/db</code> inside
+                    container is MongoDB's storage path.<br />
+                    So we map:
+                  </p>
+                  <div class="mt-2 text-center">
+                    <p class="text-lg font-bold text-green-300">
+                      Host folder → Container database path
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="command-container">
+              <div class="command-text" id="code5">
+                docker run -d \ --name mongo-db \ -p 27017:27017 \ -v
+                ~/mongo-data:/data/db \ mongo
+              </div>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('code5')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <div class="highlight-box">
+                <h4 class="font-bold text-cyan-300 mb-2">
+                  <i class="fas fa-arrow-right mr-2"></i>Key Difference
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  This time
+                  <span class="text-red-300">no named volume</span> involved 👍
+                </p>
+              </div>
+
+              <div class="highlight-box">
+                <h4 class="font-bold text-green-300 mb-2">
+                  <i class="fas fa-database mr-2"></i>Direct Access
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  MongoDB is literally writing into your Linux folder
+                </p>
+              </div>
+
+              <div class="highlight-box">
+                <h4 class="font-bold text-amber-300 mb-2">
+                  <i class="fas fa-check-circle mr-2"></i>Verify
+                </h4>
+                <div class="command-container">
+                  <div class="command-text" id="code6">docker ps</div>
+                  <div class="copy-btn-wrapper">
+                    <button
+                      class="copy-btn no-select"
+                      onclick="copyCode('code6')"
+                    >
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mount-visual mt-6">
+              <div class="text-center">
+                <div class="flex items-center justify-center space-x-4 mb-4">
+                  <div class="text-center">
+                    <div class="mount-icon">
+                      <i class="fas fa-desktop"></i>
+                    </div>
+                    <p class="text-slate-300 text-sm mt-1">Host Machine</p>
+                    <p class="text-red-300 font-bold">~/mongo-data</p>
+                  </div>
+
+                  <i class="fas fa-exchange-alt text-2xl text-amber-400"></i>
+
+                  <div class="text-center">
+                    <div class="mount-icon">
+                      <i class="fas fa-box"></i>
+                    </div>
+                    <p class="text-slate-300 text-sm mt-1">Container</p>
+                    <p class="text-cyan-300 font-bold">/data/db</p>
+                  </div>
+                </div>
+                <p class="text-slate-400 text-sm">
+                  Bind Mount = Direct Folder Mapping
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">4</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-purple-300 mb-4">
+              <i class="fas fa-vial mr-3"></i>🧪 Step-4: Insert Data
+            </h2>
+
+            <div class="space-y-4">
+              <div>
+                <p class="text-slate-300 mb-1">Enter MongoDB shell:</p>
+                <div class="command-container">
+                  <div class="command-text" id="code7">
+                    docker exec -it mongo-db mongosh
+                  </div>
+                  <div class="copy-btn-wrapper">
+                    <button
+                      class="copy-btn no-select"
+                      onclick="copyCode('code7')"
+                    >
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-slate-800/50 rounded-lg p-4">
+                <h4 class="font-bold text-slate-200 mb-3">
+                  Inside MongoDB Shell:
+                </h4>
+
+                <div class="space-y-3">
+                  <div>
+                    <p class="text-slate-300 mb-1">Use/Create Database:</p>
+                    <div class="command-container">
+                      <div class="command-text" id="code8">use amitDB</div>
+                      <div class="copy-btn-wrapper">
+                        <button
+                          class="copy-btn no-select"
+                          onclick="copyCode('code8')"
+                        >
+                          <i class="fas fa-copy"></i> Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="text-slate-300 mb-1">Insert Data:</p>
+                    <div class="command-container">
+                      <div class="command-text" id="code9">
+                        db.users.insertOne({ name: "Amit", mount: "Bind", power:
+                        "Pro Mode" })
+                      </div>
+                      <div class="copy-btn-wrapper">
+                        <button
+                          class="copy-btn no-select"
+                          onclick="copyCode('code9')"
+                        >
+                          <i class="fas fa-copy"></i> Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="text-slate-300 mb-1">Verify Data:</p>
+                    <div class="command-container">
+                      <div class="command-text" id="code10">
+                        db.users.find()
+                      </div>
+                      <div class="copy-btn-wrapper">
+                        <button
+                          class="copy-btn no-select"
+                          onclick="copyCode('code10')"
+                        >
+                          <i class="fas fa-copy"></i> Copy
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="terminal-output mt-4">
+                  <div class="terminal-line">
+                    <span class="terminal-prompt">></span> db.users.find()
+                  </div>
+                  <div class="terminal-line">
+                    [
+                    <div class="ml-4">{</div>
+                    <div class="ml-8">"_id": ObjectId("..."),</div>
+                    <div class="ml-8">"name": "Amit",</div>
+                    <div class="ml-8">"mount": "Bind",</div>
+                    <div class="ml-8">"power": "Pro Mode"</div>
+                    <div class="ml-4">}</div>
+                    ]
+                  </div>
+                </div>
+
+                <div class="mt-4 flex items-center text-green-400">
+                  <span class="status-indicator status-success"></span>
+                  <span>You should see the document 😎</span>
+                </div>
+
+                <div class="mt-3">
+                  <p class="text-slate-300 mb-1">Exit MongoDB Shell:</p>
+                  <div class="command-container">
+                    <div class="command-text" id="code11">exit</div>
+                    <div class="copy-btn-wrapper">
+                      <button
+                        class="copy-btn no-select"
+                        onclick="copyCode('code11')"
+                      >
+                        <i class="fas fa-copy"></i> Copy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 5 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">5</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-blue-300 mb-4">
+              <i class="fas fa-eye mr-3"></i>👀 Step-5: Check HOST folder
+            </h2>
+            <p class="text-slate-300 mb-6">
+              Now check your Linux folder to see the actual database files:
+            </p>
+
+            <div class="command-container">
+              <div class="command-text" id="code12">ls ~/mongo-data</div>
+              <div class="copy-btn-wrapper">
+                <button class="copy-btn no-select" onclick="copyCode('code12')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="terminal-output mt-4">
+              <div class="terminal-line">
+                <span class="terminal-prompt">$</span> ls ~/mongo-data
+              </div>
+              <div class="terminal-line">WiredTiger</div>
+              <div class="terminal-line">collection-*.wt</div>
+              <div class="terminal-line">journal</div>
+              <div class="terminal-line">mongod.lock</div>
+              <div class="terminal-line">sizeStorer.wt</div>
+              <div class="terminal-line">storage.bson</div>
+            </div>
+
+            <div
+              class="text-center p-6 bg-gradient-to-r from-red-900/20 to-pink-900/20 border border-red-700/30 rounded-lg mt-6"
+            >
+              <div class="text-4xl md:text-5xl mb-4">💪</div>
+              <h3 class="text-2xl md:text-3xl font-bold text-red-300 mb-2">
+                This is proof bind mount works!
+              </h3>
+              <p class="text-slate-300">
+                You're seeing real MongoDB database files on your host machine
+              </p>
+            </div>
+
+            <div class="highlight-box mt-6">
+              <h4 class="font-bold text-amber-300 mb-2">What You're Seeing:</h4>
+              <ul class="space-y-2 text-slate-300">
+                <li>
+                  <code class="text-cyan-300">WiredTiger</code> - MongoDB's
+                  storage engine
+                </li>
+                <li>
+                  <code class="text-cyan-300">*.wt files</code> - Actual data
+                  collections
+                </li>
+                <li>
+                  <code class="text-cyan-300">journal/</code> - Transaction logs
+                  for recovery
+                </li>
+                <li>
+                  <code class="text-cyan-300">mongod.lock</code> - Lock file
+                  preventing multiple access
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 6 -->
+        <section class="step-card p-5 md:p-6">
+          <div class="step-number">6</div>
+          <div class="pt-8">
+            <h2 class="text-xl md:text-2xl font-bold text-green-300 mb-4">
+              <i class="fas fa-redo mr-3"></i>🔁 Step-6: Test persistence
+            </h2>
+            <p class="text-slate-300 mb-6">
+              Destroy and recreate MongoDB to prove data persists in host folder
+            </p>
+
+            <div class="space-y-4">
+              <div>
+                <p class="text-slate-300 mb-1">Stop MongoDB Container:</p>
+                <div class="command-container">
+                  <div class="command-text" id="code13">
+                    docker stop mongo-db
+                  </div>
+                  <div class="copy-btn-wrapper">
+                    <button
+                      class="copy-btn no-select"
+                      onclick="copyCode('code13')"
+                    >
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-slate-300 mb-1">Delete Container Completely:</p>
+                <div class="command-container">
+                  <div class="command-text" id="code14">docker rm mongo-db</div>
+                  <div class="copy-btn-wrapper">
+                    <button
+                      class="copy-btn no-select"
+                      onclick="copyCode('code14')"
+                    >
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-slate-300 mb-1">
+                  Run Again with SAME Bind Mount:
+                </p>
+                <div class="command-container">
+                  <div class="command-text" id="code15">
+                    docker run -d \ --name mongo-db \ -p 27017:27017 \ -v
+                    /home/amit/mongo-data:/data/db \ mongo
+                  </div>
+                  <div class="copy-btn-wrapper">
+                    <button
+                      class="copy-btn no-select"
+                      onclick="copyCode('code15')"
+                    >
+                      <i class="fas fa-copy"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="highlight-box mt-6">
+              <h4 class="font-bold text-slate-200 mb-2">
+                Enter MongoDB and Check Data:
+              </h4>
+              <div class="command-container">
+                <div class="command-text" id="code16">
+                  docker exec -it mongo-db mongosh
+                </div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('code16')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+
+              <div class="command-container mt-3">
+                <div class="command-text" id="code17">
+                  use amitDB db.users.find()
+                </div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('code17')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="text-center p-6 bg-gradient-to-r from-green-900/20 to-emerald-900/20 border border-green-700/30 rounded-lg mt-6"
+            >
+              <div class="text-4xl md:text-5xl mb-4">🎉</div>
+              <h3 class="text-2xl md:text-3xl font-bold text-green-300 mb-2">
+                Your data is STILL THERE!
+              </h3>
+              <p class="text-slate-300 text-lg">
+                Because it lives on your machine, not inside Docker
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section class="concept-card p-5 md:p-6">
+          <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+            <i class="fas fa-brain mr-3"></i>🧠 Bind Mount vs Volume — Simple
+            Memory Trick
+          </h2>
+
+          <div class="comparison-grid">
+            <div class="comparison-card volume-card">
+              <div class="text-center mb-4">
+                <div class="text-3xl mb-2">📦</div>
+                <h3 class="text-xl font-bold text-cyan-300">Named Volume</h3>
+                <p class="text-slate-400 text-sm">Docker manages storage</p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >Best for production</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      Clean, Docker-managed storage
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >Docker manages storage</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      Automatic cleanup and optimization
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200">Cleaner</span>
+                    <p class="text-slate-400 text-sm">
+                      No host path dependencies
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-times-circle text-red-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >You don't easily see files</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      Files hidden in Docker's storage
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="comparison-card bind-card">
+              <div class="text-center mb-4">
+                <div class="text-3xl mb-2">📂</div>
+                <h3 class="text-xl font-bold text-red-300">Bind Mount</h3>
+                <p class="text-slate-400 text-sm">YOU control storage</p>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >Perfect for development</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      See and edit files in real-time
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >YOU control files</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      Direct access to host folders
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >Can open/edit directly</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      Use any editor on host files
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start">
+                  <i class="fas fa-times-circle text-red-400 mt-1 mr-2"></i>
+                  <div>
+                    <span class="font-medium text-slate-200"
+                      >Easier to break</span
+                    >
+                    <p class="text-slate-400 text-sm">
+                      If you delete host folder
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 bg-slate-800/50 rounded-lg p-4">
+            <h4 class="font-bold text-amber-300 mb-3">
+              <i class="fas fa-trophy mr-2"></i>When to Use Each?
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-slate-900/30 p-3 rounded">
+                <h5 class="font-bold text-cyan-300 mb-2">Use Volume When:</h5>
+                <ul class="space-y-1 text-slate-300 text-sm">
+                  <li>• Production deployment</li>
+                  <li>• Database in production</li>
+                  <li>• Need Docker to manage storage</li>
+                  <li>• Don't need to inspect files</li>
+                </ul>
+              </div>
+              <div class="bg-slate-900/30 p-3 rounded">
+                <h5 class="font-bold text-red-300 mb-2">
+                  Use Bind Mount When:
+                </h5>
+                <ul class="space-y-1 text-slate-300 text-sm">
+                  <li>• Local development</li>
+                  <li>• Need to see/edit database files</li>
+                  <li>• Debugging data issues</li>
+                  <li>• Quick file access</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Final Summary -->
+        <section
+          class="text-center p-6 md:p-8 bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-2xl"
+        >
+          <div class="text-5xl md:text-6xl mb-4">🚀</div>
+          <h2 class="text-2xl md:text-3xl font-bold gradient-text mb-4">
+            Bind Mounts Mastery Achieved!
+          </h2>
+          <p class="text-lg md:text-xl text-slate-300 mb-6">
+            You now control Docker storage like a true developer
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 md:gap-4 mb-6">
+            <span class="badge badge-danger">
+              <i class="fas fa-check-circle mr-2"></i>Host Control
+            </span>
+            <span class="badge badge-warning">
+              <i class="fas fa-eye mr-2"></i>File Visibility
+            </span>
+            <span class="badge badge-primary">
+              <i class="fas fa-code mr-2"></i>Dev Ready
+            </span>
+          </div>
+
+          <div class="text-xl md:text-2xl text-amber-300 font-bold">
+            🎯 Next Level: Docker Compose with Bind Mounts!
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // Enhanced copy functionality
+      function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        let textToCopy = codeElement.textContent;
+
+        // Clean up multi-line commands (remove line continuation spaces)
+        textToCopy = textToCopy.replace(/\\\n\s*/g, ' ');
+
+        // Remove any extra whitespace
+        textToCopy = textToCopy.trim();
+
+        // Use modern clipboard API
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            // Visual feedback on the button
+            const button = event.target.closest('button');
+            if (!button) return;
+
+            const originalHTML = button.innerHTML;
+            const originalClasses = button.className;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            // Add ripple effect
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+
+            ripple.style.cssText = `
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: scale(0);
+                    animation: ripple 0.6s linear;
+                    width: ${size}px;
+                    height: ${size}px;
+                    top: ${y}px;
+                    left: ${x}px;
+                    pointer-events: none;
+                    z-index: 1;
+                `;
+
+            button.style.position = 'relative';
+            button.style.overflow = 'hidden';
+            button.appendChild(ripple);
+
+            // Haptic feedback on supported devices
+            if (navigator.vibrate) {
+              navigator.vibrate(50);
+            }
+
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+              button.className = originalClasses;
+              ripple.remove();
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            const button = event.target.closest('button');
+            const originalHTML = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+            }, 2000);
+          });
+      }
+
+      // Add interactive effects
+      document.addEventListener('DOMContentLoaded', () => {
+        // Add ripple animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+                @keyframes ripple {
+                    to {
+                        transform: scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+        document.head.appendChild(style);
+
+        // Add hover effects to cards
+        document
+          .querySelectorAll('.concept-card, .step-card')
+          .forEach((card) => {
+            card.addEventListener('mouseenter', () => {
+              card.style.transform = 'translateY(-5px)';
+            });
+
+            card.addEventListener('mouseleave', () => {
+              card.style.transform = 'translateY(0)';
+            });
+          });
+
+        // Handle mobile touch improvements
+        if ('ontouchstart' in window) {
+          document.body.classList.add('touch-device');
+
+          // Better touch targets for copy buttons
+          document.querySelectorAll('.copy-btn').forEach((btn) => {
+            btn.classList.add('touch-target');
+          });
+
+          // Prevent zoom on double tap
+          document.addEventListener(
+            'touchstart',
+            function (e) {
+              if (e.touches.length > 1) {
+                e.preventDefault();
+              }
+            },
+            { passive: false },
+          );
+
+          // Add touch feedback
+          document.querySelectorAll('.copy-btn').forEach((btn) => {
+            btn.addEventListener('touchstart', function () {
+              this.style.transform = 'scale(0.95)';
+            });
+
+            btn.addEventListener('touchend', function () {
+              this.style.transform = 'scale(1)';
+            });
+          });
+        }
+
+        // Adjust copy button position on resize
+        function adjustCommandLayout() {
+          document
+            .querySelectorAll('.command-container')
+            .forEach((container) => {
+              const commandText = container.querySelector('.command-text');
+              const copyBtn = container.querySelector('.copy-btn-wrapper');
+
+              if (commandText && copyBtn) {
+                const textHeight = commandText.scrollHeight;
+                const btnHeight = copyBtn.offsetHeight;
+
+                // Ensure button doesn't overlap text
+                if (btnHeight > textHeight) {
+                  copyBtn.style.top = '50%';
+                  copyBtn.style.transform = 'translateY(-50%)';
+                } else {
+                  copyBtn.style.top = '10px';
+                  copyBtn.style.transform = 'none';
+                }
+              }
+            });
+        }
+
+        // Run on load and resize
+        adjustCommandLayout();
+        window.addEventListener('resize', adjustCommandLayout);
+
+        // Animate step numbers on scroll
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                  entry.target.style.transform = 'scale(1)';
+                }, 300);
+              }
+            });
+          },
+          { threshold: 0.5 },
+        );
+
+        document.querySelectorAll('.step-number').forEach((step) => {
+          observer.observe(step);
+        });
+
+        // Add visual indicator for long commands
+        document.querySelectorAll('.command-container').forEach((container) => {
+          const commandText = container.querySelector('.command-text');
+          if (commandText.scrollWidth > commandText.clientWidth) {
+            container.style.position = 'relative';
+            const scrollHint = document.createElement('div');
+            scrollHint.innerHTML =
+              '<i class="fas fa-arrow-left"></i><i class="fas fa-arrow-right"></i>';
+            scrollHint.style.cssText = `
+                        position: absolute;
+                        bottom: 5px;
+                        right: 10px;
+                        color: #64748b;
+                        font-size: 0.8rem;
+                        opacity: 0.7;
+                    `;
+            container.appendChild(scrollHint);
+          }
+        });
+      });
+
+      // Scroll to top button
+      const scrollBtn = document.createElement('button');
+      scrollBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+      scrollBtn.className =
+        'fixed bottom-6 right-6 w-12 h-12 md:w-14 md:h-14 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-full flex items-center justify-center text-lg md:text-xl shadow-2xl z-50 touch-target no-select';
+      scrollBtn.style.display = 'none';
+      scrollBtn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.body.appendChild(scrollBtn);
+
+      window.addEventListener('scroll', () => {
+        scrollBtn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+      });
+
+      // Handle orientation change
+      window.addEventListener('orientationchange', function () {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+        }, 100);
+      });
+    </script>
+  </body>
+</html>

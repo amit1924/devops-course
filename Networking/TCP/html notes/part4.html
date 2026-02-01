@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TCP Advanced: Mobile Study Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-green: #00ff9d;
+        --neon-blue: #00e0ff;
+        --neon-purple: #b967ff;
+        --neon-pink: #ff2d95;
+        --neon-orange: #ff6b35;
+        --dark-bg: #0f172a;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1a2332 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(
+          135deg,
+          var(--neon-green),
+          var(--neon-blue)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .concept-card {
+        background: #1e293b;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .concept-card {
+          border-radius: 12px;
+          margin-bottom: 1rem;
+        }
+      }
+
+      .concept-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0, 255, 157, 0.15);
+        border-color: rgba(0, 255, 157, 0.3);
+      }
+
+      .protocol-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+      }
+
+      @media (max-width: 768px) {
+        .protocol-header {
+          padding: 1rem;
+        }
+      }
+
+      .protocol-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+      }
+
+      .gbn-header::before {
+        background: var(--neon-blue);
+      }
+      .sr-header::before {
+        background: var(--neon-purple);
+      }
+      .fast-header::before {
+        background: var(--neon-green);
+      }
+      .rtt-header::before {
+        background: var(--neon-orange);
+      }
+      .congestion-header::before {
+        background: #ff4757;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      @media (max-width: 768px) {
+        .badge {
+          padding: 3px 8px;
+          font-size: 0.7rem;
+        }
+      }
+
+      .good-badge {
+        background: rgba(0, 255, 157, 0.15);
+        border: 1px solid var(--neon-green);
+        color: var(--neon-green);
+      }
+
+      .bad-badge {
+        background: rgba(255, 45, 85, 0.15);
+        border: 1px solid #ff2d55;
+        color: #ff2d55;
+      }
+
+      .info-badge {
+        background: rgba(0, 224, 255, 0.15);
+        border: 1px solid var(--neon-blue);
+        color: var(--neon-blue);
+      }
+
+      .warning-badge {
+        background: rgba(255, 107, 53, 0.15);
+        border: 1px solid var(--neon-orange);
+        color: var(--neon-orange);
+      }
+
+      .mobile-visual {
+        height: 200px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 12px;
+        position: relative;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        margin: 1rem 0;
+      }
+
+      @media (max-width: 768px) {
+        .mobile-visual {
+          height: 150px;
+        }
+      }
+
+      .mobile-packet {
+        position: absolute;
+        width: 40px;
+        height: 35px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+      }
+
+      @media (max-width: 768px) {
+        .mobile-packet {
+          width: 35px;
+          height: 30px;
+          font-size: 0.7rem;
+        }
+      }
+
+      .packet-acked {
+        background: #10b981;
+        border: 2px solid #10b981;
+      }
+      .packet-sent {
+        background: #3b82f6;
+        border: 2px solid #3b82f6;
+      }
+      .packet-lost {
+        background: #ef4444;
+        border: 2px solid #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .packet-buffered {
+        background: #8b5cf6;
+        border: 2px solid #8b5cf6;
+      }
+      .packet-future {
+        background: #6b7280;
+        border: 2px dashed #6b7280;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .mobile-timeline {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        padding: 1rem 0;
+      }
+
+      @media (min-width: 768px) {
+        .mobile-timeline {
+          flex-direction: row;
+          justify-content: space-between;
+        }
+      }
+
+      .timeline-point {
+        position: relative;
+        z-index: 2;
+        margin-bottom: 1.5rem;
+        padding-left: 2rem;
+      }
+
+      @media (min-width: 768px) {
+        .timeline-point {
+          width: 100px;
+          text-align: center;
+          padding-left: 0;
+          margin-bottom: 0;
+        }
+      }
+
+      .timeline-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        border: 3px solid #1e293b;
+      }
+
+      @media (min-width: 768px) {
+        .timeline-dot {
+          position: relative;
+          margin: 0 auto 10px;
+        }
+      }
+
+      .mobile-table {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .comparison-table {
+        width: 100%;
+        min-width: 600px;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+
+      .comparison-table th {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      @media (max-width: 768px) {
+        .comparison-table th {
+          padding: 0.75rem;
+          font-size: 0.9rem;
+        }
+      }
+
+      .comparison-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      @media (max-width: 768px) {
+        .comparison-table td {
+          padding: 0.75rem;
+          font-size: 0.9rem;
+        }
+      }
+
+      .mobile-button {
+        width: 100%;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+      }
+
+      @media (min-width: 768px) {
+        .mobile-button {
+          width: auto;
+          padding: 0.5rem 1rem;
+          margin-bottom: 0;
+        }
+      }
+
+      .mobile-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 768px) {
+        .mobile-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (min-width: 1024px) {
+        .mobile-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      .expandable {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+      }
+
+      .expandable.expanded {
+        max-height: 500px;
+      }
+
+      .rtt-formula {
+        background: rgba(255, 107, 53, 0.1);
+        border-left: 4px solid var(--neon-orange);
+        padding: 1rem;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+
+      @media (max-width: 768px) {
+        .rtt-formula {
+          padding: 0.75rem;
+          font-size: 0.8rem;
+        }
+      }
+
+      .mobile-step-indicator {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+      }
+
+      .step-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #4b5563;
+        cursor: pointer;
+      }
+
+      .step-dot.active {
+        background: var(--neon-blue);
+      }
+
+      .notification {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        z-index: 1000;
+        max-width: 300px;
+        word-wrap: break-word;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .mobile-menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 80%;
+        height: 100%;
+        background: #1e293b;
+        z-index: 1001;
+        transition: right 0.3s ease;
+        padding: 2rem 1rem;
+        overflow-y: auto;
+      }
+
+      .mobile-menu.active {
+        right: 0;
+      }
+
+      .menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+      }
+
+      .menu-overlay.active {
+        display: block;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4">
+    <!-- Mobile Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="mobile-menu" id="mobileMenu">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold gradient-text">Navigation</h3>
+        <button onclick="toggleMenu()" class="text-2xl">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <nav class="space-y-4">
+        <a
+          href="#gbn"
+          onclick="toggleMenu()"
+          class="block p-3 rounded-lg bg-blue-900/30"
+        >
+          <i class="fas fa-backward mr-3"></i> Go-Back-N
+        </a>
+        <a
+          href="#sr"
+          onclick="toggleMenu()"
+          class="block p-3 rounded-lg bg-purple-900/30"
+        >
+          <i class="fas fa-brain mr-3"></i> Selective Repeat
+        </a>
+        <a
+          href="#fast"
+          onclick="toggleMenu()"
+          class="block p-3 rounded-lg bg-green-900/30"
+        >
+          <i class="fas fa-bolt mr-3"></i> Fast Retransmit
+        </a>
+        <a
+          href="#rtt"
+          onclick="toggleMenu()"
+          class="block p-3 rounded-lg bg-orange-900/30"
+        >
+          <i class="fas fa-chart-line mr-3"></i> RTT Estimation
+        </a>
+        <a
+          href="#congestion"
+          onclick="toggleMenu()"
+          class="block p-3 rounded-lg bg-red-900/30"
+        >
+          <i class="fas fa-traffic-light mr-3"></i> Congestion Control
+        </a>
+      </nav>
+    </div>
+
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <div
+              class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center"
+            >
+              <i class="fas fa-exchange-alt text-xl text-white"></i>
+            </div>
+            <div
+              class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-600 flex items-center justify-center"
+            >
+              <span class="text-xs font-bold">TCP</span>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-xl md:text-3xl font-bold gradient-text">
+              TCP Advanced
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400">
+              Mobile-Friendly Study Guide
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button
+            onclick="toggleMenu()"
+            class="md:hidden p-2 rounded-lg bg-slate-800"
+          >
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="hidden md:flex space-x-2">
+            <span class="badge info-badge"
+              ><i class="fas fa-mobile-alt mr-1"></i> Mobile</span
+            >
+            <span class="badge good-badge"
+              ><i class="fas fa-bolt mr-1"></i> Interactive</span
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto">
+      <!-- Connection Management -->
+      <section class="mb-8" id="connection">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-handshake mr-3 text-green-400"></i>
+          TCP Connection Management
+        </h2>
+
+        <div class="concept-card">
+          <div
+            class="protocol-header"
+            style="background: linear-gradient(135deg, #0ea5e9, #3b82f6)"
+          >
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 md:mr-4"
+              >
+                <i class="fas fa-sync-alt text-blue-400"></i>
+              </div>
+              <div>
+                <h3 class="text-lg md:text-xl font-bold">
+                  3-Way Handshake Explained
+                </h3>
+                <p class="text-xs md:text-sm text-slate-300">
+                  SYN → SYN-ACK → ACK
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 md:p-6">
+            <div class="mobile-grid">
+              <div class="p-4 bg-blue-900/20 rounded-lg">
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3"
+                  >
+                    <span class="font-bold text-white">1</span>
+                  </div>
+                  <h4 class="font-bold text-blue-300">Client → SYN</h4>
+                </div>
+                <p class="text-sm">
+                  "Hey Server, I want to talk. My starting seq = X"
+                </p>
+              </div>
+
+              <div class="p-4 bg-green-900/20 rounded-lg">
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3"
+                  >
+                    <span class="font-bold text-white">2</span>
+                  </div>
+                  <h4 class="font-bold text-green-300">Server → SYN-ACK</h4>
+                </div>
+                <p class="text-sm">
+                  "Got it! Your seq = X, so ACK = X+1. My seq = Y"
+                </p>
+              </div>
+
+              <div class="p-4 bg-purple-900/20 rounded-lg">
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center mr-3"
+                  >
+                    <span class="font-bold text-white">3</span>
+                  </div>
+                  <h4 class="font-bold text-purple-300">Client → ACK</h4>
+                </div>
+                <p class="text-sm">
+                  "Cool! Got your seq = Y, so ACK = Y+1. Let's chat!"
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Go-Back-N -->
+      <section class="mb-8" id="gbn">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-backward mr-3 text-blue-400"></i>
+          Go-Back-N (Window Size = 4)
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header gbn-header">
+            <div
+              class="flex flex-col md:flex-row md:items-center justify-between"
+            >
+              <div class="flex items-center mb-3 md:mb-0">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-train text-blue-400"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold">When One Coach Derails...</h3>
+                  <p class="text-xs text-slate-400">
+                    "Send that coach again AND every coach after it"
+                  </p>
+                </div>
+              </div>
+              <button
+                onclick="startGBNAnimation()"
+                class="mobile-button bg-blue-600 hover:bg-blue-700"
+              >
+                <i class="fas fa-play mr-2"></i> Show Animation
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="mobile-visual" id="gbnWindow"></div>
+
+            <div class="mobile-step-indicator">
+              <div class="step-dot active" onclick="showStep(1)"></div>
+              <div class="step-dot" onclick="showStep(2)"></div>
+              <div class="step-dot" onclick="showStep(3)"></div>
+              <div class="step-dot" onclick="showStep(4)"></div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 mt-4">
+              <div class="p-3 bg-blue-900/20 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-user-check text-blue-400 mr-2"></i>
+                  <span class="font-bold text-sm">Receiver Logic</span>
+                </div>
+                <ul class="text-xs mt-2 space-y-1">
+                  <li class="flex items-center">
+                    <i class="fas fa-check text-green-400 mr-2"></i>
+                    pkt0 arrives → Deliver → ACK0
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-times text-red-400 mr-2"></i>
+                    pkt2 ❌ Lost
+                  </li>
+                  <li class="flex items-center">
+                    <i class="fas fa-ban text-yellow-400 mr-2"></i>
+                    pkt3 arrives → DISCARD
+                  </li>
+                </ul>
+              </div>
+
+              <div class="p-3 bg-red-900/20 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                  <span class="font-bold text-sm">Problem</span>
+                </div>
+                <p class="text-xs mt-2">
+                  1 packet lost → Must resend MANY packets. Wastes bandwidth!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selective Repeat -->
+      <section class="mb-8" id="sr">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-brain mr-3 text-purple-400"></i>
+          Selective Repeat: The Smart Upgrade
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header sr-header">
+            <div
+              class="flex flex-col md:flex-row md:items-center justify-between"
+            >
+              <div class="flex items-center mb-3 md:mb-0">
+                <div
+                  class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-boxes text-purple-400"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold">Store Now, Deliver Later</h3>
+                  <p class="text-xs text-slate-400">
+                    SR buffers out-of-order packets
+                  </p>
+                </div>
+              </div>
+              <button
+                onclick="startSRAnimation()"
+                class="mobile-button bg-purple-600 hover:bg-purple-700"
+              >
+                <i class="fas fa-play-circle mr-2"></i> Show SR Magic
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="mobile-visual" id="srWindow"></div>
+
+            <div class="grid grid-cols-1 gap-3 mt-4">
+              <div class="p-3 bg-purple-900/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-inbox text-purple-400 mr-2"></i>
+                  <span class="font-bold text-sm">SR Smart Behavior</span>
+                </div>
+                <div class="text-xs space-y-2">
+                  <div class="flex items-center">
+                    <div
+                      class="w-6 h-6 rounded bg-purple-500 flex items-center justify-center mr-2"
+                    >
+                      <span class="text-xs font-bold">3</span>
+                    </div>
+                    <span>pkt3 arrives → Store + ACK3</span>
+                  </div>
+                  <div class="flex items-center">
+                    <div
+                      class="w-6 h-6 rounded bg-purple-500 flex items-center justify-center mr-2"
+                    >
+                      <span class="text-xs font-bold">2</span>
+                    </div>
+                    <span>pkt2 arrives → Deliver all!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fast Retransmit -->
+      <section class="mb-8" id="fast">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-bolt mr-3 text-green-400"></i>
+          Fast Retransmit ⚡
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header fast-header">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-running text-green-400"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold">
+                  3 Duplicate ACKs = Retransmit NOW!
+                </h3>
+                <p class="text-xs text-slate-400">Why wait for timeout?</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="mobile-timeline">
+              <div class="timeline-point">
+                <div class="timeline-dot bg-red-500"></div>
+                <div>
+                  <div class="text-sm font-bold">Packet Lost</div>
+                  <div class="text-xs text-slate-400">pkt3 ❌ gone</div>
+                </div>
+              </div>
+
+              <div class="timeline-point">
+                <div class="timeline-dot bg-yellow-500"></div>
+                <div>
+                  <div class="text-sm font-bold">1st Duplicate ACK</div>
+                  <div class="text-xs text-slate-400">pkt4 arrives</div>
+                </div>
+              </div>
+
+              <div class="timeline-point">
+                <div class="timeline-dot bg-yellow-500"></div>
+                <div>
+                  <div class="text-sm font-bold">2nd Duplicate</div>
+                  <div class="text-xs text-slate-400">pkt5 arrives</div>
+                </div>
+              </div>
+
+              <div class="timeline-point">
+                <div class="timeline-dot bg-green-500"></div>
+                <div>
+                  <div class="text-sm font-bold">3rd Duplicate!</div>
+                  <div class="text-xs text-slate-400">🚀 Retransmit NOW!</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div class="p-3 bg-red-900/20 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-hourglass-half text-red-400 mr-2"></i>
+                  <span class="font-bold text-sm">Old Way</span>
+                </div>
+                <p class="text-xs mt-2">
+                  Wait timeout → Wait more → THEN resend 😩
+                </p>
+              </div>
+
+              <div class="p-3 bg-green-900/20 rounded-lg">
+                <div class="flex items-center">
+                  <i class="fas fa-rocket text-green-400 mr-2"></i>
+                  <span class="font-bold text-sm">Fast Retransmit</span>
+                </div>
+                <p class="text-xs mt-2">3 dup ACKs → IMMEDIATE retransmit 🚀</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RTT Estimation -->
+      <section class="mb-8" id="rtt">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-chart-line mr-3 text-orange-400"></i>
+          TCP RTT Estimation
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header rtt-header">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-stopwatch text-orange-400"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold">Adaptive Timeout Calculation</h3>
+                <p class="text-xs text-slate-400">TCP's genius formula</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="space-y-3">
+              <div class="rtt-formula">
+                <div class="text-green-300 font-bold text-sm">EstimatedRTT</div>
+                <div class="text-white">
+                  = (1 − α)*EstimatedRTT + α*SampleRTT
+                </div>
+                <div class="text-blue-300 text-xs mt-1">α = 0.125</div>
+              </div>
+
+              <div class="rtt-formula">
+                <div class="text-purple-300 font-bold text-sm">DevRTT</div>
+                <div class="text-white">
+                  = (1 − β)*DevRTT + β*|SampleRTT − EstimatedRTT|
+                </div>
+                <div class="text-blue-300 text-xs mt-1">β = 0.25</div>
+              </div>
+
+              <div class="rtt-formula bg-green-900/20 border-green-800">
+                <div class="text-yellow-300 font-bold text-sm">
+                  TimeoutInterval
+                </div>
+                <div class="text-white">= EstimatedRTT + 4 * DevRTT</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Congestion Control -->
+      <section class="mb-8" id="congestion">
+        <h2 class="text-xl md:text-2xl font-bold mb-4 flex items-center">
+          <i class="fas fa-traffic-light mr-3 text-red-400"></i>
+          Congestion Control
+        </h2>
+
+        <div class="concept-card">
+          <div class="protocol-header congestion-header">
+            <div class="flex items-center">
+              <div
+                class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-car text-red-400"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold">Internet Traffic Police</h3>
+                <p class="text-xs text-slate-400">
+                  Preventing network meltdown
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="mobile-table">
+              <table class="comparison-table">
+                <thead>
+                  <tr class="bg-slate-800/50">
+                    <th>Approach</th>
+                    <th>How It Works</th>
+                    <th>Used By</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-bold">End-to-End</td>
+                    <td>Hosts guess congestion from loss/delay</td>
+                    <td>✅ TCP (Internet)</td>
+                  </tr>
+                  <tr>
+                    <td class="font-bold">Network-Assisted</td>
+                    <td>Routers explicitly warn hosts</td>
+                    <td>⚠️ Optional ECN</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div class="p-3 bg-blue-900/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-rocket text-blue-400 mr-2"></i>
+                  <span class="font-bold text-sm">Slow Start</span>
+                </div>
+                <p class="text-xs">cwnd doubles each RTT (1→2→4→8...)</p>
+              </div>
+
+              <div class="p-3 bg-green-900/20 rounded-lg">
+                <div class="flex items-center mb-2">
+                  <i class="fas fa-tachometer-alt text-green-400 mr-2"></i>
+                  <span class="font-bold text-sm">Congestion Avoidance</span>
+                </div>
+                <p class="text-xs">+1 MSS per RTT (10→11→12...)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Final Comparison -->
+      <section class="mb-8">
+        <h2 class="text-xl md:text-2xl font-bold mb-4">Final Comparison</h2>
+
+        <div class="concept-card">
+          <div class="p-4">
+            <div class="mobile-table">
+              <table class="comparison-table">
+                <thead>
+                  <tr class="bg-slate-800/50">
+                    <th>Feature</th>
+                    <th class="text-center text-blue-400">GBN</th>
+                    <th class="text-center text-purple-400">SR</th>
+                    <th class="text-center text-green-400">TCP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Out-of-order</td>
+                    <td class="text-center">❌ Discard</td>
+                    <td class="text-center">✔ Buffer</td>
+                    <td class="text-center">✔ Buffer</td>
+                  </tr>
+                  <tr>
+                    <td>Retransmit</td>
+                    <td class="text-center">ALL from base</td>
+                    <td class="text-center">Only missing</td>
+                    <td class="text-center">Only missing</td>
+                  </tr>
+                  <tr>
+                    <td>Efficiency</td>
+                    <td class="text-center">
+                      <span class="badge bad-badge">Low</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge good-badge">High</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge good-badge">Very High</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              class="mt-4 p-4 bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg"
+            >
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-star text-white"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-green-300 text-sm">
+                    ⭐ Real TCP = Hybrid
+                  </h4>
+                  <p class="text-xs text-slate-300 mt-1">
+                    Uses cumulative ACKs like GBN, buffers like SR, adds Fast
+                    Retransmit!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 pt-6 border-t border-slate-800">
+      <div class="text-center">
+        <div class="flex justify-center space-x-2 mb-4 flex-wrap">
+          <span class="badge info-badge">
+            <i class="fas fa-mobile-alt mr-1"></i> Mobile Optimized
+          </span>
+          <span class="badge good-badge">
+            <i class="fas fa-check-circle mr-1"></i> Interactive
+          </span>
+        </div>
+        <p class="text-xs text-slate-500">
+          TCP Advanced Concepts • Mobile-Friendly Study Guide • All concepts
+          explained visually
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Mobile menu toggle
+      function toggleMenu() {
+        const menu = document.getElementById('mobileMenu');
+        const overlay = document.getElementById('menuOverlay');
+        menu.classList.toggle('active');
+        overlay.classList.toggle('active');
+      }
+
+      // Close menu when clicking overlay
+      document
+        .getElementById('menuOverlay')
+        .addEventListener('click', toggleMenu);
+
+      // GBN Window Visualization
+      function createGBNWindow() {
+        const window = document.getElementById('gbnWindow');
+        window.innerHTML = '';
+
+        // Create packet boxes - mobile optimized
+        const packetCount = 6;
+        const packetWidth = window.offsetWidth < 400 ? 35 : 40;
+        const spacing = window.offsetWidth < 400 ? 50 : 60;
+
+        for (let i = 0; i < packetCount; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'mobile-packet';
+          packet.textContent = `p${i}`;
+          packet.id = `gbn-pkt${i}`;
+
+          // Position packets
+          const left = 20 + i * spacing;
+          const top = 70;
+
+          packet.style.left = `${left}px`;
+          packet.style.top = `${top}px`;
+
+          // Default state
+          if (i < 4) {
+            packet.classList.add('packet-sent');
+          } else {
+            packet.classList.add('packet-future');
+          }
+
+          window.appendChild(packet);
+        }
+      }
+
+      // SR Window Visualization
+      function createSRWindow() {
+        const window = document.getElementById('srWindow');
+        window.innerHTML = '';
+
+        // Create packet boxes - mobile optimized
+        const packetCount = 6;
+        const packetWidth = window.offsetWidth < 400 ? 35 : 40;
+        const spacing = window.offsetWidth < 400 ? 50 : 60;
+
+        for (let i = 0; i < packetCount; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'mobile-packet';
+          packet.textContent = `p${i}`;
+          packet.id = `sr-pkt${i}`;
+
+          // Position packets in two rows for mobile
+          const left = 20 + i * spacing;
+          const top = i < 3 ? 40 : 100;
+
+          packet.style.left = `${left}px`;
+          packet.style.top = `${top}px`;
+
+          // Default state
+          if (i < 4) {
+            packet.classList.add('packet-sent');
+          } else {
+            packet.classList.add('packet-future');
+          }
+
+          window.appendChild(packet);
+        }
+
+        // Add buffer indicator for mobile
+        const buffer = document.createElement('div');
+        buffer.className =
+          'absolute bottom-4 left-4 bg-purple-900/70 p-2 rounded-lg';
+        buffer.style.fontSize = '0.7rem';
+        buffer.innerHTML = `
+                <div class="font-bold text-purple-300">Buffer</div>
+                <div class="text-slate-300 mt-1">Empty</div>
+            `;
+        buffer.id = 'sr-buffer';
+        window.appendChild(buffer);
+      }
+
+      // Animation functions
+      let currentStep = 1;
+
+      function showStep(step) {
+        currentStep = step;
+
+        // Update step dots
+        document.querySelectorAll('.step-dot').forEach((dot, index) => {
+          if (index + 1 === step) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+
+        // Reset all packets
+        for (let i = 0; i < 6; i++) {
+          const packet = document.getElementById(`gbn-pkt${i}`);
+          if (packet) {
+            packet.className = 'mobile-packet packet-future';
+            if (i < 4) {
+              packet.classList.add('packet-sent');
+            }
+          }
+        }
+
+        // Apply step-specific changes
+        switch (step) {
+          case 1:
+            showNotification(
+              'Step 1: Sender sends 4 packets (window full)',
+              'info',
+            );
+            break;
+
+          case 2:
+            document.getElementById('gbn-pkt0').className =
+              'mobile-packet packet-acked';
+            document.getElementById('gbn-pkt1').className =
+              'mobile-packet packet-acked';
+            showNotification(
+              'Step 2: ACK0 and ACK1 received successfully',
+              'success',
+            );
+            break;
+
+          case 3:
+            document.getElementById('gbn-pkt0').className =
+              'mobile-packet packet-acked';
+            document.getElementById('gbn-pkt1').className =
+              'mobile-packet packet-acked';
+            document.getElementById('gbn-pkt2').className =
+              'mobile-packet packet-lost';
+            document.getElementById('gbn-pkt3').className =
+              'mobile-packet packet-sent';
+            showNotification(
+              'Step 3: Packet 2 LOST! ❌ Receiver discards pkt3',
+              'error',
+            );
+            break;
+
+          case 4:
+            for (let i = 0; i < 6; i++) {
+              const packet = document.getElementById(`gbn-pkt${i}`);
+              if (i < 2) {
+                packet.className = 'mobile-packet packet-acked';
+              } else if (i >= 2 && i <= 5) {
+                packet.className = 'mobile-packet packet-lost';
+                packet.style.animationDelay = `${(i - 2) * 0.3}s`;
+              }
+            }
+            showNotification(
+              'Step 4: TIMEOUT! Resend packets 2,3,4,5...',
+              'warning',
+            );
+            break;
+        }
+      }
+
+      function startGBNAnimation() {
+        createGBNWindow();
+        setTimeout(() => showStep(1), 500);
+        setTimeout(() => showStep(2), 1500);
+        setTimeout(() => showStep(3), 2500);
+        setTimeout(() => showStep(4), 3500);
+      }
+
+      function startSRAnimation() {
+        createSRWindow();
+
+        // Animate SR behavior
+        setTimeout(() => {
+          document.getElementById('sr-pkt0').className =
+            'mobile-packet packet-acked';
+          document.getElementById('sr-pkt1').className =
+            'mobile-packet packet-acked';
+          document.getElementById('sr-pkt2').className =
+            'mobile-packet packet-lost';
+        }, 500);
+
+        setTimeout(() => {
+          document.getElementById('sr-pkt3').className =
+            'mobile-packet packet-buffered';
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="font-bold text-purple-300">Buffer</div>
+                    <div class="text-green-300 mt-1">p3 ✓</div>
+                `;
+        }, 1500);
+
+        setTimeout(() => {
+          document.getElementById('sr-pkt4').className =
+            'mobile-packet packet-buffered';
+          document.getElementById('sr-buffer').innerHTML = `
+                    <div class="font-bold text-purple-300">Buffer</div>
+                    <div class="text-green-300 mt-1">p3 ✓ p4 ✓</div>
+                `;
+        }, 2000);
+
+        setTimeout(() => {
+          // pkt2 arrives
+          document.getElementById('sr-pkt2').className =
+            'mobile-packet packet-acked';
+
+          // Deliver all buffered packets
+          setTimeout(() => {
+            document.getElementById('sr-pkt3').className =
+              'mobile-packet packet-acked';
+            document.getElementById('sr-pkt4').className =
+              'mobile-packet packet-acked';
+            document.getElementById('sr-buffer').innerHTML = `
+                        <div class="font-bold text-purple-300">Buffer</div>
+                        <div class="text-green-300 mt-1">🎉 All delivered!</div>
+                    `;
+          }, 500);
+
+          showNotification(
+            'Selective Repeat Magic! 🎯 Wait for missing, then deliver all',
+            'success',
+          );
+        }, 3000);
+      }
+
+      // Show mobile-friendly notification
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+
+        let bgColor = 'bg-blue-900/90';
+        let icon = 'fa-info-circle';
+        let iconColor = 'text-blue-400';
+
+        if (type === 'success') {
+          bgColor = 'bg-green-900/90';
+          icon = 'fa-check-circle';
+          iconColor = 'text-green-400';
+        } else if (type === 'error') {
+          bgColor = 'bg-red-900/90';
+          icon = 'fa-exclamation-circle';
+          iconColor = 'text-red-400';
+        } else if (type === 'warning') {
+          bgColor = 'bg-yellow-900/90';
+          icon = 'fa-exclamation-triangle';
+          iconColor = 'text-yellow-400';
+        }
+
+        notification.className = `notification ${bgColor} border border-slate-700`;
+        notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${icon} ${iconColor} mr-3"></i>
+                    <div class="font-medium text-sm">${message}</div>
+                </div>
+            `;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Initialize on load and resize
+      function initializeVisuals() {
+        createGBNWindow();
+        createSRWindow();
+      }
+
+      document.addEventListener('DOMContentLoaded', initializeVisuals);
+      window.addEventListener('resize', initializeVisuals);
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            window.scrollTo({
+              top: targetElement.offsetTop - 20,
+              behavior: 'smooth',
+            });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

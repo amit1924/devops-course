@@ -1,0 +1,306 @@
+🎯 Port Scanning Techniques — Which Tool to Use & Why
+
+Think like a mechanic:
+👉 Different problems → different tools
+Same with Nmap: different scan types → different situations
+
+But first, one important point:
+
+✔️ Most advanced scans require root / administrator privileges
+✔️ Normal users only get basic scans
+
+Now let’s go scan-by-scan in a clean way 😊
+
+🥇 1️⃣ SYN Scan — The KING 👑
+
+Command:
+
+nmap -sS <target>
+
+
+This is:
+
+Default scan (if you have root)
+
+Fast ⚡
+
+Reliable
+
+Slightly stealthy
+
+Most widely used
+
+How it works:
+
+Sends SYN
+
+If reply = SYN/ACK → port OPEN
+
+If reply = RST → port CLOSED
+
+If no reply / ICMP blocked → FILTERED
+
+It’s called:
+👉 Half-open scan
+Because it doesn’t complete the connection.
+
+Use when:
+✔️ You want speed
+✔️ Good accuracy
+✔️ Less noise in logs
+
+This is the scan professionals use 90% of the time.
+
+🥈 2️⃣ CONNECT Scan — The Backup
+
+Command:
+
+nmap -sT <target>
+
+
+Used when:
+
+You don’t have root
+
+Or raw packets not allowed
+
+How it works:
+
+Uses OS normal connection call
+
+Actually completes connection
+
+Then disconnects
+
+Downside:
+❌ Slower
+❌ More visible in logs
+❌ More resource usage
+
+Use when:
+✔️ You don’t have administrator permission
+
+🥉 3️⃣ UDP Scan — The Painful One 😅
+
+Command:
+
+nmap -sU <target>
+
+
+Used to find:
+
+DNS (53)
+
+SNMP (161)
+
+DHCP
+
+VPN services
+
+Many IoT services
+
+Problem:
+❌ Very slow
+❌ Many systems throttle ICMP replies
+❌ Often shows open|filtered
+
+Still important because:
+👉 Hackers LOVE UDP weaknesses
+
+Use when:
+✔️ You want complete security testing
+✔️ You suspect UDP services exist
+
+🔥 4️⃣ NULL / FIN / XMAS Stealth Scans
+
+Commands:
+
+nmap -sN <target>   (Null)
+nmap -sF <target>   (Fin)
+nmap -sX <target>   (Xmas)
+
+
+These are tricky stealth scans
+They exploit weird TCP RFC behavior.
+
+Logic:
+
+No SYN packet
+
+If port CLOSED → sends RST
+
+If port OPEN → ignores
+
+So results:
+
+RST = CLOSED
+
+No reply = OPEN | FILTERED
+
+Why use?
+✔️ Bypass some old firewalls
+✔️ Sometimes stealthy
+
+Problems:
+❌ Doesn’t work properly on Windows
+❌ Many modern systems block these
+❌ Often confusing output
+
+Use when:
+✔️ Testing older Unix networks
+✔️ Need stealth alternatives
+
+🧱 5️⃣ ACK Scan — Firewall Mapping
+
+Command:
+
+nmap -sA <target>
+
+
+Important point:
+👉 This scan DOES NOT find open ports.
+
+Its job:
+🔥 Detect firewall rules
+
+Results:
+
+RST = UNFILTERED (reachable)
+
+No reply / ICMP = FILTERED
+
+Use when:
+✔️ You want to understand firewall behavior
+✔️ Checking whether firewall is stateful
+
+🪟 6️⃣ WINDOW Scan
+
+Command:
+
+nmap -sW <target>
+
+
+Similar to ACK scan but:
+
+Uses TCP window size trick
+
+Can sometimes detect open vs closed
+
+But:
+❌ Works only on few systems
+❌ Not reliable everywhere
+
+Use when:
+✔️ Testing specific legacy / older environments
+
+🧠 7️⃣ MAIMON Scan
+
+Command:
+
+nmap -sM <target>
+
+
+Very rare but cool trick.
+
+Similar to FIN scan but more niche.
+
+Use:
+✔️ For curiosity / academic learning
+(Not super common today)
+
+⚙️ 8️⃣ Custom Flag Scan
+
+Command:
+
+nmap --scanflags <flags>
+
+
+Example:
+
+nmap --scanflags SYNFIN <target>
+
+
+For advanced experts only
+Lets you design your OWN scan style.
+
+Use when:
+✔️ Bypassing custom IDS rules
+✔️ Experimental testing
+
+Not beginner friendly — we’ll revisit later 😊
+
+🌍 9️⃣ SCTP Scans (Telecom / Special Networks)
+
+Commands:
+
+nmap -sY   (INIT scan)
+nmap -sZ   (COOKIE scan)
+
+
+Used in:
+
+Telecom networks
+
+SS7 / SIGTRAN systems
+
+Normal users rarely need this.
+
+🕵️ 10️⃣ Idle Scan (The Ninja Scan)
+
+Command:
+
+nmap -sI zombiehost target
+
+
+This is legendary 😎
+
+Features:
+✔️ 100% blind scanning
+✔️ Target never sees your IP
+✔️ Traffic appears from zombie host
+
+Very advanced.
+Hard to set up.
+But extremely stealthy.
+
+Used by:
+✔️ elite pentesters
+✔️ research scenarios
+
+We will learn later when you’re ready 💪
+
+🧪 11️⃣ IP Protocol Scan
+
+Command:
+
+nmap -sO <target>
+
+
+Finds:
+
+Which IP protocols are supported
+(e.g., ICMP, TCP, IGMP etc.)
+
+Not a port scan
+but related and useful for deep analysis.
+
+⚠️ 12️⃣ FTP Bounce Scan
+
+Command:
+
+nmap -b ftpserver target
+
+
+Uses old FTP flaw to scan.
+Mostly patched today.
+Rarely works now.
+
+| Scan            | Best Use           |
+| --------------- | ------------------ |
+| -sS             | Best overall       |
+| -sT             | No root access     |
+| -sU             | UDP discovery      |
+| -sN / -sF / -sX | stealth tricks     |
+| -sA             | firewall detection |
+| -sI             | ninja stealth      |
+| -sO             | protocol scan      |

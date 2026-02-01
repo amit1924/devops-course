@@ -1,0 +1,10 @@
+# MongoDB data
+Docker/mongo-data/
+
+# Ignore nested Git repos
+Docker/basic project/
+Jenkins/
+
+# OS files
+.DS_Store
+Thumbs.db

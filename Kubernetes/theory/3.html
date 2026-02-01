@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Getting Kubernetes - Setup Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-blue: #00f3ff;
+        --neon-green: #00ff9d;
+        --neon-purple: #b967ff;
+        --neon-orange: #ff6b35;
+        --neon-pink: #ff00ff;
+        --dark-bg: #0a0a1a;
+        --darker-bg: #050510;
+        --card-bg: #11112a;
+      }
+
+      body {
+        background-color: var(--dark-bg);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      .tab-button {
+        background: linear-gradient(135deg, #1a1a3a 0%, #252550 100%);
+        border: 1px solid var(--neon-blue);
+        transition: all 0.3s ease;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(135deg, var(--neon-blue) 0%, #00b7ff 100%);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+      }
+
+      .code-block {
+        background: #1a1a2e;
+        border-left: 4px solid var(--neon-green);
+        font-family: 'Courier New', monospace;
+      }
+
+      .warning-box {
+        border-left: 4px solid var(--neon-orange);
+        background: rgba(255, 107, 53, 0.1);
+      }
+
+      .info-box {
+        border-left: 4px solid var(--neon-blue);
+        background: rgba(0, 243, 255, 0.1);
+      }
+
+      .step-card {
+        position: relative;
+        padding-left: 60px;
+        margin-bottom: 30px;
+      }
+
+      .step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 45px;
+        height: 45px;
+        background: var(--neon-purple);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        box-shadow: 0 0 10px rgba(185, 103, 255, 0.5);
+        flex-wrap: wrap;
+      }
+
+      .pricing-badge {
+        background: linear-gradient(135deg, #ff3366, #ff9966);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        display: inline-block;
+        margin-left: 10px;
+      }
+
+      .free-badge {
+        background: linear-gradient(135deg, #00cc66, #00ff99);
+        color: black;
+      }
+
+      .cloud-card {
+        border: 2px solid;
+        border-image: linear-gradient(
+            45deg,
+            var(--neon-blue),
+            var(--neon-purple)
+          )
+          1;
+        background: rgba(17, 17, 42, 0.8);
+      }
+
+      .local-card {
+        border: 2px solid;
+        border-image: linear-gradient(
+            45deg,
+            var(--neon-green),
+            var(--neon-blue)
+          )
+          1;
+        background: rgba(17, 17, 42, 0.8);
+      }
+
+      .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+      }
+
+      .gke-icon {
+        background: linear-gradient(135deg, #4285f4, #34a853);
+      }
+
+      .docker-icon {
+        background: linear-gradient(135deg, #2496ed, #0d9b6c);
+      }
+
+      .kubectl-icon {
+        background: linear-gradient(135deg, #326ce5, #c5343a);
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen overflow-x-hidden"
+    style="
+      background: linear-gradient(135deg, var(--darker-bg) 0%, #151530 100%);
+    "
+  >
+    <!-- Header -->
+    <header
+      class="top-0 z-50 bg-black/90 backdrop-blur-md border-b border-neon-blue/40"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div
+          class="flex flex-col md:flex-row justify-between items-center flex-wrap"
+        >
+          <div class="flex items-center mb-4 md:mb-0">
+            <div
+              class="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center mr-4"
+            >
+              <i class="fas fa-download text-2xl neon-text-purple"></i>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold neon-text-blue">
+                Chapter 3: Getting Kubernetes
+              </h1>
+              <p class="text-gray-300">
+                Setup Guide for Local & Cloud Clusters
+              </p>
+            </div>
+          </div>
+          <div class="flex space-x-4 flex-wrap">
+            <button
+              onclick="switchTab('local')"
+              id="localTab"
+              class="tab-button active px-6 py-2 rounded-lg"
+            >
+              <i class="fas fa-laptop mr-2"></i>Local Setup
+            </button>
+            <button
+              onclick="switchTab('cloud')"
+              id="cloudTab"
+              class="tab-button px-6 py-2 rounded-lg"
+            >
+              <i class="fas fa-cloud mr-2"></i>Cloud Setup
+            </button>
+            <button
+              onclick="switchTab('kubectl')"
+              id="kubectlTab"
+              class="tab-button px-6 py-2 rounded-lg"
+            >
+              <i class="fas fa-terminal mr-2"></i>kubectl Guide
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Local Setup Tab -->
+      <div id="localContent" class="tab-content">
+        <div class="local-card rounded-2xl p-8 mb-8">
+          <div class="flex items-center mb-8">
+            <div class="icon-circle docker-icon">
+              <i class="fab fa-docker text-3xl text-white"></i>
+            </div>
+            <div class="ml-6">
+              <h2 class="text-3xl font-bold neon-text-green">
+                <i class="fas fa-laptop-house mr-2"></i>Kubernetes on Your
+                Laptop
+              </h2>
+              <div class="flex items-center mt-2">
+                <span class="text-gray-300"
+                  >Free for personal/educational use</span
+                >
+                <span class="free-badge ml-3">FREE</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div
+                class="w-12 h-12 rounded-lg bg-blue-900/50 flex items-center justify-center mb-4"
+              >
+                <i class="fas fa-download text-xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Docker Desktop</h3>
+              <p class="text-gray-300">
+                Easiest way to get Docker + Kubernetes + kubectl
+              </p>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div
+                class="w-12 h-12 rounded-lg bg-green-900/50 flex items-center justify-center mb-4"
+              >
+                <i class="fas fa-toggle-on text-xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Single-Node Cluster</h3>
+              <p class="text-gray-300">Built-in Kubernetes, just enable it</p>
+            </div>
+
+            <div class="bg-black/40 p-6 rounded-xl">
+              <div
+                class="w-12 h-12 rounded-lg bg-purple-900/50 flex items-center justify-center mb-4"
+              >
+                <i class="fas fa-check-circle text-xl"></i>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Follow Most Examples</h3>
+              <p class="text-gray-300">Works with 95% of book examples</p>
+            </div>
+          </div>
+
+          <!-- Installation Steps -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-blue mb-6">
+              <i class="fas fa-list-ol mr-2"></i>Installation Steps
+            </h3>
+
+            <div class="space-y-6">
+              <!-- Step 1 -->
+              <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="bg-black/30 p-6 rounded-xl">
+                  <h4 class="text-xl font-bold neon-text-green mb-3">
+                    Download Docker Desktop
+                  </h4>
+                  <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <a
+                      href="#"
+                      class="bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-center transition"
+                    >
+                      <i class="fab fa-windows text-2xl text-blue-400 mb-2"></i>
+                      <p class="font-bold">Windows</p>
+                      <p class="text-sm text-gray-400">
+                        Install WSL2 when prompted
+                      </p>
+                    </a>
+                    <a
+                      href="#"
+                      class="bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-center transition"
+                    >
+                      <i class="fab fa-apple text-2xl text-gray-300 mb-2"></i>
+                      <p class="font-bold">macOS</p>
+                      <p class="text-sm text-gray-400">ARM or Intel</p>
+                    </a>
+                    <a
+                      href="#"
+                      class="bg-gray-800 hover:bg-gray-700 p-4 rounded-lg text-center transition"
+                    >
+                      <i class="fab fa-linux text-2xl text-yellow-400 mb-2"></i>
+                      <p class="font-bold">Linux</p>
+                      <p class="text-sm text-gray-400">Multiple distros</p>
+                    </a>
+                  </div>
+                  <div class="info-box p-4 rounded-lg">
+                    <p class="text-sm">
+                      <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                      <strong>Note:</strong> Free for personal/educational use.
+                      Companies with 250+ employees or $10M+ revenue need a
+                      license.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="bg-black/30 p-6 rounded-xl">
+                  <h4 class="text-xl font-bold neon-text-green mb-3">
+                    Enable Kubernetes
+                  </h4>
+                  <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <p class="mb-3">1. Click Docker whale icon</p>
+                      <p class="mb-3">2. Go to Settings → Kubernetes</p>
+                      <p class="mb-3">3. Check "Enable Kubernetes"</p>
+                      <p>4. Click "Apply & Restart"</p>
+                    </div>
+                    <div class="bg-gray-900 p-4 rounded-lg">
+                      <div class="flex items-center mb-3">
+                        <div
+                          class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3"
+                        >
+                          <i class="fab fa-docker text-white"></i>
+                        </div>
+                        <span class="font-bold">Docker Desktop</span>
+                      </div>
+                      <div class="space-y-2">
+                        <div class="flex items-center">
+                          <i class="fas fa-check text-green-400 mr-2"></i>
+                          <span>Docker Engine</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-check text-green-400 mr-2"></i>
+                          <span>Kubernetes v1.29.1</span>
+                        </div>
+                        <div class="flex items-center">
+                          <i class="fas fa-check text-green-400 mr-2"></i>
+                          <span>kubectl CLI</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="bg-black/30 p-6 rounded-xl">
+                  <h4 class="text-xl font-bold neon-text-green mb-3">
+                    Verify Installation
+                  </h4>
+                  <div class="code-block p-4 rounded-lg mb-4">
+                    <pre class="text-sm text-green-300">
+$ <span class="text-cyan-300">docker --version</span>
+Docker version 25.0.2, build 29cf629
+
+$ <span class="text-cyan-300">kubectl version --client</span>
+Client Version: v1.29.1
+GitVersion: v1.29.1
+Platform: darwin/arm64
+
+$ <span class="text-cyan-300">kubectl get nodes</span>
+NAME             STATUS   ROLES           AGE   VERSION
+docker-desktop   Ready    control-plane   93d   v1.29.1</pre>
+                  </div>
+                  <div class="bg-green-900/20 p-4 rounded-lg">
+                    <p class="text-green-300">
+                      <i class="fas fa-check-circle mr-2"></i>
+                      <strong>Success!</strong> You now have a single-node
+                      Kubernetes cluster
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative Local Options -->
+          <div>
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              <i class="fas fa-exchange-alt mr-2"></i>Alternative Local Options
+            </h3>
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="bg-black/40 p-4 rounded-lg text-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fab fa-docker"></i>
+                </div>
+                <p class="font-bold">k3d</p>
+                <p class="text-xs text-gray-400">
+                  Multi-node clusters on Docker
+                </p>
+              </div>
+              <div class="bg-black/40 p-4 rounded-lg text-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-docker"></i>
+                </div>
+                <p class="font-bold">KinD</p>
+                <p class="text-xs text-gray-400">Kubernetes in Docker</p>
+              </div>
+              <div class="bg-black/40 p-4 rounded-lg text-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-cube"></i>
+                </div>
+                <p class="font-bold">minikube</p>
+                <p class="text-xs text-gray-400">Local Kubernetes cluster</p>
+              </div>
+              <div class="bg-black/40 p-4 rounded-lg text-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-orange-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-microchip"></i>
+                </div>
+                <p class="font-bold">MicroK8s</p>
+                <p class="text-xs text-gray-400">
+                  Lightweight K8s by Canonical
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloud Setup Tab -->
+      <div id="cloudContent" class="tab-content hidden">
+        <div class="cloud-card rounded-2xl p-8 mb-8">
+          <div class="warning-box p-6 rounded-xl mb-8">
+            <div class="flex items-center">
+              <i
+                class="fas fa-exclamation-triangle text-2xl text-orange-400 mr-3"
+              ></i>
+              <div>
+                <h3 class="text-xl font-bold neon-text-orange">
+                  💰 Cost Warning
+                </h3>
+                <p class="text-gray-300">
+                  Cloud Kubernetes clusters cost money! Delete when not in use.
+                </p>
+                <p class="text-sm text-gray-400 mt-1">
+                  Recommended: Delete cluster daily, create new when needed
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center mb-8">
+            <div class="icon-circle gke-icon">
+              <i class="fab fa-google text-3xl text-white"></i>
+            </div>
+            <div class="ml-6">
+              <h2 class="text-3xl font-bold neon-text-blue">
+                <i class="fas fa-cloud mr-2"></i>Google Kubernetes Engine (GKE)
+              </h2>
+              <p class="text-gray-300 mt-2">
+                Production-grade hosted Kubernetes service
+              </p>
+            </div>
+          </div>
+
+          <!-- Cloud Providers -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              <i class="fas fa-cloud-upload-alt mr-2"></i>Popular Hosted
+              Kubernetes Services
+            </h3>
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-orange-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fab fa-aws"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">AWS EKS</h4>
+                </div>
+                <p class="text-gray-300 text-sm">Elastic Kubernetes Service</p>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-blue-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fab fa-microsoft"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">Azure AKS</h4>
+                </div>
+                <p class="text-gray-300 text-sm">Azure Kubernetes Service</p>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-green-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fab fa-google"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">Google GKE</h4>
+                </div>
+                <p class="text-gray-300 text-sm">Google Kubernetes Engine</p>
+              </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 mt-6">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-cyan-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-cloud"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">DigitalOcean</h4>
+                </div>
+                <p class="text-gray-300 text-sm">DOKS</p>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-purple-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-bolt"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">Civo</h4>
+                </div>
+                <p class="text-gray-300 text-sm">Cloud Kubernetes</p>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                  <div
+                    class="w-10 h-10 rounded-lg bg-blue-900/50 flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-server"></i>
+                  </div>
+                  <h4 class="text-lg font-bold">Linode</h4>
+                </div>
+                <p class="text-gray-300 text-sm">LKE</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- GKE Setup Steps -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              <i class="fas fa-wrench mr-2"></i>GKE Setup Steps
+            </h3>
+
+            <div class="space-y-6">
+              <!-- Prerequisites -->
+              <div class="bg-black/30 p-6 rounded-xl">
+                <h4 class="text-xl font-bold neon-text-blue mb-4">
+                  Prerequisites
+                </h4>
+                <div class="grid md:grid-cols-3 gap-4">
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <i class="fas fa-credit-card text-yellow-400 mb-2"></i>
+                    <p class="font-bold">Google Account</p>
+                    <p class="text-sm text-gray-400">With billing configured</p>
+                  </div>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <i class="fas fa-folder-plus text-green-400 mb-2"></i>
+                    <p class="font-bold">Blank Project</p>
+                    <p class="text-sm text-gray-400">New GCP project</p>
+                  </div>
+                  <div class="bg-gray-800 p-4 rounded-lg">
+                    <i class="fas fa-terminal text-blue-400 mb-2"></i>
+                    <p class="font-bold">gcloud CLI</p>
+                    <p class="text-sm text-gray-400">Google Cloud SDK</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Create Cluster -->
+              <div class="bg-black/30 p-6 rounded-xl">
+                <h4 class="text-xl font-bold neon-text-blue mb-4">
+                  Create GKE Cluster
+                </h4>
+                <div class="space-y-4">
+                  <div class="flex items-start">
+                    <div
+                      class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3 mt-1"
+                    >
+                      <span class="font-bold">1</span>
+                    </div>
+                    <div>
+                      <p class="font-bold">Go to Google Cloud Console</p>
+                      <p class="text-gray-400 text-sm">
+                        Kubernetes Engine → Clusters
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start">
+                    <div
+                      class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3 mt-1"
+                    >
+                      <span class="font-bold">2</span>
+                    </div>
+                    <div>
+                      <p class="font-bold">
+                        Create Cluster → SWITCH TO STANDARD
+                      </p>
+                      <div class="warning-box p-3 rounded-lg mt-2">
+                        <p class="text-sm">
+                          <i
+                            class="fas fa-exclamation-triangle text-orange-400 mr-2"
+                          ></i>
+                          <strong>Important:</strong> Do NOT use AutoPilot
+                          (won't work with all examples)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start">
+                    <div
+                      class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3 mt-1"
+                    >
+                      <span class="font-bold">3</span>
+                    </div>
+                    <div>
+                      <p class="font-bold">Configure Cluster</p>
+                      <div class="bg-gray-900 p-4 rounded-lg mt-2">
+                        <div class="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <p class="text-sm">
+                              <strong>Name:</strong> gke-tkb
+                            </p>
+                            <p class="text-sm">
+                              <strong>Location:</strong> Regional
+                            </p>
+                          </div>
+                          <div>
+                            <p class="text-sm">
+                              <strong>Channel:</strong> Rapid
+                            </p>
+                            <p class="text-sm">
+                              <strong>Nodes:</strong> 1 per zone
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Test Cluster -->
+              <div class="bg-black/30 p-6 rounded-xl">
+                <h4 class="text-xl font-bold neon-text-blue mb-4">
+                  Test Your Cluster
+                </h4>
+                <div class="code-block p-4 rounded-lg mb-4">
+                  <pre class="text-sm text-green-300">
+<span class="text-gray-500"># Connect kubectl to your cluster</span>
+$ <span class="text-cyan-300">gcloud container clusters get-credentials gke-tkb --region=us-central1</span>
+Fetching cluster endpoint and auth data.
+kubeconfig entry generated for gke-tkb.
+
+<span class="text-gray-500"># Check nodes</span>
+$ <span class="text-cyan-300">kubectl get nodes</span>
+NAME                                      STATUS   ROLES    AGE   VERSION
+gke-gke-tkb-default-pool-abc123   Ready    &lt;none&gt;   5m    v1.29.0-gke.1381000
+gke-gke-tkb-default-pool-def456   Ready    &lt;none&gt;   5m    v1.29.0-gke.1381000
+gke-gke-tkb-default-pool-ghi789   Ready    &lt;none&gt;   5m    v1.29.0-gke.1381000</pre>
+                </div>
+                <div class="info-box p-4 rounded-lg">
+                  <p class="text-sm">
+                    <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                    <strong>Note:</strong> Worker nodes show
+                    <code>&lt;none&gt;</code> for ROLES because GKE manages
+                    control plane nodes (hidden from you)
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- kubectl Guide Tab -->
+      <div id="kubectlContent" class="tab-content hidden">
+        <div class="neon-border rounded-2xl p-8 mb-8 bg-card-bg">
+          <div class="flex items-center mb-8">
+            <div class="icon-circle kubectl-icon">
+              <i class="fas fa-terminal text-3xl text-white"></i>
+            </div>
+            <div class="ml-6">
+              <h2 class="text-3xl font-bold neon-text-green">
+                <i class="fas fa-terminal mr-2"></i>kubectl Command Line Tool
+              </h2>
+              <p class="text-gray-300 mt-2">
+                Your Swiss Army knife for Kubernetes
+              </p>
+            </div>
+          </div>
+
+          <!-- Version Compatibility -->
+          <div class="bg-black/40 p-6 rounded-xl mb-8">
+            <h3 class="text-2xl font-bold neon-text-blue mb-4">
+              Version Compatibility
+            </h3>
+            <div class="flex items-center justify-center mb-4">
+              <div class="text-center mx-4">
+                <div
+                  class="w-16 h-16 rounded-full bg-red-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <span class="text-xl font-bold">-1</span>
+                </div>
+                <p class="text-sm">One minor version</p>
+                <p class="font-bold">lower</p>
+              </div>
+
+              <div class="mx-8">
+                <i class="fas fa-arrows-alt-h text-3xl text-gray-400"></i>
+              </div>
+
+              <div class="text-center mx-4">
+                <div
+                  class="w-16 h-16 rounded-full bg-green-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-check text-2xl"></i>
+                </div>
+                <p class="text-sm">Cluster version</p>
+                <p class="font-bold">v1.29.x</p>
+              </div>
+
+              <div class="mx-8">
+                <i class="fas fa-arrows-alt-h text-3xl text-gray-400"></i>
+              </div>
+
+              <div class="text-center mx-4">
+                <div
+                  class="w-16 h-16 rounded-full bg-red-900/50 flex items-center justify-center mx-auto mb-2"
+                >
+                  <span class="text-xl font-bold">+1</span>
+                </div>
+                <p class="text-sm">One minor version</p>
+                <p class="font-bold">higher</p>
+              </div>
+            </div>
+            <div class="info-box p-4 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+                <strong>Rule:</strong> kubectl should be no more than ±1 minor
+                version from your cluster
+              </p>
+              <p class="text-sm mt-1">
+                Example: Cluster v1.29.x → kubectl v1.28.x to v1.30.x
+              </p>
+            </div>
+          </div>
+
+          <!-- kubeconfig Explained -->
+          <div class="mb-8">
+            <h3 class="text-2xl font-bold neon-text-purple mb-6">
+              <i class="fas fa-cog mr-2"></i>kubeconfig File Explained
+            </h3>
+
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div
+                  class="w-12 h-12 rounded-lg bg-blue-900/50 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-sitemap"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">Clusters</h4>
+                <p class="text-gray-300 text-sm">
+                  List of Kubernetes clusters kubectl knows about
+                </p>
+                <ul class="mt-3 space-y-1 text-sm">
+                  <li><i class="fas fa-server text-gray-400 mr-2"></i>Name</li>
+                  <li>
+                    <i class="fas fa-link text-gray-400 mr-2"></i>API endpoint
+                  </li>
+                  <li>
+                    <i class="fas fa-certificate text-gray-400 mr-2"></i
+                    >Certificate
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div
+                  class="w-12 h-12 rounded-lg bg-green-900/50 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-users"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">Users</h4>
+                <p class="text-gray-300 text-sm">
+                  Credentials for authentication
+                </p>
+                <ul class="mt-3 space-y-1 text-sm">
+                  <li>
+                    <i class="fas fa-user text-gray-400 mr-2"></i>dev, ops,
+                    admin
+                  </li>
+                  <li>
+                    <i class="fas fa-key text-gray-400 mr-2"></i
+                    >Certificates/keys
+                  </li>
+                  <li>
+                    <i class="fas fa-id-card text-gray-400 mr-2"></i>X.509
+                    certificates
+                  </li>
+                </ul>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <div
+                  class="w-12 h-12 rounded-lg bg-purple-900/50 flex items-center justify-center mb-4"
+                >
+                  <i class="fas fa-project-diagram"></i>
+                </div>
+                <h4 class="text-lg font-bold mb-2">Contexts</h4>
+                <p class="text-gray-300 text-sm">Cluster + User combination</p>
+                <ul class="mt-3 space-y-1 text-sm">
+                  <li>
+                    <i class="fas fa-link text-gray-400 mr-2"></i>Links cluster
+                    + user
+                  </li>
+                  <li>
+                    <i class="fas fa-tag text-gray-400 mr-2"></i>Friendly name
+                  </li>
+                  <li>
+                    <i class="fas fa-bolt text-gray-400 mr-2"></i>Quick
+                    switching
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- kubeconfig Example -->
+            <div class="bg-black/40 p-6 rounded-xl">
+              <h4 class="text-xl font-bold neon-text-blue mb-4">
+                kubeconfig Example
+              </h4>
+              <div class="code-block p-4 rounded-lg overflow-x-auto">
+                <pre class="text-sm text-green-300">
+<span class="text-blue-300">apiVersion</span>: v1
+<span class="text-blue-300">kind</span>: Config
+<span class="text-gray-500"># CLUSTERS</span>
+<span class="text-blue-300">clusters</span>:
+- <span class="text-blue-300">name</span>: shield  <span class="text-gray-500">← Friendly name</span>
+  <span class="text-blue-300">cluster</span>:
+    <span class="text-blue-300">server</span>: https://192.168.1.77:8443  <span class="text-gray-500">← API endpoint</span>
+    <span class="text-blue-300">certificate-authority-data</span>: LS0tLS1CRUdJTiBDRVJ...
+
+<span class="text-gray-500"># USERS</span>
+<span class="text-blue-300">users</span>:
+- <span class="text-blue-300">name</span>: coulson  <span class="text-gray-500">← User credentials</span>
+  <span class="text-blue-300">user</span>:
+    <span class="text-blue-300">client-certificate-data</span>: LS0tLS1CRUdJTiBDRV...
+    <span class="text-blue-300">client-key-data</span>: LS0tLS1CRUdJTiBFQyB...
+
+<span class="text-gray-500"># CONTEXTS</span>
+<span class="text-blue-300">contexts</span>:
+- <span class="text-blue-300">name</span>: director  <span class="text-gray-500">← Context name</span>
+  <span class="text-blue-300">context</span>:
+    <span class="text-blue-300">cluster</span>: shield      <span class="text-gray-500">← Use this cluster</span>
+    <span class="text-blue-300">user</span>: coulson        <span class="text-gray-500">← As this user</span>
+
+<span class="text-gray-500"># CURRENT CONTEXT</span>
+<span class="text-blue-300">current-context</span>: director  <span class="text-gray-500">← Active context</span></pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- kubectl Commands -->
+          <div>
+            <h3 class="text-2xl font-bold neon-text-green mb-6">
+              <i class="fas fa-code mr-2"></i>Essential kubectl Commands
+            </h3>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-lg font-bold neon-text-blue mb-4">
+                  Context Management
+                </h4>
+                <div class="space-y-4">
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300">kubectl config view</code>
+                    <p class="text-gray-400 text-sm mt-1">
+                      View kubeconfig (sensitive data redacted)
+                    </p>
+                  </div>
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300"
+                      >kubectl config current-context</code
+                    >
+                    <p class="text-gray-400 text-sm mt-1">
+                      Show current context
+                    </p>
+                  </div>
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300"
+                      >kubectl config use-context docker-desktop</code
+                    >
+                    <p class="text-gray-400 text-sm mt-1">Switch context</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-black/40 p-6 rounded-xl">
+                <h4 class="text-lg font-bold neon-text-blue mb-4">
+                  Cluster Operations
+                </h4>
+                <div class="space-y-4">
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300">kubectl get nodes</code>
+                    <p class="text-gray-400 text-sm mt-1">List all nodes</p>
+                  </div>
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300">kubectl get pods -A</code>
+                    <p class="text-gray-400 text-sm mt-1">
+                      List all pods in all namespaces
+                    </p>
+                  </div>
+                  <div class="code-block p-3 rounded">
+                    <code class="text-green-300"
+                      >kubectl apply -f deployment.yaml</code
+                    >
+                    <p class="text-gray-400 text-sm mt-1">
+                      Apply configuration file
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 border-t border-neon-blue/30 pt-8 pb-6">
+      <div class="container mx-auto px-4">
+        <div class="grid md:grid-cols-4 gap-8">
+          <div>
+            <h4 class="font-bold neon-text-purple mb-4">Setup Options</h4>
+            <ul class="space-y-2">
+              <li class="flex items-center">
+                <i class="fas fa-laptop text-blue-400 mr-2"></i>
+                <span>Docker Desktop</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-cloud text-green-400 mr-2"></i>
+                <span>GKE (Google Cloud)</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-server text-purple-400 mr-2"></i>
+                <span>AWS EKS / Azure AKS</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-blue mb-4">Local Alternatives</h4>
+            <ul class="space-y-2">
+              <li class="flex items-center">
+                <i class="fab fa-docker text-cyan-400 mr-2"></i>
+                <span>k3d</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-docker text-blue-400 mr-2"></i>
+                <span>KinD</span>
+              </li>
+              <li class="flex items-center">
+                <i class="fas fa-cube text-orange-400 mr-2"></i>
+                <span>minikube</span>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-green mb-4">kubectl Tips</h4>
+            <div class="space-y-2">
+              <code class="block bg-black/50 px-2 py-1 rounded text-xs"
+                >kubectl config get-contexts</code
+              >
+              <code class="block bg-black/50 px-2 py-1 rounded text-xs"
+                >kubectl cluster-info</code
+              >
+              <code class="block bg-black/50 px-2 py-1 rounded text-xs"
+                >kubectl version</code
+              >
+            </div>
+          </div>
+
+          <div>
+            <h4 class="font-bold neon-text-orange mb-4">⚠️ Important</h4>
+            <div class="bg-orange-900/20 p-3 rounded-lg">
+              <p class="text-sm">
+                <i class="fas fa-trash-alt mr-2"></i>
+                Delete cloud clusters when not in use!
+              </p>
+              <p class="text-xs text-gray-400 mt-1">
+                Daily deletion recommended
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-800 text-center">
+          <div class="flex justify-center space-x-6 mb-4 flex-wrap">
+            <div class="flex items-center">
+              <i class="fab fa-docker text-2xl text-cyan-400 mr-2"></i>
+              <span>Docker Desktop</span>
+            </div>
+            <div class="flex items-center">
+              <i class="fab fa-google text-2xl text-red-400 mr-2"></i>
+              <span>Google Cloud GKE</span>
+            </div>
+            <div class="flex items-center">
+              <i class="fas fa-terminal text-2xl text-green-400 mr-2"></i>
+              <span>kubectl CLI</span>
+            </div>
+          </div>
+          <p class="text-gray-500 text-sm">
+            Chapter 3: Getting Kubernetes - Complete Setup Guide
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach((content) => {
+          content.classList.add('hidden');
+        });
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + 'Content').classList.remove('hidden');
+
+        // Add active class to clicked tab button
+        document.getElementById(tabName + 'Tab').classList.add('active');
+
+        // Add visual feedback
+        const header = document.querySelector('header');
+        header.style.borderColor =
+          tabName === 'local'
+            ? 'rgba(0, 243, 255, 0.4)'
+            : tabName === 'cloud'
+              ? 'rgba(185, 103, 255, 0.4)'
+              : 'rgba(0, 255, 157, 0.4)';
+      }
+
+      // Add interactive elements
+      document.addEventListener('DOMContentLoaded', function () {
+        // Simulate Docker Desktop whale click
+        const dockerSteps = document.querySelectorAll('.step-card');
+        dockerSteps.forEach((step, index) => {
+          step.addEventListener('click', function () {
+            this.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              this.style.transform = '';
+            }, 200);
+
+            // Pulse the step number
+            const stepNum = this.querySelector('.step-number');
+            stepNum.style.boxShadow = '0 0 20px rgba(185, 103, 255, 0.8)';
+            setTimeout(() => {
+              stepNum.style.boxShadow = '';
+            }, 500);
+          });
+        });
+
+        // Warning animation for cloud costs
+        const warningBox = document.querySelector('.warning-box');
+        if (warningBox) {
+          setInterval(() => {
+            warningBox.style.borderLeftColor =
+              warningBox.style.borderLeftColor === 'var(--neon-orange)'
+                ? '#ff9966'
+                : 'var(--neon-orange)';
+          }, 2000);
+        }
+      });
+    </script>
+  </body>
+</html>

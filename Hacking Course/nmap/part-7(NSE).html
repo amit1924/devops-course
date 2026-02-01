@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nmap Scripting Engine (NSE)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0e17;
+            color: #e0e0e0;
+        }
+        
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .neon-border {
+            border: 1px solid #00d9ff;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+        
+        .neon-text {
+            color: #00d9ff;
+            text-shadow: 0 0 5px rgba(0, 217, 255, 0.7);
+        }
+        
+        .neon-pink {
+            color: #ff00ff;
+            text-shadow: 0 0 5px rgba(255, 0, 255, 0.7);
+        }
+        
+        .neon-green {
+            color: #00ff9d;
+            text-shadow: 0 0 5px rgba(0, 255, 157, 0.7);
+        }
+        
+        .neon-yellow {
+            color: #ffff00;
+            text-shadow: 0 0 5px rgba(255, 255, 0, 0.7);
+        }
+        
+        .dark-card {
+            background-color: #111827;
+            border-radius: 0.75rem;
+        }
+        
+        .copy-btn:hover {
+            background-color: rgba(0, 217, 255, 0.1);
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1a202c;
+            border-radius: 4px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #00d9ff;
+            border-radius: 4px;
+        }
+        
+        .command-block {
+            background-color: #1a202c;
+            border-left: 4px solid #00d9ff;
+        }
+        
+        .note-highlight {
+            background-color: rgba(0, 217, 255, 0.1);
+            border-left: 4px solid #ff00ff;
+        }
+        
+        .nse-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .nse-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 217, 255, 0.15);
+        }
+        
+        .category-badge {
+            background: linear-gradient(135deg, #0a0e17 0%, #1a202c 100%);
+            border: 1px solid #2d3748;
+        }
+        
+        .warning-pulse {
+            animation: warning-pulse 2s infinite;
+        }
+        
+        @keyframes warning-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        
+        .safe-pulse {
+            animation: safe-pulse 3s infinite;
+        }
+        
+        @keyframes safe-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        
+        .script-flow {
+            position: relative;
+            height: 100px;
+            overflow: hidden;
+        }
+        
+        .script-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            z-index: 10;
+        }
+        
+        .flow-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, #00d9ff, transparent);
+            transform-origin: left center;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold neon-text">
+                    <i class="fas fa-code mr-3"></i>Nmap Scripting Engine (NSE)
+                </h1>
+                <p class="text-gray-400 mt-2">Plugins for Nmap - Automation Brain</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-2">
+                <div class="px-3 py-1 bg-purple-900/30 rounded-full text-sm border border-purple-700">
+                    <i class="fas fa-cogs mr-1"></i> Automation
+                </div>
+                <div class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Powerful
+                </div>
+            </div>
+        </div>
+        
+        <!-- Introduction Card -->
+        <div class="mt-6 p-5 dark-card neon-border rounded-xl">
+            <div class="flex items-start">
+                <i class="fas fa-fire text-red-400 mt-1 mr-3 text-2xl"></i>
+                <div>
+                    <h2 class="text-xl font-bold neon-yellow mb-2">🔥 What is NSE?</h2>
+                    
+                    <div class="mb-4 p-4 bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-300">
+                            Nmap Scripting Engine (NSE) lets Nmap run scripts (written in Lua) to:
+                        </p>
+                        <ul class="mt-2 space-y-2 ml-6">
+                            <li class="flex items-center">
+                                <i class="fas fa-search text-cyan-400 mr-2"></i>
+                                <span class="text-gray-300">discover deeper info</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-bug text-red-400 mr-2"></i>
+                                <span class="text-gray-300">detect vulnerabilities</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-cogs text-yellow-400 mr-2"></i>
+                                <span class="text-gray-300">test misconfigurations</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-hammer text-purple-400 mr-2"></i>
+                                <span class="text-gray-300">brute force logins</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-bolt text-green-400 mr-2"></i>
+                                <span class="text-gray-300">even exploit in some rare cases</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="p-4 bg-blue-900/20 rounded-lg border border-blue-800">
+                            <p class="text-blue-300 text-center">
+                                <i class="fas fa-plug mr-2"></i>
+                                👉 "Plugins for Nmap"
+                            </p>
+                        </div>
+                        <div class="p-4 bg-green-900/20 rounded-lg border border-green-800">
+                            <p class="text-green-300 text-center">
+                                <i class="fas fa-brain mr-2"></i>
+                                👉 "Automation brain of Nmap"
+                            </p>
+                        </div>
+                        <div class="p-4 bg-purple-900/20 rounded-lg border border-purple-800">
+                            <p class="text-purple-300 text-center">
+                                <i class="fas fa-robot mr-2"></i>
+                                👉 "Turn Nmap into mini Metasploit + Wireshark + scanner"
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-800">
+                        <p class="text-yellow-300 flex items-center">
+                            <i class="fas fa-rocket mr-2"></i>
+                            <span>And yes… it runs scripts in parallel, so it's fast 🚀</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto">
+        <!-- Section 1: What Can NSE Do? -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-blue-900/50 flex items-center justify-center mr-3 border border-blue-700">
+                    <i class="fas fa-brain text-blue-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">What Can NSE Do?</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border">
+                <div class="mb-6">
+                    <p class="text-gray-300 mb-6 text-center">
+                        Here's what pros use it for 👇
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Network Discovery -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-green-800 safe-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-network-wired text-green-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-yellow">Network Discovery</h3>
+                        </div>
+                        
+                        <p class="text-gray-300 text-sm mb-4">
+                            Find emails, hostnames, banners, devices
+                        </p>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script discovery &lt;target&gt;</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Smarter Version -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-blue-800 safe-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-search-plus text-blue-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-yellow">Smarter Version Detection</h3>
+                        </div>
+                        
+                        <p class="text-gray-300 text-sm mb-4">
+                            Beyond -sV
+                        </p>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script version &lt;target&gt;</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Vulnerability Detection -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-red-800 warning-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-shield-alt text-red-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-pink">Vulnerability Detection</h3>
+                        </div>
+                        
+                        <div class="command-block p-3 rounded-lg mb-4">
+                            <code class="code-font">nmap --script vuln &lt;target&gt;</code>
+                        </div>
+                        
+                        <p class="text-gray-300 text-sm">
+                            It checks things like:<br>
+                            • CVEs<br>
+                            • weak SSL<br>
+                            • outdated services<br>
+                            • unsafe configs
+                        </p>
+                    </div>
+                    
+                    <!-- Exploits -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-red-800 warning-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-bomb text-red-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-pink">Exploits (⚠️ Permission Only!)</h3>
+                        </div>
+                        
+                        <p class="text-gray-300 text-sm mb-4">
+                            Yes, some scripts exploit vulnerabilities.
+                        </p>
+                        
+                        <div class="command-block p-3 rounded-lg mb-4">
+                            <code class="code-font">nmap --script exploit &lt;target&gt;</code>
+                        </div>
+                        
+                        <div class="p-3 bg-red-900/20 rounded-lg">
+                            <p class="text-red-300 text-sm">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                ⚠️ NEVER use this without explicit permission.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Malware Detection -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-purple-800 safe-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-virus text-purple-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-yellow">Malware Detection</h3>
+                        </div>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script malware &lt;target&gt;</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Brute Force -->
+                    <div class="nse-card dark-card p-5 rounded-xl border border-red-800 warning-pulse">
+                        <div class="flex items-center mb-4">
+                            <div class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center mr-3">
+                                <i class="fas fa-lock-open text-red-300"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold neon-pink">Brute Force / Auth Testing</h3>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-gray-900 rounded text-xs">auth</span>
+                            <span class="px-2 py-1 bg-gray-900 rounded text-xs">&</span>
+                            <span class="px-2 py-1 bg-gray-900 rounded text-xs">intrusive</span>
+                            <span class="px-2 py-1 bg-gray-900 rounded text-xs">categories</span>
+                        </div>
+                        
+                        <div class="p-3 bg-red-900/20 rounded-lg">
+                            <p class="text-red-300 text-sm">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                ⚠️ ONLY ON SYSTEMS YOU OWN / HAVE PERMISSION
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 2: NSE Categories -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700">
+                    <i class="fas fa-tags text-purple-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">NSE Script Categories</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border overflow-x-auto">
+                <table class="w-full min-w-full">
+                    <thead>
+                        <tr class="border-b border-cyan-800">
+                            <th class="text-left py-3 px-4 text-cyan-400">Category</th>
+                            <th class="text-left py-3 px-4 text-cyan-400">Meaning</th>
+                            <th class="text-left py-3 px-4 text-cyan-400">Safety</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-green-900/50 px-2 py-1 rounded">safe</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">safe, non harmful</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-900/30 rounded text-xs text-green-300">Safe</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-blue-900/50 px-2 py-1 rounded">default</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">runs with -sC</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-900/30 rounded text-xs text-green-300">Safe</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-blue-900/50 px-2 py-1 rounded">version</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">improves service detection</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-900/30 rounded text-xs text-green-300">Safe</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-yellow-900/50 px-2 py-1 rounded">vuln</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">finds vulnerabilities</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-yellow-900/30 rounded text-xs text-yellow-300">Caution</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-red-900/50 px-2 py-1 rounded">exploit</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">can exploit</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-red-900/30 rounded text-xs text-red-300">Dangerous</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-red-900/50 px-2 py-1 rounded">intrusive</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">touches aggressively</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-red-900/30 rounded text-xs text-red-300">Dangerous</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-yellow-900/50 px-2 py-1 rounded">auth</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">brute force / credential checking</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-red-900/30 rounded text-xs text-red-300">Dangerous</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-purple-900/50 px-2 py-1 rounded">malware</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">checks for infection</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-900/30 rounded text-xs text-green-300">Safe</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-red-900/50 px-2 py-1 rounded">dos</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">denial of service ⚠️ risky</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-red-900/30 rounded text-xs text-red-300">Dangerous</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-green-900/50 px-2 py-1 rounded">discovery</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">find info</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-green-900/30 rounded text-xs text-green-300">Safe</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-yellow-900/50 px-2 py-1 rounded">broadcast</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">scans whole network</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-yellow-900/30 rounded text-xs text-yellow-300">Caution</span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-800 hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-red-900/50 px-2 py-1 rounded">external</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">sends data outside network</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-red-900/30 rounded text-xs text-red-300">Dangerous</span>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-900/50">
+                            <td class="py-3 px-4">
+                                <code class="code-font bg-yellow-900/50 px-2 py-1 rounded">fuzzer</code>
+                            </td>
+                            <td class="py-3 px-4 text-gray-300">testing services stability</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-yellow-900/30 rounded text-xs text-yellow-300">Caution</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-green-900/20 rounded-lg border border-green-800">
+                        <h4 class="font-bold text-gray-300 mb-3">Use safely in learning:</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700">safe</span>
+                            <span class="px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700">default</span>
+                            <span class="px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700">discovery</span>
+                            <span class="px-3 py-1 bg-green-900/30 rounded-full text-sm border border-green-700">version</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-red-900/20 rounded-lg border border-red-800 warning-pulse">
+                        <h4 class="font-bold text-gray-300 mb-3">Use only in labs / permission:</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">intrusive</span>
+                            <span class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">auth</span>
+                            <span class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">vuln</span>
+                            <span class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">exploit</span>
+                            <span class="px-3 py-1 bg-red-900/30 rounded-full text-sm border border-red-700">dos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 3: Most Important Command -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700">
+                    <i class="fas fa-star text-yellow-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">⭐ Most Important NSE Command</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border">
+                <div class="mb-6">
+                    <p class="text-gray-300 mb-6 text-center text-lg">
+                        Run default safe useful scripts:
+                    </p>
+                    
+                    <div class="command-block p-4 rounded-lg mb-6">
+                        <code class="code-font text-xl">nmap -sC &lt;target&gt;</code>
+                    </div>
+                    
+                    <button class="copy-btn mb-6 px-6 py-3 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition text-lg" onclick="copyToClipboard('nmap -sC <target>')">
+                        <i class="fas fa-copy mr-2"></i> Copy Most Used Command
+                    </button>
+                    
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-300 text-center">
+                            Equivalent to: <code class="code-font bg-black px-2 py-1 rounded">nmap --script=default &lt;target&gt;</code>
+                        </p>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-yellow-900/20 rounded-lg border border-yellow-800">
+                        <p class="text-yellow-300 text-center text-lg">
+                            <i class="fas fa-thumbs-up mr-2"></i>
+                            Use this A LOT 👍
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 4: Choosing Scripts -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-cyan-900/50 flex items-center justify-center mr-3 border border-cyan-700">
+                    <i class="fas fa-gamepad text-cyan-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">🎮 Choosing Which Scripts to Run</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Category -->
+                    <div class="nse-card p-5 bg-gray-900/30 rounded-xl border border-green-800">
+                        <h4 class="font-bold text-gray-300 mb-4 flex items-center">
+                            <i class="fas fa-tag text-green-400 mr-2"></i>
+                            Run a specific category
+                        </h4>
+                        
+                        <div class="mb-4">
+                            <p class="text-gray-300 text-sm mb-2">Example: vulnerability scripts</p>
+                            <div class="command-block p-3 rounded-lg">
+                                <code class="code-font">nmap --script vuln &lt;target&gt;</code>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-gray-300 text-sm mb-2">Discovery:</p>
+                            <div class="command-block p-3 rounded-lg">
+                                <code class="code-font">nmap --script discovery &lt;target&gt;</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wildcard -->
+                    <div class="nse-card p-5 bg-gray-900/30 rounded-xl border border-blue-800">
+                        <h4 class="font-bold text-gray-300 mb-4 flex items-center">
+                            <i class="fas fa-asterisk text-blue-400 mr-2"></i>
+                            Run all HTTP-related scripts
+                        </h4>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script "http-*" &lt;target&gt;</code>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Combine -->
+                    <div class="nse-card p-5 bg-gray-900/30 rounded-xl border border-purple-800">
+                        <h4 class="font-bold text-gray-300 mb-4 flex items-center">
+                            <i class="fas fa-layer-group text-purple-400 mr-2"></i>
+                            Combine categories
+                        </h4>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script "default,safe" &lt;target&gt;</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Boolean -->
+                    <div class="nse-card p-5 bg-gray-900/30 rounded-xl border border-red-800">
+                        <h4 class="font-bold text-gray-300 mb-4 flex items-center">
+                            <i class="fas fa-project-diagram text-red-400 mr-2"></i>
+                            Boolean Logic (power move 😎)
+                        </h4>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script "(default or intrusive) and not http-*" &lt;target&gt;</code>
+                        </div>
+                        <p class="text-gray-400 text-sm mt-2">
+                            Run intrusive + default but ignore HTTP scripts
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 5: Script Arguments -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center mr-3 border border-purple-700">
+                    <i class="fas fa-puzzle-piece text-purple-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">🧩 Script Arguments</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border">
+                <div class="mb-6">
+                    <p class="text-gray-300 mb-6">
+                        Some scripts need parameters
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h4 class="font-bold text-gray-300 mb-4">Example:</h4>
+                            <div class="command-block p-3 rounded-lg">
+                                <code class="code-font">nmap --script ftp-anon --script-args ftp-anon.maxlist=200 &lt;target&gt;</code>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-bold text-gray-300 mb-4">Example advanced format:</h4>
+                            <div class="command-block p-3 rounded-lg">
+                                <code class="code-font">--script-args 'user=admin,pass=1234'</code>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-300">
+                            You can even load args from file:
+                        </p>
+                        <div class="command-block p-3 rounded-lg mt-2">
+                            <code class="code-font">--script-args-file file.txt</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section 6: Script Info & Debug -->
+        <section class="mb-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Script Help -->
+                <div class="dark-card p-5 rounded-xl border border-cyan-800">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 rounded-full bg-cyan-900 flex items-center justify-center mr-3">
+                            <i class="fas fa-eye text-cyan-300"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold neon-yellow">Viewing Script Info</h3>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-gray-300 mb-4">
+                            Want to see what a script does?
+                        </p>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">nmap --script-help ftp-anon</code>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-gray-900/50 rounded-lg">
+                        <p class="text-gray-300 text-sm">
+                            Or see all vuln scripts descriptions:
+                        </p>
+                        <div class="command-block p-2 rounded-lg mt-2">
+                            <code class="code-font text-sm">nmap --script-help vuln</code>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Debug -->
+                <div class="dark-card p-5 rounded-xl border border-green-800">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 rounded-full bg-green-900 flex items-center justify-center mr-3">
+                            <i class="fas fa-bug text-green-300"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold neon-yellow">Debug NSE Traffic</h3>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-gray-300 mb-4">
+                            Want to see EVERYTHING script sends/receives?
+                        </p>
+                        
+                        <div class="command-block p-3 rounded-lg">
+                            <code class="code-font">--script-trace</code>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-yellow-900/20 rounded-lg">
+                        <p class="text-yellow-300 text-sm">
+                            <i class="fas fa-graduation-cap mr-2"></i>
+                            So cool for learning 👌
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Update DB -->
+            <div class="mt-6 dark-card p-5 rounded-xl border border-blue-800">
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center mr-3">
+                        <i class="fas fa-sync-alt text-blue-300"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold neon-yellow">Updating Script Database</h3>
+                </div>
+                
+                <div class="command-block p-3 rounded-lg">
+                    <code class="code-font">nmap --script-updatedb</code>
+                </div>
+                
+                <p class="text-gray-300 text-sm mt-2">
+                    When you add/remove scripts
+                </p>
+            </div>
+        </section>
+        
+        <!-- Safety Warning -->
+        <section class="mb-10">
+            <div class="dark-card p-5 rounded-xl border border-red-800 warning-pulse">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-heart text-red-400 text-2xl mr-3"></i>
+                    <h2 class="text-2xl font-bold neon-pink">❤️ IMPORTANT Safety Reminder</h2>
+                </div>
+                
+                <div class="mb-6">
+                    <p class="text-gray-300 mb-4">
+                        NSE can:
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="p-4 bg-green-900/20 rounded-lg border border-green-800">
+                            <h4 class="font-bold text-gray-300 mb-3">✅ Safe Actions:</h4>
+                            <ul class="space-y-2">
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">scan</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">probe</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">identify vulns</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="p-4 bg-red-900/20 rounded-lg border border-red-800">
+                            <h4 class="font-bold text-gray-300 mb-3">⚠️ Potentially Dangerous:</h4>
+                            <ul class="space-y-2">
+                                <li class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">brute force</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">crash weak services</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">exploit</span>
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+                                    <span class="text-gray-300 text-sm">DoS</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-yellow-900/20 rounded-lg mb-6">
+                    <h4 class="font-bold text-gray-300 mb-3">So always:</h4>
+                    <ul class="space-y-3">
+                        <li class="flex items-center">
+                            <i class="fas fa-home text-green-400 mr-2"></i>
+                            <span class="text-gray-300">👉 only scan your OWN devices</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-flask text-blue-400 mr-2"></i>
+                            <span class="text-gray-300">👉 lab machines</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-file-contract text-purple-400 mr-2"></i>
+                            <span class="text-gray-300">👉 networks where you have WRITTEN permission</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="p-4 bg-cyan-900/20 rounded-lg border border-cyan-800">
+                    <p class="text-cyan-300 text-center text-lg">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        You are learning to protect, not attack 💪
+                    </p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Practical Examples -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center mr-3 border border-green-700">
+                    <i class="fas fa-code text-green-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">Practical Examples</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Example 1 -->
+                <div class="nse-card dark-card p-5 rounded-xl border border-cyan-800">
+                    <h4 class="font-bold text-gray-300 mb-4">Safe Discovery Scan</h4>
+                    <div class="command-block p-4 rounded-lg mb-4">
+                        <code class="code-font">nmap -sC scanme.nmap.org</code>
+                    </div>
+                    <button class="copy-btn w-full px-4 py-2 rounded-lg border border-cyan-700 text-cyan-400 hover:bg-cyan-900/30 transition" onclick="copyToClipboard('nmap -sC scanme.nmap.org')">
+                        <i class="fas fa-copy mr-1"></i> Copy Command
+                    </button>
+                </div>
+                
+                <!-- Example 2 -->
+                <div class="nse-card dark-card p-5 rounded-xl border border-purple-800">
+                    <h4 class="font-bold text-gray-300 mb-4">HTTP Service Investigation</h4>
+                    <div class="command-block p-4 rounded-lg mb-4">
+                        <code class="code-font">nmap --script "http-*" --script-args http.useragent="Mozilla" 192.168.1.1</code>
+                    </div>
+                    <button class="copy-btn w-full px-4 py-2 rounded-lg border border-purple-700 text-purple-400 hover:bg-purple-900/30 transition" onclick="copyToClipboard('nmap --script "http-*" --script-args http.useragent="Mozilla" 192.168.1.1')">
+                        <i class="fas fa-copy mr-1"></i> Copy Command
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Script Execution Flow -->
+        <section class="mb-10">
+            <div class="flex items-center mb-4">
+                <div class="w-10 h-10 rounded-full bg-yellow-900/50 flex items-center justify-center mr-3 border border-yellow-700">
+                    <i class="fas fa-project-diagram text-yellow-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold neon-green">NSE Execution Flow</h2>
+            </div>
+            
+            <div class="dark-card p-5 rounded-xl neon-border">
+                <div class="script-flow relative mb-6">
+                    <!-- Flow lines -->
+                    <div class="flow-line" style="width: 20%; top: 50px; left: 10%; transform: rotate(0deg);"></div>
+                    <div class="flow-line" style="width: 20%; top: 50px; left: 30%; transform: rotate(0deg);"></div>
+                    <div class="flow-line" style="width: 20%; top: 50px; left: 50%; transform: rotate(0deg);"></div>
+                    <div class="flow-line" style="width: 20%; top: 50px; left: 70%; transform: rotate(0deg);"></div>
+                    
+                    <!-- Script nodes -->
+                    <div class="script-node bg-blue-600" style="left: 5%; top: 25px;">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <div class="script-node bg-green-600" style="left: 25%; top: 25px;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="script-node bg-purple-600" style="left: 45%; top: 25px;">
+                        <i class="fas fa-parallel-lines"></i>
+                    </div>
+                    <div class="script-node bg-red-600" style="left: 65%; top: 25px;">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="script-node bg-cyan-600" style="left: 85%; top: 25px;">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    
+                    <!-- Labels -->
+                    <div class="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-gray-400">
+                        <div class="text-center" style="width: 20%;">Nmap Starts</div>
+                        <div class="text-center" style="width: 20%;">Load Scripts</div>
+                        <div class="text-center" style="width: 20%;">Parallel Exec</div>
+                        <div class="text-center" style="width: 20%;">Collect Results</div>
+                        <div class="text-center" style="width: 20%;">Generate Report</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <h4 class="font-bold text-gray-300 mb-3">Script Selection:</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Category filtering</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-blue-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Port matching</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-yellow-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Prerequisites checking</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <h4 class="font-bold text-gray-300 mb-3">Execution Features:</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-red-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Parallel execution</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-purple-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Timeout handling</span>
+                            </li>
+                            <li class="flex items-center">
+                                <div class="w-2 h-2 rounded-full bg-cyan-400 mr-2"></div>
+                                <span class="text-gray-300 text-sm">Error recovery</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Summary Card -->
+        <div class="mt-12 p-6 dark-card rounded-xl border border-cyan-800">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-graduation-cap text-cyan-400 text-3xl mr-4"></i>
+                <div>
+                    <h3 class="text-2xl font-bold neon-green mb-2">NSE Mastery Summary</h3>
+                    <p class="text-gray-300">NSE transforms Nmap from a simple scanner into a powerful security assessment toolkit through Lua scripting.</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+                    <i class="fas fa-plug text-green-400 text-2xl mb-2"></i>
+                    <h4 class="font-bold text-gray-300">Plugin System</h4>
+                    <p class="text-gray-400 text-sm">600+ Lua scripts</p>
+                </div>
+                
+                <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+                    <i class="fas fa-bolt text-yellow-400 text-2xl mb-2"></i>
+                    <h4 class="font-bold text-gray-300">Parallel Execution</h4>
+                    <p class="text-gray-400 text-sm">Fast simultaneous scanning</p>
+                </div>
+                
+                <div class="p-4 bg-gray-900/50 rounded-lg text-center">
+                    <i class="fas fa-shield-alt text-red-400 text-2xl mb-2"></i>
+                    <h4 class="font-bold text-gray-300">Responsible Use</h4>
+                    <p class="text-gray-400 text-sm">Ethical testing only</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg border border-cyan-700 transition-transform transform translate-y-20 z-50 max-w-sm hidden">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-400 text-xl mr-3"></i>
+            <span id="toast-message">Command copied to clipboard!</span>
+        </div>
+    </div>
+
+    <script>
+        // Copy to clipboard functionality
+        function copyToClipboard(text) {
+            // Handle the complex quote escaping
+            const cleanText = text.replace(/"/g, '\\"');
+            navigator.clipboard.writeText(cleanText).then(() => {
+                showToast("Command copied to clipboard!");
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showToast("Failed to copy command");
+            });
+        }
+        
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.remove('translate-y-20');
+            toast.classList.add('translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0');
+                toast.classList.add('translate-y-20');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Nmap Scripting Engine notes loaded!");
+            
+            // Animate script flow
+            const scriptNodes = document.querySelectorAll('.script-node');
+            scriptNodes.forEach((node, index) => {
+                node.style.animationDelay = `${index * 0.3}s`;
+                node.style.animation = `pulse 2s infinite ${index * 0.3}s`;
+            });
+        });
+    </script>
+</body>
+</html>

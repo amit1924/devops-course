@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transport Layer Mastery | TCP/UDP Visual Guide</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"
+    />
+    <style>
+      :root {
+        --layer-app: #8b5cf6;
+        --layer-transport: #10b981;
+        --layer-network: #3b82f6;
+        --layer-link: #f59e0b;
+        --layer-physical: #ef4444;
+        --neon-green: #00ff9d;
+        --neon-blue: #00e0ff;
+      }
+
+      body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        min-height: 100vh;
+      }
+
+      .layer-card {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .layer-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .app-layer::before {
+        background: var(--layer-app);
+      }
+      .transport-layer::before {
+        background: var(--layer-transport);
+      }
+      .network-layer::before {
+        background: var(--layer-network);
+      }
+
+      .layer-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
+      }
+
+      .protocol-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 2px;
+      }
+
+      .tcp-badge {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid #10b981;
+        color: #10b981;
+      }
+
+      .udp-badge {
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid #3b82f6;
+        color: #3b82f6;
+      }
+
+      .port-bubble {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .port-bubble:hover {
+        transform: scale(1.1);
+        z-index: 10;
+      }
+
+      .port-bubble::after {
+        content: attr(data-service);
+        position: absolute;
+        bottom: -25px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+      }
+
+      .data-flow {
+        position: relative;
+        height: 300px;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .flow-line {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--neon-green),
+          transparent
+        );
+        animation: flow 3s linear infinite;
+      }
+
+      .packet {
+        position: absolute;
+        width: 30px;
+        height: 20px;
+        background: var(--neon-blue);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        animation: movePacket 4s linear infinite;
+        z-index: 5;
+      }
+
+      @keyframes flow {
+        0% {
+          opacity: 0;
+          transform: translateX(-100px);
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(calc(100vw - 100px));
+        }
+      }
+
+      @keyframes movePacket {
+        0% {
+          transform: translateX(-100px) rotate(0deg);
+        }
+        25% {
+          transform: translateX(25vw) rotate(90deg);
+        }
+        50% {
+          transform: translateX(50vw) rotate(180deg);
+        }
+        75% {
+          transform: translateX(75vw) rotate(270deg);
+        }
+        100% {
+          transform: translateX(calc(100vw - 100px)) rotate(360deg);
+        }
+      }
+
+      .socket-visual {
+        width: 80px;
+        height: 40px;
+        background: linear-gradient(135deg, #1e40af, #3b82f6);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        margin: 10px;
+        cursor: pointer;
+      }
+
+      .socket-visual::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #10b981;
+        border-radius: 50%;
+        right: -10px;
+      }
+
+      .code-block {
+        background: #1e293b;
+        border-left: 4px solid #10b981;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .pill-tab {
+        padding: 8px 20px;
+        border-radius: 25px;
+        background: rgba(30, 41, 59, 0.5);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .pill-tab.active {
+        background: #10b981;
+        color: white;
+        font-weight: bold;
+      }
+
+      .segment-visual {
+        width: 120px;
+        height: 60px;
+        border: 2px solid #3b82f6;
+        border-radius: 8px;
+        position: relative;
+        margin: 10px;
+      }
+
+      .segment-header {
+        height: 20px;
+        background: rgba(59, 130, 246, 0.3);
+        border-bottom: 1px solid #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+      }
+
+      .segment-data {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+      }
+
+      .comparison-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .gradient-text {
+        background: linear-gradient(135deg, #00ff9d, #00e0ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-emerald-500/20"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center space-x-3 mb-4 md:mb-0">
+            <div class="relative">
+              <div
+                class="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center"
+              >
+                <i class="fas fa-network-wired text-xl text-slate-900"></i>
+              </div>
+              <div
+                class="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center"
+              >
+                <span class="text-xs font-bold">T</span>
+              </div>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold gradient-text">
+                Transport Layer Mastery
+              </h1>
+              <p class="text-sm text-slate-400">
+                TCP/UDP • Sockets • Multiplexing • Real Python Demos
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <div class="hidden md:flex space-x-2">
+              <span class="protocol-badge tcp-badge">
+                <i class="fas fa-shield-alt mr-2"></i>TCP
+              </span>
+              <span class="protocol-badge udp-badge">
+                <i class="fas fa-bolt mr-2"></i>UDP
+              </span>
+              <span
+                class="px-3 py-1 rounded-full bg-emerald-900/30 text-emerald-300 text-xs font-bold"
+              >
+                <i class="fas fa-check mr-1"></i>ACTIVE
+              </span>
+            </div>
+            <button
+              id="themeToggle"
+              class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition"
+            >
+              <i class="fas fa-moon text-cyan-400"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+      <!-- Hero Section -->
+      <section class="mb-12">
+        <div
+          class="p-8 rounded-2xl bg-gradient-to-r from-emerald-900/20 via-slate-900 to-blue-900/20 border border-emerald-800/30"
+        >
+          <div class="flex flex-col lg:flex-row items-center justify-between">
+            <div class="lg:w-2/3 mb-8 lg:mb-0">
+              <div
+                class="inline-block p-2 rounded-full bg-gradient-to-r from-emerald-900/30 to-cyan-900/30 mb-4"
+              >
+                <span
+                  class="px-4 py-2 rounded-full bg-slate-900 text-sm font-medium text-emerald-300"
+                >
+                  <i class="fas fa-brain mr-2"></i>CHAPTER 3: TRANSPORT LAYER
+                </span>
+              </div>
+              <h1 class="text-4xl md:text-5xl font-bold mb-6">
+                <span class="text-emerald-300"
+                  >Internet's Delivery Manager</span
+                >
+                <span class="text-white">Revealed</span>
+              </h1>
+              <p class="text-xl text-slate-300 mb-8">
+                Transport layer sits between apps and network, making programs
+                talk safely across the internet. This is where TCP reliability
+                and UDP speed are born.
+              </p>
+              <div class="flex flex-wrap gap-4">
+                <a
+                  href="#layers-visual"
+                  class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-bold rounded-lg hover:shadow-lg hover:shadow-emerald-500/30 transition"
+                >
+                  <i class="fas fa-layer-group mr-2"></i>Visualize Layers
+                </a>
+                <a
+                  href="#tcp-udp"
+                  class="px-6 py-3 border border-emerald-500/30 bg-slate-900/50 font-medium rounded-lg hover:bg-slate-800 transition"
+                >
+                  <i class="fas fa-balance-scale mr-2"></i>TCP vs UDP
+                </a>
+                <a
+                  href="#python-demos"
+                  class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition"
+                >
+                  <i class="fas fa-code mr-2"></i>Live Python Demos
+                </a>
+              </div>
+            </div>
+            <div class="lg:w-1/3 flex justify-center">
+              <div class="relative">
+                <div
+                  class="w-64 h-64 rounded-full bg-gradient-to-r from-emerald-900/20 to-cyan-900/20 flex items-center justify-center"
+                >
+                  <div class="text-center">
+                    <div class="text-6xl mb-2">🚀</div>
+                    <div class="font-bold text-emerald-300">Layer 4</div>
+                    <div class="text-sm text-slate-400">Transport Layer</div>
+                  </div>
+                </div>
+                <div
+                  class="absolute -bottom-2 -right-2 w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center"
+                >
+                  <div class="text-center">
+                    <div class="text-xl">🌐</div>
+                    <div class="text-xs font-bold">Layer 3</div>
+                  </div>
+                </div>
+                <div
+                  class="absolute top-4 -left-4 w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center"
+                >
+                  <div class="text-center">
+                    <div class="text-lg">📱</div>
+                    <div class="text-xs font-bold">Layer 5</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div
+          class="p-6 rounded-xl bg-slate-900/50 border border-slate-800 text-center"
+        >
+          <div class="text-3xl font-bold text-emerald-400 mb-2">2</div>
+          <div class="text-lg font-medium">Core Protocols</div>
+          <div class="text-sm text-slate-400">TCP & UDP</div>
+        </div>
+        <div
+          class="p-6 rounded-xl bg-slate-900/50 border border-slate-800 text-center"
+        >
+          <div class="text-3xl font-bold text-blue-400 mb-2">65535</div>
+          <div class="text-lg font-medium">Port Numbers</div>
+          <div class="text-sm text-slate-400">0-65535 range</div>
+        </div>
+        <div
+          class="p-6 rounded-xl bg-slate-900/50 border border-slate-800 text-center"
+        >
+          <div class="text-3xl font-bold text-purple-400 mb-2">4-Tuple</div>
+          <div class="text-lg font-medium">TCP Socket ID</div>
+          <div class="text-sm text-slate-400">
+            Source IP, Port, Dest IP, Port
+          </div>
+        </div>
+        <div
+          class="p-6 rounded-xl bg-gradient-to-r from-emerald-900/30 to-emerald-800/20 border border-emerald-800/50 text-center"
+        >
+          <div class="text-3xl font-bold text-emerald-300 mb-2">7</div>
+          <div class="text-lg font-medium text-emerald-300">Live Projects</div>
+          <div class="text-sm text-emerald-400">Hands-on learning</div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column - Core Concepts -->
+        <div class="lg:col-span-2 space-y-8">
+          <!-- OSI Layers Visualization -->
+          <section
+            id="layers-visual"
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-layer-group text-2xl text-emerald-400"></i>
+              </div>
+              <h2 class="section-title text-2xl font-bold">
+                Internet Layer Cake 🍰
+              </h2>
+            </div>
+
+            <div class="mb-6">
+              <p class="text-slate-300 mb-6">
+                The transport layer sits right in the middle, acting as the
+                bridge between applications and the network:
+              </p>
+
+              <!-- Layers Visualization -->
+              <div class="space-y-4">
+                <!-- Application Layer -->
+                <div
+                  class="layer-card app-layer p-4 bg-gradient-to-r from-purple-900/20 to-slate-900"
+                >
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-lg bg-purple-600/30 flex items-center justify-center mr-4"
+                    >
+                      <i class="fas fa-mobile-alt text-purple-400"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-lg font-bold text-purple-300">
+                        Layer 5: Application Layer
+                      </h3>
+                      <p class="text-sm text-slate-400">
+                        HTTP, FTP, WhatsApp, Chrome, Spotify
+                      </p>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm text-purple-400">
+                        Sends: "Hello World!"
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Transport Layer (Highlighted) -->
+                <div
+                  class="layer-card transport-layer p-4 bg-gradient-to-r from-emerald-900/30 to-slate-900 border-2 border-emerald-500/50"
+                >
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-lg bg-emerald-600/30 flex items-center justify-center mr-4"
+                    >
+                      <i class="fas fa-truck-loading text-emerald-400"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-lg font-bold text-emerald-300">
+                        🚀 Layer 4: TRANSPORT LAYER
+                      </h3>
+                      <p class="text-sm text-slate-300">
+                        Delivery Manager - Breaks data into segments, adds port
+                        numbers
+                      </p>
+                      <div class="flex flex-wrap gap-2 mt-2">
+                        <span class="protocol-badge tcp-badge">
+                          <i class="fas fa-shield-alt mr-1"></i>TCP: Reliable
+                        </span>
+                        <span class="protocol-badge udp-badge">
+                          <i class="fas fa-bolt mr-1"></i>UDP: Fast
+                        </span>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm text-emerald-400">
+                        Creates: Segment with Port 5000
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Network Layer -->
+                <div
+                  class="layer-card network-layer p-4 bg-gradient-to-r from-blue-900/20 to-slate-900"
+                >
+                  <div class="flex items-center">
+                    <div
+                      class="w-10 h-10 rounded-lg bg-blue-600/30 flex items-center justify-center mr-4"
+                    >
+                      <i class="fas fa-route text-blue-400"></i>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-lg font-bold text-blue-300">
+                        Layer 3: Network Layer
+                      </h3>
+                      <p class="text-sm text-slate-400">
+                        IP, Routers - Delivers between devices
+                      </p>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm text-blue-400">
+                        Adds: IP Addresses
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-950 border border-slate-800"
+            >
+              <div class="flex items-center">
+                <i class="fas fa-lightbulb text-xl text-cyan-400 mr-3"></i>
+                <div>
+                  <p class="font-bold text-emerald-300">Simple Analogy</p>
+                  <p class="text-sm text-slate-400 mt-1">
+                    Application = Kid writing letter 📝 → Transport = Mom
+                    putting in envelope ✉️ → Network = Postman delivering to
+                    house 🏠
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- TCP vs UDP Comparison -->
+          <section
+            id="tcp-udp"
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500/20 to-emerald-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-balance-scale text-2xl text-blue-400"></i>
+              </div>
+              <h2 class="section-title text-2xl font-bold">
+                TCP vs UDP: Choose Your Fighter ⚔️
+              </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="comparison-table w-full">
+                <thead>
+                  <tr class="border-b border-slate-700">
+                    <th class="text-left p-4">Feature</th>
+                    <th class="text-center p-4">
+                      <div class="flex items-center justify-center">
+                        <span class="protocol-badge tcp-badge mr-2">
+                          <i class="fas fa-shield-alt"></i>
+                        </span>
+                        <span class="font-bold">TCP</span>
+                      </div>
+                    </th>
+                    <th class="text-center p-4">
+                      <div class="flex items-center justify-center">
+                        <span class="protocol-badge udp-badge mr-2">
+                          <i class="fas fa-bolt"></i>
+                        </span>
+                        <span class="font-bold">UDP</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="p-4 font-medium">Connection</td>
+                    <td class="p-4 text-center text-emerald-400">
+                      Connection-oriented
+                    </td>
+                    <td class="p-4 text-center text-blue-400">
+                      Connectionless
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-4 font-medium">Reliability</td>
+                    <td class="p-4 text-center text-emerald-400">
+                      ✅ Guaranteed delivery
+                    </td>
+                    <td class="p-4 text-center text-blue-400">
+                      ❌ Best effort
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-4 font-medium">Speed</td>
+                    <td class="p-4 text-center text-emerald-400">
+                      Slower (overhead)
+                    </td>
+                    <td class="p-4 text-center text-blue-400">
+                      ⚡ Lightning fast
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-4 font-medium">Ordering</td>
+                    <td class="p-4 text-center text-emerald-400">
+                      Sequenced packets
+                    </td>
+                    <td class="p-4 text-center text-blue-400">No ordering</td>
+                  </tr>
+                  <tr>
+                    <td class="p-4 font-medium">Use Cases</td>
+                    <td class="p-4 text-center">
+                      <div class="space-y-1">
+                        <span
+                          class="block text-xs bg-emerald-900/30 text-emerald-300 px-2 py-1 rounded"
+                          >Web Browsing</span
+                        >
+                        <span
+                          class="block text-xs bg-emerald-900/30 text-emerald-300 px-2 py-1 rounded"
+                          >Email</span
+                        >
+                        <span
+                          class="block text-xs bg-emerald-900/30 text-emerald-300 px-2 py-1 rounded"
+                          >File Transfer</span
+                        >
+                      </div>
+                    </td>
+                    <td class="p-4 text-center">
+                      <div class="space-y-1">
+                        <span
+                          class="block text-xs bg-blue-900/30 text-blue-300 px-2 py-1 rounded"
+                          >Video Streaming</span
+                        >
+                        <span
+                          class="block text-xs bg-blue-900/30 text-blue-300 px-2 py-1 rounded"
+                          >DNS Queries</span
+                        >
+                        <span
+                          class="block text-xs bg-blue-900/30 text-blue-300 px-2 py-1 rounded"
+                          >Online Gaming</span
+                        >
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="p-4 font-medium">Analogy</td>
+                    <td class="p-4 text-center text-emerald-400">
+                      Registered post with tracking
+                    </td>
+                    <td class="p-4 text-center text-blue-400">
+                      Throwing paper airplane
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Segment Visualization -->
+            <div class="mt-8">
+              <h3 class="text-lg font-bold mb-4 text-emerald-300">
+                Segment Creation Process
+              </h3>
+              <div class="flex flex-wrap justify-center items-center gap-6">
+                <div class="text-center">
+                  <div class="segment-visual">
+                    <div class="segment-header">App Data</div>
+                    <div class="segment-data">"Hello"</div>
+                  </div>
+                  <div class="text-xs text-slate-400 mt-2">
+                    Application sends data
+                  </div>
+                </div>
+
+                <div class="text-2xl text-emerald-400">→</div>
+
+                <div class="text-center">
+                  <div class="segment-visual">
+                    <div class="segment-header">TCP Header</div>
+                    <div class="segment-data">
+                      <div class="text-xs">Src Port: 5000</div>
+                      <div class="text-xs">Dest Port: 80</div>
+                      <div class="text-xs">Seq: 12345</div>
+                    </div>
+                  </div>
+                  <div class="text-xs text-emerald-400 mt-2">
+                    Transport adds header
+                  </div>
+                </div>
+
+                <div class="text-2xl text-emerald-400">→</div>
+
+                <div class="text-center">
+                  <div class="segment-visual">
+                    <div class="segment-header">IP Header</div>
+                    <div class="segment-data">
+                      <div class="text-xs">Src IP: 192.168.1.10</div>
+                      <div class="text-xs">Dest IP: 8.8.8.8</div>
+                    </div>
+                  </div>
+                  <div class="text-xs text-blue-400 mt-2">
+                    Network adds IP info
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Port Numbers Visualization -->
+          <section
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-door-open text-2xl text-purple-400"></i>
+              </div>
+              <h2 class="section-title text-2xl font-bold">
+                Port Numbers: The Doors to Programs 🚪
+              </h2>
+            </div>
+
+            <div class="mb-6">
+              <p class="text-slate-300 mb-6">
+                Ports identify which application should receive data. Like
+                apartment numbers in a building:
+              </p>
+
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                  <div
+                    class="port-bubble mx-auto bg-red-500/20 text-red-400 border border-red-500/50"
+                    data-service="HTTP"
+                  >
+                    80
+                  </div>
+                  <div class="mt-6 text-sm font-medium">Web Server</div>
+                  <div class="text-xs text-slate-400">HTTP Traffic</div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="port-bubble mx-auto bg-green-500/20 text-green-400 border border-green-500/50"
+                    data-service="HTTPS"
+                  >
+                    443
+                  </div>
+                  <div class="mt-6 text-sm font-medium">Secure Web</div>
+                  <div class="text-xs text-slate-400">HTTPS (SSL)</div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="port-bubble mx-auto bg-blue-500/20 text-blue-400 border border-blue-500/50"
+                    data-service="SSH"
+                  >
+                    22
+                  </div>
+                  <div class="mt-6 text-sm font-medium">Secure Shell</div>
+                  <div class="text-xs text-slate-400">Remote Access</div>
+                </div>
+
+                <div class="text-center">
+                  <div
+                    class="port-bubble mx-auto bg-purple-500/20 text-purple-400 border border-purple-500/50"
+                    data-service="Your App"
+                  >
+                    5000
+                  </div>
+                  <div class="mt-6 text-sm font-medium">Custom Apps</div>
+                  <div class="text-xs text-slate-400">Development Ports</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Multiplexing Visualization -->
+            <div class="mt-8">
+              <h3 class="text-lg font-bold mb-4 text-cyan-300">
+                Multiplexing & Demultiplexing
+              </h3>
+              <div
+                class="multiplex-flow relative h-40 bg-slate-900/50 rounded-xl p-4"
+              >
+                <div class="absolute left-4 top-8">
+                  <div class="socket-visual" id="socket1">
+                    <span class="text-xs">App 1</span>
+                  </div>
+                  <div class="socket-visual mt-4" id="socket2">
+                    <span class="text-xs">App 2</span>
+                  </div>
+                  <div class="socket-visual mt-4" id="socket3">
+                    <span class="text-xs">App 3</span>
+                  </div>
+                </div>
+
+                <div
+                  class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                >
+                  <div
+                    class="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center"
+                  >
+                    <i class="fas fa-exchange-alt text-slate-900"></i>
+                  </div>
+                  <div
+                    class="text-center mt-2 text-xs font-bold text-emerald-300"
+                  >
+                    Transport Layer
+                  </div>
+                </div>
+
+                <div class="absolute right-4 top-8">
+                  <div
+                    class="w-32 h-24 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center"
+                  >
+                    <div class="text-center">
+                      <div class="text-2xl">🌐</div>
+                      <div class="text-xs text-slate-400">Network</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Flow lines -->
+                <div
+                  class="flow-line"
+                  style="top: 20px; width: 40%; left: 100px"
+                ></div>
+                <div
+                  class="flow-line"
+                  style="top: 70px; width: 40%; left: 100px"
+                ></div>
+                <div
+                  class="flow-line"
+                  style="top: 120px; width: 40%; left: 100px"
+                ></div>
+              </div>
+              <div class="text-center mt-4 text-sm text-slate-400">
+                Multiple apps → Single transport layer → Network (and back)
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Right Column - Python Demos & Projects -->
+        <div class="space-y-8">
+          <!-- Live Python Demos -->
+          <section
+            id="python-demos"
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-500/20 to-red-500/20 flex items-center justify-center mr-3"
+              >
+                <i class="fab fa-python text-2xl text-yellow-400"></i>
+              </div>
+              <h2 class="text-xl font-bold">Live Python Demos 🐍</h2>
+            </div>
+
+            <div class="space-y-6">
+              <!-- TCP Server Demo -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-bold text-emerald-300">
+                    TCP Server (Socket Programming)
+                  </h3>
+                  <button
+                    onclick="copyCode('tcpServerCode')"
+                    class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700"
+                  >
+                    <i class="far fa-copy mr-1"></i>Copy
+                  </button>
+                </div>
+                <div class="code-block p-4">
+                  <pre
+                    id="tcpServerCode"
+                  ><code class="language-python">import socket
+
+# Create TCP socket
+server = socket.socket(socket.AF_INET, 
+                       socket.SOCK_STREAM)
+
+# Bind to port 5000
+server.bind(("0.0.0.0", 5000))
+
+# Start listening
+server.listen()
+print("Server listening on port 5000...")
+
+# Accept client connection
+conn, addr = server.accept()
+print(f"Connected with {addr}")
+
+# Receive data
+data = conn.recv(1024).decode()
+print(f"Client says: {data}")
+
+# Send response
+conn.send("Hello from server!".encode())
+
+# Clean up
+conn.close()
+server.close()</code></pre>
+                </div>
+                <div class="flex gap-2 mt-3">
+                  <button
+                    onclick="runDemo('tcpServer')"
+                    class="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 rounded text-sm font-medium"
+                  >
+                    <i class="fas fa-play mr-2"></i>Run Demo
+                  </button>
+                  <button
+                    onclick="explainCode('tcpServer')"
+                    class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm font-medium"
+                  >
+                    <i class="fas fa-question-circle mr-2"></i>Explain
+                  </button>
+                </div>
+              </div>
+
+              <!-- UDP Demo -->
+              <div>
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-bold text-blue-300">
+                    UDP Server (Connectionless)
+                  </h3>
+                  <button
+                    onclick="copyCode('udpServerCode')"
+                    class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700"
+                  >
+                    <i class="far fa-copy mr-1"></i>Copy
+                  </button>
+                </div>
+                <div class="code-block p-4">
+                  <pre
+                    id="udpServerCode"
+                  ><code class="language-python">import socket
+
+# Create UDP socket
+server = socket.socket(socket.AF_INET,
+                       socket.SOCK_DGRAM)
+
+# Bind to port 6000
+server.bind(("0.0.0.0", 6000))
+
+print("UDP Server ready on port 6000...")
+
+# Receive without connection
+while True:
+    data, addr = server.recvfrom(1024)
+    print(f"Message from {addr}: {data.decode()}")
+    
+    # Send response back
+    server.sendto("Got it!".encode(), addr)</code></pre>
+                </div>
+                <div class="flex gap-2 mt-3">
+                  <button
+                    onclick="runDemo('udpServer')"
+                    class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
+                  >
+                    <i class="fas fa-play mr-2"></i>Run Demo
+                  </button>
+                  <button
+                    onclick="explainCode('udpServer')"
+                    class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded text-sm font-medium"
+                  >
+                    <i class="fas fa-question-circle mr-2"></i>Explain
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Hands-on Projects -->
+          <section
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 flex items-center justify-center mr-3"
+              >
+                <i class="fas fa-flask text-xl text-purple-400"></i>
+              </div>
+              <h2 class="text-xl font-bold">7 Tiny Projects 🧪</h2>
+            </div>
+
+            <div class="space-y-4">
+              <div
+                class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-emerald-900/30 flex items-center justify-center mr-3"
+                  >
+                    <span class="text-emerald-400 font-bold">1</span>
+                  </div>
+                  <div>
+                    <div class="font-medium">ping google.com</div>
+                    <div class="text-xs text-slate-400">
+                      See packet travel & RTT
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mr-3"
+                  >
+                    <span class="text-blue-400 font-bold">2</span>
+                  </div>
+                  <div>
+                    <div class="font-medium">netstat -tunlp</div>
+                    <div class="text-xs text-slate-400">
+                      See active ports & protocols
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-red-900/30 flex items-center justify-center mr-3"
+                  >
+                    <span class="text-red-400 font-bold">3</span>
+                  </div>
+                  <div>
+                    <div class="font-medium">ping -c 50 google.com</div>
+                    <div class="text-xs text-slate-400">
+                      Experience packet loss
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-yellow-900/30 flex items-center justify-center mr-3"
+                  >
+                    <span class="text-yellow-400 font-bold">4</span>
+                  </div>
+                  <div>
+                    <div class="font-medium">traceroute google.com</div>
+                    <div class="text-xs text-slate-400">
+                      Visualize network path
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer"
+              >
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 rounded-full bg-purple-900/30 flex items-center justify-center mr-3"
+                  >
+                    <span class="text-purple-400 font-bold">5</span>
+                  </div>
+                  <div>
+                    <div class="font-medium">Multi-client TCP Server</div>
+                    <div class="text-xs text-slate-400">
+                      See multiplexing in action
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Key Concepts Cheatsheet -->
+          <section
+            class="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 card-hover"
+          >
+            <h3 class="text-lg font-bold mb-4 text-emerald-300">
+              🔥 Key Concepts Cheatsheet
+            </h3>
+            <div class="space-y-3">
+              <div class="p-3 rounded-lg bg-slate-800/30">
+                <div class="font-medium text-emerald-400">Port Numbers</div>
+                <div class="text-sm text-slate-400">
+                  0-1023: Well-known ports<br />1024-49151: Registered ports<br />49152-65535:
+                  Dynamic/private
+                </div>
+              </div>
+
+              <div class="p-3 rounded-lg bg-slate-800/30">
+                <div class="font-medium text-blue-400">Socket = IP + Port</div>
+                <div class="text-sm text-slate-400">
+                  UDP: (Dest IP, Dest Port)<br />TCP: (Src IP, Src Port, Dest
+                  IP, Dest Port)
+                </div>
+              </div>
+
+              <div class="p-3 rounded-lg bg-slate-800/30">
+                <div class="font-medium text-purple-400">
+                  Segment = Data + Header
+                </div>
+                <div class="text-sm text-slate-400">
+                  Header contains source/destination ports, sequence numbers
+                  (TCP), length, checksum
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="mt-6 p-3 rounded-lg bg-emerald-900/20 border border-emerald-800/30"
+            >
+              <div class="flex items-center">
+                <i class="fas fa-graduation-cap text-emerald-400 mr-3"></i>
+                <div>
+                  <div class="font-bold text-emerald-300">You've Mastered:</div>
+                  <div class="text-sm text-slate-300 mt-1">
+                    Transport layer role • TCP vs UDP • Ports • Sockets •
+                    Multiplexing
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quick Terminal -->
+          <section
+            class="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 card-hover"
+          >
+            <div class="flex items-center mb-4">
+              <i class="fas fa-terminal text-emerald-400 mr-3"></i>
+              <h3 class="text-lg font-bold">Quick Terminal Commands</h3>
+            </div>
+
+            <div class="space-y-2">
+              <div class="p-3 rounded bg-slate-900/50 font-mono text-sm">
+                $ <span class="text-emerald-400">ss -tunlp</span>
+                <div class="text-xs text-slate-500 mt-1">
+                  Show all TCP/UDP ports in use
+                </div>
+              </div>
+
+              <div class="p-3 rounded bg-slate-900/50 font-mono text-sm">
+                $ <span class="text-emerald-400">nc -u 127.0.0.1 8080</span>
+                <div class="text-xs text-slate-500 mt-1">
+                  Test UDP connection
+                </div>
+              </div>
+
+              <div class="p-3 rounded bg-slate-900/50 font-mono text-sm">
+                $
+                <span class="text-emerald-400"
+                  >curl -v http://localhost:5000</span
+                >
+                <div class="text-xs text-slate-500 mt-1">
+                  Debug HTTP/TCP connection
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Data Flow Animation -->
+      <section
+        class="mt-12 p-6 rounded-2xl bg-slate-900/40 border border-slate-800"
+      >
+        <div class="flex items-center mb-6">
+          <div
+            class="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 flex items-center justify-center mr-4"
+          >
+            <i class="fas fa-shipping-fast text-2xl text-cyan-400"></i>
+          </div>
+          <h2 class="section-title text-2xl font-bold">
+            Live Data Flow Visualization
+          </h2>
+        </div>
+
+        <div class="data-flow">
+          <!-- Application Layer -->
+          <div class="absolute left-8 top-8">
+            <div
+              class="w-24 h-24 rounded-lg bg-purple-600/20 border-2 border-purple-500 flex flex-col items-center justify-center"
+            >
+              <div class="text-3xl">📱</div>
+              <div class="text-xs font-bold mt-2 text-purple-300">
+                Application
+              </div>
+              <div class="text-xs text-purple-400">"Hello"</div>
+            </div>
+          </div>
+
+          <!-- Transport Layer -->
+          <div class="absolute left-1/3 top-8 transform -translate-x-1/2">
+            <div
+              class="w-24 h-24 rounded-lg bg-emerald-600/20 border-2 border-emerald-500 flex flex-col items-center justify-center"
+            >
+              <div class="text-3xl">📦</div>
+              <div class="text-xs font-bold mt-2 text-emerald-300">
+                Transport
+              </div>
+              <div class="text-xs text-emerald-400">Port: 5000</div>
+            </div>
+          </div>
+
+          <!-- Network Layer -->
+          <div class="absolute left-2/3 top-8 transform -translate-x-1/2">
+            <div
+              class="w-24 h-24 rounded-lg bg-blue-600/20 border-2 border-blue-500 flex flex-col items-center justify-center"
+            >
+              <div class="text-3xl">🌐</div>
+              <div class="text-xs font-bold mt-2 text-blue-300">Network</div>
+              <div class="text-xs text-blue-400">IP: 8.8.8.8</div>
+            </div>
+          </div>
+
+          <!-- Destination -->
+          <div class="absolute right-8 top-8">
+            <div
+              class="w-24 h-24 rounded-lg bg-green-600/20 border-2 border-green-500 flex flex-col items-center justify-center"
+            >
+              <div class="text-3xl">💻</div>
+              <div class="text-xs font-bold mt-2 text-green-300">
+                Destination
+              </div>
+              <div class="text-xs text-green-400">App</div>
+            </div>
+          </div>
+
+          <!-- Flow arrows -->
+          <div class="flow-line" style="top: 50px; width: 70%; left: 15%"></div>
+          <div
+            class="flow-line"
+            style="top: 100px; width: 70%; left: 15%; animation-delay: 0.5s"
+          ></div>
+          <div
+            class="flow-line"
+            style="top: 150px; width: 70%; left: 15%; animation-delay: 1s"
+          ></div>
+
+          <!-- Packets -->
+          <div class="packet" style="top: 50px; animation-delay: 0s">P1</div>
+          <div class="packet" style="top: 100px; animation-delay: 0.3s">P2</div>
+          <div class="packet" style="top: 150px; animation-delay: 0.6s">P3</div>
+        </div>
+
+        <div class="text-center mt-4 text-slate-400 text-sm">
+          Data flows: Application → Transport (adds ports) → Network (adds IP) →
+          Destination
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 pt-8 pb-6 border-t border-slate-800">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="mb-4 md:mb-0">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 flex items-center justify-center mr-2"
+              >
+                <i class="fas fa-network-wired text-xs text-slate-900"></i>
+              </div>
+              <span class="text-lg font-bold gradient-text"
+                >Transport Layer Mastery</span
+              >
+            </div>
+            <p class="text-sm text-slate-400 mt-2">
+              Understanding Layer 4: TCP, UDP, Ports, Sockets, Multiplexing
+            </p>
+          </div>
+          <div class="text-sm text-slate-500">
+            <p>
+              🎯 Chapter 3 Complete:
+              <span class="text-emerald-400">Transport Layer</span>
+            </p>
+            <p class="mt-1">
+              📚 Next: <span class="text-blue-400">Network Layer</span> •
+              <span class="text-purple-400">Application Layer</span>
+            </p>
+          </div>
+        </div>
+        <div
+          class="text-center mt-6 pt-6 border-t border-slate-800 text-xs text-slate-500"
+        >
+          <p>
+            Interactive learning dashboard for Computer Networking - Transport
+            Layer concepts with Python implementations
+          </p>
+          <p class="mt-2">
+            All code examples are runnable. TCP Server, UDP Server, Multiplexing
+            demos included.
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script>
+      // Theme toggle
+      document
+        .getElementById('themeToggle')
+        .addEventListener('click', function () {
+          const icon = this.querySelector('i');
+          if (icon.classList.contains('fa-moon')) {
+            icon.classList.remove('fa-moon', 'text-cyan-400');
+            icon.classList.add('fa-sun', 'text-yellow-400');
+            document.body.classList.add('bg-slate-100', 'text-slate-900');
+            document.body.classList.remove(
+              'bg-gradient-to-br',
+              'from-slate-900',
+              'to-slate-800',
+            );
+          } else {
+            icon.classList.remove('fa-sun', 'text-yellow-400');
+            icon.classList.add('fa-moon', 'text-cyan-400');
+            document.body.classList.remove('bg-slate-100', 'text-slate-900');
+            document.body.classList.add(
+              'bg-gradient-to-br',
+              'from-slate-900',
+              'to-slate-800',
+            );
+          }
+        });
+
+      // Copy code function
+      function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        const codeText = codeElement.textContent;
+
+        navigator.clipboard
+          .writeText(codeText)
+          .then(() => {
+            // Show success notification
+            showNotification('Code copied to clipboard!', 'success');
+          })
+          .catch((err) => {
+            showNotification('Failed to copy code', 'error');
+            console.error('Copy failed:', err);
+          });
+      }
+
+      // Run demo simulation
+      function runDemo(demoType) {
+        showNotification(`Running ${demoType.toUpperCase()} demo...`, 'info');
+
+        // Simulate server starting
+        setTimeout(() => {
+          if (demoType === 'tcpServer') {
+            showNotification(
+              'TCP Server started on port 5000. Waiting for connections...',
+              'success',
+            );
+          } else if (demoType === 'udpServer') {
+            showNotification(
+              'UDP Server started on port 6000. Ready to receive datagrams...',
+              'success',
+            );
+          }
+
+          // Simulate client connection
+          setTimeout(() => {
+            showNotification('Client connected! Sending data...', 'info');
+
+            // Simulate data exchange
+            setTimeout(() => {
+              showNotification(
+                'Data received and response sent successfully!',
+                'success',
+              );
+            }, 1000);
+          }, 1500);
+        }, 500);
+      }
+
+      // Explain code
+      function explainCode(demoType) {
+        let explanation = '';
+
+        if (demoType === 'tcpServer') {
+          explanation = `
+🏗️ Step-by-Step Explanation:
+1. import socket → Get networking powers
+2. socket.socket() → Create communication device
+3. AF_INET → Use IPv4 addresses
+4. SOCK_STREAM → Use TCP (reliable)
+5. bind() → Attach to port 5000
+6. listen() → Open for connections
+7. accept() → Wait for client
+8. recv() → Receive data
+9. send() → Send response
+10. close() → Clean up
+
+🎯 Key Concept: This creates a reliable, connection-oriented TCP server.
+                `;
+        } else if (demoType === 'udpServer') {
+          explanation = `
+⚡ UDP Server Explanation:
+1. SOCK_DGRAM → Use UDP (connectionless)
+2. bind() → Attach to port 6000
+3. recvfrom() → Receive from ANY client
+4. No connection needed!
+5. sendto() → Send back to specific address
+6. Loop continues forever
+
+🎯 Key Concept: UDP is fast but unreliable. No connections, just send/receive.
+                `;
+        }
+
+        // Create modal with explanation
+        const modal = document.createElement('div');
+        modal.className =
+          'fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4';
+        modal.innerHTML = `
+                <div class="bg-slate-900 rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-emerald-400">Code Explanation</h3>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="prose prose-invert max-w-none">
+                        <pre class="whitespace-pre-wrap text-slate-300 font-mono text-sm">${explanation}</pre>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="this.parentElement.parentElement.remove()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+
+        document.body.appendChild(modal);
+      }
+
+      // Show notification
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+
+        let bgColor = 'bg-slate-800';
+        let borderColor = 'border-slate-700';
+        let textColor = 'text-white';
+
+        if (type === 'success') {
+          bgColor = 'bg-emerald-900/80';
+          borderColor = 'border-emerald-700';
+        } else if (type === 'error') {
+          bgColor = 'bg-red-900/80';
+          borderColor = 'border-red-700';
+        } else if (type === 'info') {
+          bgColor = 'bg-blue-900/80';
+          borderColor = 'border-blue-700';
+        }
+
+        notification.className = `fixed bottom-4 right-4 p-4 rounded-lg ${bgColor} border ${borderColor} ${textColor} shadow-lg z-50 max-w-sm transition-all duration-300`;
+        notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${
+                      type === 'success'
+                        ? 'check-circle'
+                        : type === 'error'
+                        ? 'exclamation-circle'
+                        : 'info-circle'
+                    } 
+                       ${
+                         type === 'success'
+                           ? 'text-emerald-400'
+                           : type === 'error'
+                           ? 'text-red-400'
+                           : 'text-blue-400'
+                       } mr-3"></i>
+                    <div>
+                        <div class="font-medium">${message}</div>
+                    </div>
+                </div>
+            `;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateY(10px)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Animate port bubbles on hover
+      document.querySelectorAll('.port-bubble').forEach((bubble) => {
+        bubble.addEventListener('mouseenter', function () {
+          this.style.transform = 'scale(1.2) translateY(-5px)';
+          this.style.boxShadow = '0 10px 20px rgba(0,0,0,0.3)';
+        });
+
+        bubble.addEventListener('mouseleave', function () {
+          this.style.transform = 'scale(1)';
+          this.style.boxShadow = 'none';
+        });
+      });
+
+      // Initialize Prism syntax highlighting
+      document.addEventListener('DOMContentLoaded', function () {
+        Prism.highlightAll();
+
+        // Create some packet animations
+        const dataFlow = document.querySelector('.data-flow');
+        for (let i = 0; i < 5; i++) {
+          const packet = document.createElement('div');
+          packet.className = 'packet';
+          packet.textContent = `P${i + 1}`;
+          packet.style.top = `${60 + i * 30}px`;
+          packet.style.animationDelay = `${i * 0.5}s`;
+          dataFlow.appendChild(packet);
+        }
+      });
+    </script>
+  </body>
+</html>

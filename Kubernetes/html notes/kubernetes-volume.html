@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>💾 Kubernetes Volumes - Complete Storage Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      /* Larger fonts for better readability */
+      h1 {
+        font-size: 2.5rem !important;
+      }
+      h2 {
+        font-size: 2rem !important;
+      }
+      h3 {
+        font-size: 1.75rem !important;
+      }
+      h4 {
+        font-size: 1.5rem !important;
+      }
+      p,
+      li {
+        font-size: 1.25rem !important;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #8b5cf6, #10b981, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .volume-card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px auto;
+        max-width: 100%;
+      }
+
+      .volume-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        border-color: #8b5cf6;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+        padding: 25px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 6px solid #8b5cf6;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        word-break: break-word;
+        padding-right: 110px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 8px 0;
+        color: #e2e8f0;
+        font-size: 1.1rem;
+      }
+
+      .terminal-prompt {
+        color: #8b5cf6;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-info {
+        color: #3b82f6;
+      }
+
+      .storage-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        margin: 25px 0;
+        border: 3px solid #334155;
+        position: relative;
+        min-height: 350px;
+      }
+
+      .storage-flow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      .storage-node {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid;
+        transition: all 0.3s ease;
+        min-height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .storage-node:hover {
+        transform: translateY(-5px);
+      }
+
+      .node-pod {
+        border-color: #10b981;
+      }
+
+      .node-pvc {
+        border-color: #3b82f6;
+      }
+
+      .node-pv {
+        border-color: #8b5cf6;
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+        font-size: 1.5rem;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.15),
+          rgba(37, 99, 235, 0.15)
+        );
+        border-left: 5px solid #3b82f6;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.15)
+        );
+        border-left: 5px solid #10b981;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15),
+          rgba(217, 119, 6, 0.15)
+        );
+        border-left: 5px solid #f59e0b;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .demo-btn {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .demo-btn:hover {
+        background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+      }
+
+      .demo-btn.primary {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+
+      .demo-btn.primary:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+      }
+
+      .demo-btn.amber {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .demo-btn.amber:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 5px;
+      }
+
+      .status-available {
+        background: rgba(16, 185, 129, 0.25);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.5);
+      }
+
+      .status-bound {
+        background: rgba(59, 130, 246, 0.25);
+        color: #3b82f6;
+        border: 2px solid rgba(59, 130, 246, 0.5);
+      }
+
+      .status-lost {
+        background: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        border: 2px solid rgba(239, 68, 68, 0.5);
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 15px;
+        overflow: hidden;
+        font-size: 1.2rem;
+      }
+
+      .comparison-table th {
+        background: rgba(139, 92, 246, 0.3);
+        padding: 20px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 3px solid #334155;
+        font-size: 1.3rem;
+      }
+
+      .comparison-table td {
+        padding: 18px 20px;
+        border-bottom: 2px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(139, 92, 246, 0.15);
+      }
+
+      .storage-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 25px 0;
+      }
+
+      .storage-type-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 25px;
+        border: 2px solid;
+        text-align: center;
+      }
+
+      .type-ephemeral {
+        border-color: #ef4444;
+      }
+
+      .type-persistent {
+        border-color: #10b981;
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 60px;
+        min-width: 60px;
+      }
+
+      /* Mobile-specific optimizations */
+      @media (max-width: 768px) {
+        body {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 2rem !important;
+        }
+        h2 {
+          font-size: 1.75rem !important;
+        }
+        h3 {
+          font-size: 1.5rem !important;
+        }
+        h4 {
+          font-size: 1.3rem !important;
+        }
+        p,
+        li {
+          font-size: 1.1rem !important;
+        }
+
+        .volume-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+
+        .code-container {
+          padding: 20px;
+          padding-right: 90px;
+          font-size: 1rem;
+        }
+
+        .code-text {
+          font-size: 1rem;
+          padding-right: 80px;
+        }
+
+        .copy-btn {
+          padding: 10px 20px;
+          font-size: 1rem;
+          min-height: 45px;
+        }
+
+        .demo-btn {
+          padding: 14px 24px;
+          font-size: 1.1rem;
+          min-height: 55px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .demo-controls {
+          flex-direction: column;
+        }
+
+        .storage-flow {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .flow-arrow {
+          transform: rotate(90deg);
+          margin: 10px 0;
+        }
+
+        .storage-types {
+          grid-template-columns: 1fr;
+        }
+
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+          font-size: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+          padding: 15px;
+          min-width: 150px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 480px) {
+        body {
+          font-size: 15px;
+        }
+        h1 {
+          font-size: 1.8rem !important;
+        }
+        h2 {
+          font-size: 1.6rem !important;
+        }
+        .code-text {
+          font-size: 0.95rem;
+        }
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .data-flow {
+        animation: flow 3s linear infinite;
+      }
+
+      @keyframes flow {
+        0% {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      .highlight {
+        background: rgba(139, 92, 246, 0.2);
+        padding: 3px 8px;
+        border-radius: 5px;
+        color: #8b5cf6;
+      }
+
+      .data-survives {
+        animation: survive 2s ease-in-out infinite;
+      }
+
+      @keyframes survive {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+        50% {
+          transform: scale(1.1);
+          box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="volume-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            💾 Kubernetes Volumes - Complete Storage Guide
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            From Ephemeral to Persistent Storage - Data That Survives! 🧠
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30 text-lg"
+            >
+              <i class="fas fa-database mr-2"></i>Persistent Storage
+            </span>
+            <span
+              class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full border border-green-500/30 text-lg"
+            >
+              <i class="fas fa-hdd mr-2"></i>PV + PVC Pattern
+            </span>
+            <span
+              class="px-5 py-3 bg-red-500/20 text-red-300 rounded-full border border-red-500/30 text-lg"
+            >
+              <i class="fas fa-clock mr-2"></i>Ephemeral vs Permanent
+            </span>
+            <span
+              class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30 text-lg"
+            >
+              <i class="fas fa-folder-open mr-2"></i>hostPath Mounts
+            </span>
+          </div>
+
+          <div class="storage-visual">
+            <div class="storage-flow">
+              <div class="storage-node node-pod">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-server"></i>
+                </div>
+                <h4 class="font-bold text-green-300 text-xl">Pod</h4>
+                <p class="text-slate-300 text-sm">Your Application</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-bound">
+                    <i class="fas fa-link mr-2"></i>Mounts Volume
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="storage-node node-pvc">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-file-contract"></i>
+                </div>
+                <h4 class="font-bold text-blue-300 text-xl">PVC</h4>
+                <p class="text-slate-300 text-sm">PersistentVolumeClaim</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-bound">
+                    <i class="fas fa-check mr-2"></i>Bound
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="storage-node node-pv">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-hdd"></i>
+                </div>
+                <h4 class="font-bold text-purple-300 text-xl">PV</h4>
+                <p class="text-slate-300 text-sm">PersistentVolume</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-available">
+                    <i class="fas fa-check mr-2"></i>1Gi Storage
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-6">
+              <div class="text-slate-400">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Pod → PVC → PV</strong> - Kubernetes storage
+                abstraction!
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- What We'll Learn -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-bullseye mr-3"></i>🎯 What We'll Learn
+        </h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="p-4 bg-slate-800/50 rounded text-center">
+            <div class="text-3xl mb-3">1️⃣</div>
+            <h4 class="font-bold text-green-300">Normal Pod Volume</h4>
+            <p class="text-slate-300 text-sm">Ephemeral storage</p>
+          </div>
+          <div class="p-4 bg-slate-800/50 rounded text-center">
+            <div class="text-3xl mb-3">2️⃣</div>
+            <h4 class="font-bold text-blue-300">Persistent Volume</h4>
+            <p class="text-slate-300 text-sm">Data survives pod delete</p>
+          </div>
+          <div class="p-4 bg-slate-800/50 rounded text-center">
+            <div class="text-3xl mb-3">3️⃣</div>
+            <h4 class="font-bold text-amber-300">External Mounts</h4>
+            <p class="text-slate-300 text-sm">hostPath folder mounting</p>
+          </div>
+          <div class="p-4 bg-slate-800/50 rounded text-center">
+            <div class="text-3xl mb-3">4️⃣</div>
+            <h4 class="font-bold text-cyan-300">Real Example</h4>
+            <p class="text-slate-300 text-sm">Saving logs / files</p>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-folder-plus mr-2"></i>🏗️ Create NEW Project Folder
+          </h4>
+          <div class="code-container" style="padding: 15px">
+            <div class="code-text">
+              cd ~/Desktop/Courses/Kubernetes mkdir kubernetes-volumes cd
+              kubernetes-volumes
+            </div>
+          </div>
+          <p class="text-slate-300 mt-3">
+            <i class="fas fa-check text-green-400 mr-2"></i>
+            So things stay clean and organized! 👍
+          </p>
+        </div>
+      </section>
+
+      <!-- Simple Understanding -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+          <i class="fas fa-brain mr-3"></i>🧠 First Understand in Simple Words
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-6 bg-red-500/10 rounded border border-red-500/30">
+            <div class="text-4xl mb-3 text-center">❌</div>
+            <h3 class="font-bold text-red-300 text-xl mb-3">
+              Right Now (Without Volumes)
+            </h3>
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="text-center">
+                <div class="text-3xl mb-2">🐳</div>
+                <div class="text-slate-300">Container Filesystem Only</div>
+                <div class="text-slate-400 text-sm">
+                  Data lives inside container
+                </div>
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
+              <strong>If pod deletes → data gone forever!</strong>
+            </p>
+          </div>
+
+          <div class="p-6 bg-green-500/10 rounded border border-green-500/30">
+            <div class="text-4xl mb-3 text-center">✅</div>
+            <h3 class="font-bold text-green-300 text-xl mb-3">
+              With Kubernetes Volumes
+            </h3>
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="text-center">
+                <div class="text-3xl mb-2">💾</div>
+                <div class="text-slate-300">
+                  Volume = Storage attached to pod
+                </div>
+                <div class="text-slate-400 text-sm">External storage mount</div>
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              <strong>Data survives pod restarts & deletions!</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="comparison-table mt-6">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Meaning</th>
+                <th>Data Survival</th>
+                <th>Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="font-bold text-amber-300">emptyDir</span></td>
+                <td>Temporary storage</td>
+                <td>❌ Dies with pod</td>
+                <td>Cache, temp files</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300"
+                    >PersistentVolume (PV + PVC)</span
+                  >
+                </td>
+                <td>Permanent storage</td>
+                <td>✔️ Survives pod delete</td>
+                <td>Database, logs, user data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Your Successful Execution -->
+      <section class="volume-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-trophy mr-3"></i>✅ Your Successful Execution
+        </h2>
+
+        <div class="terminal-output">
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f
+            volume-pod.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod/volume-demo-pod created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl exec -it
+            volume-demo-pod -- sh
+          </div>
+          <div class="terminal-line ml-4">/myapp # cd /data</div>
+          <div class="terminal-line ml-4">
+            /data # echo "Hello Amit Volume Test ❤️" > hello.txt
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            /data # cat hello.txt
+          </div>
+          <div class="terminal-line ml-8 terminal-success">
+            Hello Amit Volume Test ❤️
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl delete pod
+            volume-demo-pod
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod "volume-demo-pod" deleted
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f pv.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            persistentvolume/express-pv created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f pvc.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            persistentvolumeclaim/express-pvc created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f pvc-pod.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod/pvc-demo-pod created
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            /data # cat amit.txt
+          </div>
+          <div class="terminal-line ml-8 terminal-success">
+            Permanent Amit Data 😎
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <div class="text-center">
+            <div class="text-4xl mb-3 data-survives">🔥</div>
+            <h4 class="font-bold text-green-300 mb-2">
+              FILE STILL THERE AFTER POD DELETION!
+            </h4>
+            <p class="text-slate-300">
+              This is <strong>real persistent Kubernetes storage</strong> in
+              action! 🎉
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART 1: Simple Volume -->
+      <section class="step-card p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-rocket mr-3"></i>🚀 PART 1 — Simple Volume (Inside
+            Pod Only)
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              We'll create:
+              <strong>Pod + Volume + Save log file + Prove it works</strong>
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="volumePod">
+              apiVersion: v1 kind: Pod metadata: name: volume-demo-pod spec:
+              containers: - name: express image: express-demo:v2 volumeMounts: -
+              name: app-storage mountPath: /data volumes: - name: app-storage
+              emptyDir: {}
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('volumePod')"
+              >
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              volume-pod.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              pod/volume-demo-pod created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl exec -it
+              volume-demo-pod -- sh
+            </div>
+            <div class="terminal-line ml-4"># Inside pod:</div>
+            <div class="terminal-line ml-4">cd /data</div>
+            <div class="terminal-line ml-4">
+              echo "Hello Amit Volume Test ❤️" > hello.txt
+            </div>
+            <div class="terminal-line ml-4">ls</div>
+            <div class="terminal-line ml-4 terminal-success">cat hello.txt</div>
+            <div class="terminal-line ml-8 terminal-success">
+              Hello Amit Volume Test ❤️
+            </div>
+          </div>
+
+          <div class="warning-box">
+            <h4 class="font-bold text-amber-300 mb-3">
+              <i class="fas fa-exclamation-triangle mr-2"></i>❗️ Important
+              Truth
+            </h4>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">kubectl delete pod volume-demo-pod</div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-skull-crossbones text-red-400 mr-2"></i>
+              <strong>DATA WILL BE LOST ❌</strong>
+            </p>
+            <p class="text-slate-300 mt-2">
+              This is temporary volume (RAM / node level) - that's why
+              production uses PersistentVolume.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART 2: Persistent Volume -->
+      <section class="step-card p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-shield-alt mr-3"></i>🚀 PART 2 — REAL Persistent
+            Kubernetes Storage
+          </h2>
+
+          <div class="success-box">
+            <p class="text-slate-300">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              This survives:
+              <strong>✔️ Pod Delete • ✔️ Restart • ✔️ Crash</strong>
+            </p>
+          </div>
+
+          <div class="storage-flow mt-6">
+            <div class="storage-node node-pod">
+              <div class="text-3xl mb-3">📦</div>
+              <h4 class="font-bold text-green-300">Pod</h4>
+              <p class="text-slate-300 text-sm">Mounts PVC</p>
+            </div>
+
+            <div class="flow-arrow">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+
+            <div class="storage-node node-pvc">
+              <div class="text-3xl mb-3">📝</div>
+              <h4 class="font-bold text-blue-300">PVC</h4>
+              <p class="text-slate-300 text-sm">Requests storage</p>
+            </div>
+
+            <div class="flow-arrow">
+              <i class="fas fa-arrow-right"></i>
+            </div>
+
+            <
+          </div>
+        </div>
+      </section>
+    </div>
+                     <div class="storage-node node-pv">
+                        <div class="text-3xl mb-3">💾</div>
+                        <h4 class="font-bold text-purple-300">PV</h4>
+                        <p class="text-slate-300 text-sm">Actual storage</p>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold text-amber-300 mb-4 mt-8">
+                    <i class="fas fa-cubes mr-2"></i>🧱 Step 1 — Persistent Volume
+                </h3>
+                
+                <div class="code-container">
+                    <div class="code-text" id="pvYaml">
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: express-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/express
+                    </div>
+                    <div class="copy-btn-wrapper">
+                        <button class="copy-btn no-select" onclick="copyCode('pvYaml')">
+                            <i class="fas fa-copy"></i> Copy PV YAML
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="terminal-output">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> kubectl apply -f pv.yaml
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        persistentvolume/express-pv created
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> kubectl get pv
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        NAME         CAPACITY   ACCESS MODES   STATUS      CLAIM   AGE
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        express-pv   1Gi        RWO            Available          6s
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold text-blue-300 mb-4 mt-8">
+                    <i class="fas fa-file-contract mr-2"></i>🧱 Step 2 — Persistent Volume Claim
+                </h3>
+                
+                <div class="code-container">
+                    <div class="code-text" id="pvcYaml">
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: express-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+                    </div>
+                    <div class="copy-btn-wrapper">
+                        <button class="copy-btn no-select" onclick="copyCode('pvcYaml')">
+                            <i class="fas fa-copy"></i> Copy PVC YAML
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="terminal-output">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> kubectl apply -f pvc.yaml
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        persistentvolumeclaim/express-pvc created
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> kubectl get pvc
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        NAME          STATUS   VOLUME       CAPACITY   ACCESS MODES   AGE
+                    </div>
+                    <div class="terminal-line ml-4 terminal-success">
+                        express-pvc   Bound    express-pv   1Gi        RWO            6s
+                    </div>
+                </div>
+                
+                <div class="success-box mt-6">
+                    <div class="flex items-center">
+                        <div class="text-3xl mr-3">🎉</div>
+                        <div>
+                            <h4 class="font-bold text-green-300">PVC BOUND SUCCESS!</h4>
+                            <p class="text-slate-300">Now your claim is connected to the Persistent Volume!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Step 3: Attach PVC to Pod -->
+        <section class="step-card p-6">
+            <div class="step-badge">3</div>
+            <div class="pt-10">
+                <h2 class="text-2xl font-bold text-green-300 mb-4">
+                    <i class="fas fa-link mr-3"></i>🚀 Step 3 — Attach PVC To Pod
+                </h2>
+                
+                <div class="code-container">
+                    <div class="code-text" id="pvcPodYaml">
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-demo-pod
+spec:
+  containers:
+  - name: express
+    image: express-demo:v2
+    volumeMounts:
+    - name: storage
+      mountPath: /data
+  volumes:
+  - name: storage
+    persistentVolumeClaim:
+      claimName: express-pvc
+                    </div>
+                    <div class="copy-btn-wrapper">
+                        <button class="copy-btn no-select" onclick="copyCode('pvcPodYaml')">
+                            <i class="fas fa-copy"></i> Copy Pod YAML
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="demo-controls">
+                    <button class="demo-btn" onclick="runDemo('create')">
+                        <i class="fas fa-play mr-2"></i> Create Pod
+                    </button>
+                    <button class="demo-btn primary" onclick="runDemo('write')">
+                        <i class="fas fa-edit mr-2"></i> Write Data
+                    </button>
+                    <button class="demo-btn amber" onclick="runDemo('delete')">
+                        <i class="fas fa-trash mr-2"></i> Delete Pod
+                    </button>
+                    <button class="demo-btn primary" onclick="runDemo('recreate')">
+                        <i class="fas fa-redo mr-2"></i> Recreate
+                    </button>
+                </div>
+                
+                <div id="demoOutput" class="terminal-output">
+                    <div class="terminal-line terminal-info">
+                        <i class="fas fa-mouse-pointer mr-2"></i>
+                        Click buttons above to simulate the demo steps
+                    </div>
+                </div>
+                
+                <div class="storage-visual mt-6" id="persistenceDemo">
+                    <div class="text-center mb-4">
+                        <h3 class="text-xl font-bold text-purple-300">🔬 Persistence Test</h3>
+                        <p class="text-slate-300">Watch the data survive pod deletion!</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <div class="text-3xl mb-2" id="podStatus">🐳</div>
+                            <div class="text-slate-300">Pod Status</div>
+                            <div class="text-green-400 mt-2" id="podText">Running</div>
+                        </div>
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <div class="text-3xl mb-2" id="dataStatus">💾</div>
+                            <div class="text-slate-300">Data Status</div>
+                            <div class="text-green-400 mt-2" id="dataText">Safely Stored</div>
+                        </div>
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <div class="text-3xl mb-2" id="pvcStatus">🔗</div>
+                            <div class="text-slate-300">PVC Status</div>
+                            <div class="text-blue-400 mt-2" id="pvcText">Bound</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 text-center">
+                        <div class="inline-block p-4 bg-slate-800/70 rounded-lg">
+                            <div class="text-2xl mb-2">📝 Data Content:</div>
+                            <div class="code-container" style="padding: 15px; margin: 0;">
+                                <div class="code-text" id="dataContent">
+Permanent Amit Data 😎
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="success-box mt-6">
+                    <div class="flex items-center">
+                        <div class="text-4xl mr-3 pulse">🔥</div>
+                        <div>
+                            <h4 class="font-bold text-green-300">FILE SURVIVES POD DELETION!</h4>
+                            <p class="text-slate-300">This is real persistent Kubernetes storage in action! 🎉</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Big Picture Understanding -->
+        <section class="volume-card p-6 mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+                <i class="fas fa-sitemap mr-3"></i>🧠 Big Picture Understanding
+            </h2>
+            
+            <div class="comparison-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Data Survives?</th>
+                            <th>Use Case</th>
+                            <th>K8s Objects Needed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="font-bold text-amber-300">emptyDir</span></td>
+                            <td><span class="text-red-400">❌ No</span></td>
+                            <td>Temp logs, cache</td>
+                            <td>Pod only</td>
+                        </tr>
+                        <tr>
+                            <td><span class="font-bold text-blue-300">hostPath PV</span></td>
+                            <td><span class="text-green-400">✔ Yes</span></td>
+                            <td>Local development</td>
+                            <td>PV + PVC + Pod</td>
+                        </tr>
+                        <tr>
+                            <td><span class="font-bold text-purple-300">Cloud PV</span></td>
+                            <td><span class="text-green-400">✔✔ Yes</span></td>
+                            <td>Production databases</td>
+                            <td>StorageClass + PVC + Pod</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div class="info-box">
+                    <h4 class="font-bold text-blue-300 mb-3">
+                        <i class="fas fa-lightbulb mr-2"></i>💡 Key Insight
+                    </h4>
+                    <p class="text-slate-300">
+                        <strong>emptyDir</strong> = like your computer's RAM<br>
+                        <strong>PersistentVolume</strong> = like your computer's SSD
+                    </p>
+                    <p class="text-slate-300 mt-3">
+                        RAM clears when power off (pod delete)<br>
+                        SSD keeps data forever (persistent)
+                    </p>
+                </div>
+                
+                <div class="success-box">
+                    <h4 class="font-bold text-green-300 mb-3">
+                        <i class="fas fa-check-circle mr-2"></i>✅ Production Ready Pattern
+                    </h4>
+                    <p class="text-slate-300">
+                        Always use <strong>PV + PVC pattern</strong> for:
+                    </p>
+                    <ul class="text-slate-300 mt-2 ml-4">
+                        <li>• Database data (PostgreSQL, MySQL)</li>
+                        <li>• User uploads / files</li>
+                        <li>• Application logs</li>
+                        <li>• Configuration files</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Real World Example -->
+        <section class="volume-card p-6 mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+                <i class="fas fa-globe mr-3"></i>🌍 Real World Example
+            </h2>
+            
+            <div class="p-6 bg-slate-800/50 rounded border border-amber-500/30 mb-6">
+                <h3 class="text-xl font-bold text-amber-300 mb-4">🛠️ Use Case: Express.js Logging</h3>
+                <p class="text-slate-300 mb-4">
+                    Your Express app needs to save access logs permanently, even if pods restart.
+                </p>
+                
+                <div class="code-container">
+                    <div class="code-text">
+// server.js - Express app
+const express = require('express');
+const fs = require('fs');
+const app = express();
+
+app.use((req, res, next) => {
+    const log = `${new Date().toISOString()} - ${req.method} ${req.url}\n`;
+    // Write to persistent volume
+    fs.appendFileSync('/data/access.log', log);
+    next();
+});
+
+// Your routes...
+app.get('/', (req, res) => {
+    res.send('Hello from Express!');
+});
+
+app.listen(3000);
+                    </div>
+                </div>
+                
+                <div class="terminal-output mt-4">
+                    <div class="terminal-line">
+                        <span class="terminal-prompt">$</span> kubectl exec -it express-pod -- sh
+                    </div>
+                    <div class="terminal-line ml-4">
+                        # Check logs in persistent volume
+                    </div>
+                    <div class="terminal-line ml-4">
+                        tail -f /data/access.log
+                    </div>
+                    <div class="terminal-line ml-8 terminal-success">
+                        2024-01-15T10:30:00Z - GET /
+                    </div>
+                    <div class="terminal-line ml-8 terminal-success">
+                        2024-01-15T10:30:05Z - POST /api/login
+                    </div>
+                    <div class="terminal-line ml-4 terminal-info">
+                        # Logs survive pod crashes/updates!
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="p-4 bg-slate-800/50 rounded text-center">
+                    <div class="text-3xl mb-2">📊</div>
+                    <h4 class="font-bold text-green-300">Logs Survive</h4>
+                    <p class="text-slate-300 text-sm">Debugging made easy</p>
+                </div>
+                <div class="p-4 bg-slate-800/50 rounded text-center">
+                    <div class="text-3xl mb-2">💾</div>
+                    <h4 class="font-bold text-blue-300">File Uploads</h4>
+                    <p class="text-slate-300 text-sm">User files stay safe</p>
+                </div>
+                <div class="p-4 bg-slate-800/50 rounded text-center">
+                    <div class="text-3xl mb-2">🗄️</div>
+                    <h4 class="font-bold text-purple-300">Database</h4>
+                    <p class="text-slate-300 text-sm">PostgreSQL data persists</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Summary -->
+        <section class="volume-card p-6">
+            <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+                <i class="fas fa-flag-checkered mr-3"></i>🏁 Summary
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-300 mb-3">🎯 What You Learned</h3>
+                    <ul class="text-slate-300 space-y-2">
+                        <li><i class="fas fa-check text-green-400 mr-2"></i> Pod volumes vs Persistent Volumes</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i> PV + PVC pattern (storage abstraction)</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i> How data survives pod deletion</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i> Real-world use cases</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i> Production-ready storage setup</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-blue-300 mb-3">📁 Files You Created</h3>
+                    <div class="code-container" style="padding: 15px;">
+                        <div class="code-text">
+📦 kubernetes-volumes/
+├── 📄 volume-pod.yaml      # Simple volume
+├── 📄 pv.yaml             # PersistentVolume
+├── 📄 pvc.yaml            # PersistentVolumeClaim
+└── 📄 pvc-pod.yaml        # Pod using PVC
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="success-box mt-6">
+                <div class="flex items-center">
+                    <div class="text-4xl mr-3">🎉</div>
+                    <div>
+                        <h4 class="font-bold text-green-300">Congratulations! 🥳</h4>
+                        <p class="text-slate-300">
+                            You now understand Kubernetes storage - a critical skill for any DevOps engineer!
+                            Your data can now survive pod failures, restarts, and deployments. 🚀
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <button class="demo-btn pulse" onclick="location.reload()">
+                    <i class="fas fa-redo mr-2"></i> Run Demo Again
+                </button>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="text-center mt-10 mb-6 text-slate-400">
+            <p class="mb-4">
+                <i class="fas fa-code mr-2"></i>Made with ❤️ for Kubernetes learners
+            </p>
+            <div class="flex justify-center gap-4 text-xl">
+                <a href="#" class="text-purple-400 hover:text-purple-300 transition">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="#" class="text-blue-400 hover:text-blue-300 transition">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="#" class="text-green-400 hover:text-green-300 transition">
+                    <i class="fab fa-youtube"></i>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Copy code function
+        function copyCode(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target.closest('.copy-btn');
+                const originalText = button.innerHTML;
+                
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+        
+        // Demo simulation
+        const demoSteps = {
+            create: {
+                output: [
+                    "$ kubectl apply -f pvc-pod.yaml",
+                    "pod/pvc-demo-pod created",
+                    "",
+                    "# Pod created with PVC mounted at /data"
+                ],
+                updateUI: function() {
+                    document.getElementById('podStatus').textContent = '🚀';
+                    document.getElementById('podText').textContent = 'Created';
+                    document.getElementById('podText').className = 'text-green-400 mt-2';
+                }
+            },
+            write: {
+                output: [
+                    "$ kubectl exec -it pvc-demo-pod -- sh",
+                    "/myapp # cd /data",
+                    "/data # echo 'Permanent Amit Data 😎' > amit.txt",
+                    "/data # cat amit.txt",
+                    "Permanent Amit Data 😎",
+                    "",
+                    "# Data written to persistent volume!"
+                ],
+                updateUI: function() {
+                    document.getElementById('dataStatus').textContent = '📝';
+                    document.getElementById('dataText').textContent = 'Data Written';
+                    document.getElementById('dataText').className = 'text-green-400 mt-2';
+                    document.getElementById('dataContent').textContent = 'Permanent Amit Data 😎';
+                }
+            },
+            delete: {
+                output: [
+                    "$ kubectl delete pod pvc-demo-pod",
+                    "pod 'pvc-demo-pod' deleted",
+                    "",
+                    "# Pod deleted, but data is safe in PV!"
+                ],
+                updateUI: function() {
+                    document.getElementById('podStatus').textContent = '💀';
+                    document.getElementById('podText').textContent = 'Deleted';
+                    document.getElementById('podText').className = 'text-red-400 mt-2';
+                    document.getElementById('dataStatus').className = 'text-3xl mb-2 data-survives';
+                }
+            },
+            recreate: {
+                output: [
+                    "$ kubectl apply -f pvc-pod.yaml",
+                    "pod/pvc-demo-pod created",
+                    "$ kubectl exec -it pvc-demo-pod -- sh",
+                    "/data # cat amit.txt",
+                    "Permanent Amit Data 😎",
+                    "",
+                    "🔥 DATA SURVIVED POD DELETION! 🔥"
+                ],
+                updateUI: function() {
+                    document.getElementById('podStatus').textContent = '🐳';
+                    document.getElementById('podText').textContent = 'Running';
+                    document.getElementById('podText').className = 'text-green-400 mt-2';
+                    document.getElementById('dataStatus').textContent = '💾';
+                    document.getElementById('dataText').textContent = 'Data Safe';
+                    document.getElementById('dataText').className = 'text-green-400 mt-2';
+                    document.getElementById('dataContent').textContent = 'Permanent Amit Data 😎';
+                }
+            }
+        };
+        
+        function runDemo(step) {
+            const demo = demoSteps[step];
+            const outputDiv = document.getElementById('demoOutput');
+            
+            // Clear and show new output
+            outputDiv.innerHTML = demo.output.map(line => {
+                if (line.startsWith('$')) {
+                    return `<div class="terminal-line"><span class="terminal-prompt">$</span> ${line.substring(2)}</div>`;
+                } else if (line.startsWith('#') || line.startsWith('/')) {
+                    return `<div class="terminal-line ml-4">${line}</div>`;
+                } else if (line.includes('🔥')) {
+                    return `<div class="terminal-line ml-4 terminal-success pulse">${line}</div>`;
+                } else if (line.includes('created') || line.includes('SURVIVED') || line.includes('😎')) {
+                    return `<div class="terminal-line ml-4 terminal-success">${line}</div>`;
+                } else if (line.includes('deleted')) {
+                    return `<div class="terminal-line ml-4 terminal-error">${line}</div>`;
+                } else if (line) {
+                    return `<div class="terminal-line ml-4 terminal-info">${line}</div>`;
+                } else {
+                    return `<div class="terminal-line"></div>`;
+                }
+            }).join('');
+            
+            // Update UI visualization
+            demo.updateUI();
+            
+            // Scroll to demo output
+            outputDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Touch-friendly enhancements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make all interactive elements more touch-friendly
+            const interactiveElements = document.querySelectorAll('button, .copy-btn, .demo-btn');
+            interactiveElements.forEach(el => {
+                el.classList.add('touch-target');
+            });
+            
+            // Initialize demo
+            runDemo('create');
+        });
+        
+        // Syntax highlighting helper
+        function highlightSyntax() {
+            const codeElements = document.querySelectorAll('.code-text');
+            codeElements.forEach(el => {
+                let code = el.textContent;
+                
+                // Simple syntax highlighting
+                code = code.replace(/(apiVersion|kind|metadata|spec|containers|volumeMounts|volumes|name|image|mountPath|emptyDir|persistentVolumeClaim|claimName|capacity|storage|accessModes|hostPath|path|resources|requests)/g, 
+                    '<span class="code-keyword">$1</span>');
+                
+                code = code.replace(/(".*?")/g, '<span class="code-string">$1</span>');
+                code = code.replace(/(\d+Gi|\d+)/g, '<span class="code-number">$1</span>');
+                code = code.replace(/(#.*)/g, '<span class="code-comment">$1</span>');
+                
+                el.innerHTML = code;
+            });
+        }
+        
+        // Run syntax highlighting
+        setTimeout(highlightSyntax, 100);
+    </script>
+</body>
+</html>

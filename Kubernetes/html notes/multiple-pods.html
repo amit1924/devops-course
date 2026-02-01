@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>
+      🌐 Kubernetes Multi-Pod Communication - Microservices Networking
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      /* Larger fonts for better readability */
+      h1 {
+        font-size: 2.5rem !important;
+      }
+      h2 {
+        font-size: 2rem !important;
+      }
+      h3 {
+        font-size: 1.75rem !important;
+      }
+      h4 {
+        font-size: 1.5rem !important;
+      }
+      p,
+      li {
+        font-size: 1.25rem !important;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #10b981, #3b82f6, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .pod-card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px auto;
+        max-width: 100%;
+      }
+
+      .pod-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2);
+        border-color: #10b981;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+        padding: 25px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(59, 130, 246, 0.15);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 6px solid #10b981;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        word-break: break-word;
+        padding-right: 110px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 8px 0;
+        color: #e2e8f0;
+        font-size: 1.1rem;
+      }
+
+      .terminal-prompt {
+        color: #10b981;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-info {
+        color: #3b82f6;
+      }
+
+      .network-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        margin: 25px 0;
+        border: 3px solid #334155;
+        position: relative;
+        min-height: 350px;
+      }
+
+      .communication-flow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 1000px;
+      }
+
+      .flow-node {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid;
+        transition: all 0.3s ease;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .flow-node:hover {
+        transform: translateY(-5px);
+      }
+
+      .node-client {
+        border-color: #f59e0b;
+      }
+
+      .node-service {
+        border-color: #3b82f6;
+      }
+
+      .node-server {
+        border-color: #10b981;
+      }
+
+      .flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8b5cf6;
+        font-size: 1.5rem;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.15),
+          rgba(37, 99, 235, 0.15)
+        );
+        border-left: 5px solid #3b82f6;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.15)
+        );
+        border-left: 5px solid #10b981;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15),
+          rgba(217, 119, 6, 0.15)
+        );
+        border-left: 5px solid #f59e0b;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .demo-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .demo-btn:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+      }
+
+      .demo-btn.primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      }
+
+      .demo-btn.primary:hover {
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      }
+
+      .demo-btn.amber {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .demo-btn.amber:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 5px;
+      }
+
+      .status-running {
+        background: rgba(16, 185, 129, 0.25);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.5);
+      }
+
+      .status-service {
+        background: rgba(59, 130, 246, 0.25);
+        color: #3b82f6;
+        border: 2px solid rgba(59, 130, 246, 0.5);
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 15px;
+        overflow: hidden;
+        font-size: 1.2rem;
+      }
+
+      .comparison-table th {
+        background: rgba(16, 185, 129, 0.3);
+        padding: 20px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 3px solid #334155;
+        font-size: 1.3rem;
+      }
+
+      .comparison-table td {
+        padding: 18px 20px;
+        border-bottom: 2px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(16, 185, 129, 0.15);
+      }
+
+      .pod-visual {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 25px 0;
+        flex-wrap: wrap;
+      }
+
+      .pod-visual-box {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 25px;
+        width: 300px;
+        border: 2px solid;
+        text-align: center;
+      }
+
+      .pod-green {
+        border-color: #10b981;
+      }
+
+      .pod-amber {
+        border-color: #f59e0b;
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 60px;
+        min-width: 60px;
+      }
+
+      /* Mobile-specific optimizations */
+      @media (max-width: 768px) {
+        body {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 2rem !important;
+        }
+        h2 {
+          font-size: 1.75rem !important;
+        }
+        h3 {
+          font-size: 1.5rem !important;
+        }
+        h4 {
+          font-size: 1.3rem !important;
+        }
+        p,
+        li {
+          font-size: 1.1rem !important;
+        }
+
+        .pod-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+
+        .code-container {
+          padding: 20px;
+          padding-right: 90px;
+          font-size: 1rem;
+        }
+
+        .code-text {
+          font-size: 1rem;
+          padding-right: 80px;
+        }
+
+        .copy-btn {
+          padding: 10px 20px;
+          font-size: 1rem;
+          min-height: 45px;
+        }
+
+        .demo-btn {
+          padding: 14px 24px;
+          font-size: 1.1rem;
+          min-height: 55px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .demo-controls {
+          flex-direction: column;
+        }
+
+        .communication-flow {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .flow-arrow {
+          transform: rotate(90deg);
+          margin: 10px 0;
+        }
+
+        .pod-visual {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .pod-visual-box {
+          width: 100%;
+          max-width: 400px;
+        }
+
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+          font-size: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+          padding: 15px;
+          min-width: 150px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 480px) {
+        body {
+          font-size: 15px;
+        }
+        h1 {
+          font-size: 1.8rem !important;
+        }
+        h2 {
+          font-size: 1.6rem !important;
+        }
+        .code-text {
+          font-size: 0.95rem;
+        }
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .data-flow {
+        animation: flow 3s linear infinite;
+      }
+
+      @keyframes flow {
+        0% {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      .highlight {
+        background: rgba(16, 185, 129, 0.2);
+        padding: 3px 8px;
+        border-radius: 5px;
+        color: #10b981;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="pod-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🌐 Kubernetes Multi-Pod Communication
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Microservices Networking - Separate Pods Talking to Each Other 🧑‍🏫✨
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full border border-green-500/30 text-lg"
+            >
+              <i class="fas fa-project-diagram mr-2"></i>Multi-Pod Architecture
+            </span>
+            <span
+              class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30 text-lg"
+            >
+              <i class="fas fa-network-wired mr-2"></i>Service Networking
+            </span>
+            <span
+              class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 text-lg"
+            >
+              <i class="fas fa-microchip mr-2"></i>Independent Containers
+            </span>
+            <span
+              class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30 text-lg"
+            >
+              <i class="fas fa-comments mr-2"></i>Pod-to-Pod Communication
+            </span>
+          </div>
+
+          <div class="network-visual">
+            <div class="communication-flow">
+              <div class="flow-node node-client">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-terminal"></i>
+                </div>
+                <h4 class="font-bold text-amber-300 text-xl">Client Pod</h4>
+                <p class="text-slate-300 text-sm">Busybox Container</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-play mr-2"></i>Running
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="flow-node node-service">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-project-diagram"></i>
+                </div>
+                <h4 class="font-bold text-blue-300 text-xl">Service</h4>
+                <p class="text-slate-300 text-sm">express-service:3000</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-service">
+                    <i class="fas fa-dns mr-2"></i>DNS Name
+                  </span>
+                </div>
+              </div>
+
+              <div class="flow-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="flow-node node-server">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-server"></i>
+                </div>
+                <h4 class="font-bold text-green-300 text-xl">Server Pod</h4>
+                <p class="text-slate-300 text-sm">Express App</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-check mr-2"></i>Running
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-6">
+              <div class="text-slate-400">
+                <i class="fas fa-info-circle mr-2"></i>
+                <strong>Client Pod → Service → Server Pod</strong> - Real
+                microservices communication!
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mindset Shift -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+          <i class="fas fa-brain mr-3"></i>🧠 Simple Understanding First
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-6 bg-red-500/10 rounded border border-red-500/30">
+            <div class="text-4xl mb-3 text-center">❌</div>
+            <h3 class="font-bold text-red-300 text-xl mb-3">
+              WRONG Mental Model (Before)
+            </h3>
+            <p class="text-slate-300 mb-4">
+              "Put everything in one pod if related"
+            </p>
+            <div class="p-3 bg-slate-800/50 rounded">
+              <div class="text-center">
+                <div class="text-2xl mb-2">🏠</div>
+                <div class="text-slate-300">
+                  Single Pod with Multiple Containers
+                </div>
+                <div class="text-slate-400 text-sm">
+                  All containers share lifecycle
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 bg-green-500/10 rounded border border-green-500/30">
+            <div class="text-4xl mb-3 text-center">✅</div>
+            <h3 class="font-bold text-green-300 text-xl mb-3">
+              Correct Kubernetes Model (Now)
+            </h3>
+            <p class="text-slate-300 mb-4">"One pod = One main container"</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3 bg-slate-800/50 rounded text-center">
+                <div class="text-xl mb-2">📦</div>
+                <div class="text-slate-300 text-sm">Pod = Container</div>
+              </div>
+              <div class="p-3 bg-slate-800/50 rounded text-center">
+                <div class="text-xl mb-2">🔗</div>
+                <div class="text-slate-300 text-sm">Service DNS</div>
+              </div>
+              <div class="p-3 bg-slate-800/50 rounded text-center">
+                <div class="text-xl mb-2">🏢</div>
+                <div class="text-slate-300 text-sm">Multiple Pods</div>
+              </div>
+              <div class="p-3 bg-slate-800/50 rounded text-center">
+                <div class="text-xl mb-2">📡</div>
+                <div class="text-slate-300 text-sm">Network Communication</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-lightbulb mr-2"></i>Key Concepts:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <h5 class="font-bold text-blue-300 mb-2">
+                One Pod = One Container
+              </h5>
+              <p class="text-slate-300 text-sm">
+                Each pod has single main container
+              </p>
+            </div>
+            <div>
+              <h5 class="font-bold text-purple-300 mb-2">Multiple Services</h5>
+              <p class="text-slate-300 text-sm">
+                Communicate using Service DNS
+              </p>
+            </div>
+            <div>
+              <h5 class="font-bold text-green-300 mb-2">
+                Independent Lifecycles
+              </h5>
+              <p class="text-slate-300 text-sm">
+                Pods can be scaled independently
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- What We Will Build -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-bullseye mr-3"></i>🎯 What We Will Build
+        </h2>
+
+        <div class="pod-visual">
+          <div class="pod-visual-box pod-green">
+            <div class="text-4xl mb-3">🟢</div>
+            <h3 class="font-bold text-green-300 text-xl mb-2">
+              Pod 1 — Express App
+            </h3>
+            <p class="text-slate-300 mb-3">Runs HTTP API</p>
+            <div class="code-container" style="padding: 10px; margin: 10px 0">
+              <div class="code-text">express-service:3000</div>
+            </div>
+            <ul class="text-slate-300 text-sm space-y-1">
+              <li>
+                <i class="fas fa-server text-green-400 mr-2"></i>Deployment
+                managed
+              </li>
+              <li>
+                <i class="fas fa-network-wired text-green-400 mr-2"></i>Port
+                3000 exposed
+              </li>
+              <li>
+                <i class="fas fa-code text-green-400 mr-2"></i>Node.js Express
+                app
+              </li>
+            </ul>
+          </div>
+
+          <div class="text-center self-center">
+            <div class="text-3xl mb-2">🔗</div>
+            <div class="text-slate-400">Service Connection</div>
+          </div>
+
+          <div class="pod-visual-box pod-amber">
+            <div class="text-4xl mb-3">🟡</div>
+            <h3 class="font-bold text-amber-300 text-xl mb-2">
+              Pod 2 — Busybox Client
+            </h3>
+            <p class="text-slate-300 mb-3">Curl the Express app</p>
+            <div class="code-container" style="padding: 10px; margin: 10px 0">
+              <div class="code-text">wget express-service:3000</div>
+            </div>
+            <ul class="text-slate-300 text-sm space-y-1">
+              <li>
+                <i class="fas fa-terminal text-amber-400 mr-2"></i>Single
+                command pod
+              </li>
+              <li>
+                <i class="fas fa-wifi text-amber-400 mr-2"></i>Test network
+                connection
+              </li>
+              <li>
+                <i class="fas fa-check-circle text-amber-400 mr-2"></i>Prove
+                communication
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-box mt-6">
+          <h4 class="font-bold text-blue-300 mb-2">
+            <i class="fas fa-sitemap mr-2"></i>Architecture Diagram:
+          </h4>
+          <div class="text-center">
+            <div class="text-xl font-mono mb-2">
+              <span class="text-amber-300">busybox-pod</span>
+              <span class="text-blue-300">---></span>
+              <span class="text-green-300">express-service</span>
+              <span class="text-blue-300">---></span>
+              <span class="text-green-300">express pod</span>
+            </div>
+            <p class="text-slate-400 text-sm">
+              This is REAL production microservices pattern! 🚀
+            </p>
+          </div>
+        </div>
+
+        <div class="demo-controls">
+          <button class="demo-btn amber" onclick="showArchitecture()">
+            <i class="fas fa-sitemap mr-2"></i>View Architecture
+          </button>
+        </div>
+      </section>
+
+      <!-- Your Successful Execution -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-trophy mr-3"></i>✅ Your Successful Execution
+        </h2>
+
+        <div class="terminal-output">
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f
+            express-deploy.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            deployment.apps/express-app created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl get pods
+          </div>
+          <div class="terminal-line ml-4">
+            NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;&nbsp;&nbsp;AGE
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            express-app-6f66d49bfb-snzzd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8s
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f
+            express-service.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            service/express-service configured
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl get svc
+          </div>
+          <div class="terminal-line ml-4">
+            NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CLUSTER-IP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORT(S)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AGE
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            express-service&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ClusterIP&nbsp;&nbsp;10.97.66.77&nbsp;&nbsp;&nbsp;&nbsp;&lt;none&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3000/TCP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;23h
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl apply -f
+            client-pod.yaml
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            pod/client-pod created
+          </div>
+          <div class="terminal-line">
+            <span class="terminal-prompt">$</span> kubectl get pods
+          </div>
+          <div class="terminal-line ml-4 terminal-success">
+            client-pod&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9s
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-check-circle mr-2"></i>🎉 Now you officially have:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-3 bg-green-500/10 rounded">
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-server text-green-400"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-green-300">
+                    Pod 1 → Express app
+                  </div>
+                  <div class="text-slate-400 text-sm">Deployment managed</div>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 bg-amber-500/10 rounded">
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-3"
+                >
+                  <i class="fas fa-terminal text-amber-400"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-amber-300">
+                    Pod 2 → Busybox client
+                  </div>
+                  <div class="text-slate-400 text-sm">Single pod</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="text-slate-300 mt-3 text-center">
+            <i class="fas fa-star text-yellow-400 mr-2"></i>
+            <strong
+              >Separate pods • Separate containers • Real microservices!</strong
+            >
+          </p>
+        </div>
+      </section>
+
+      <!-- Step 1: Express Deployment -->
+      <section class="step-card p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-server mr-3"></i>✅ Step 1 — Deployment (Express
+            App Pod)
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="expressDeploy">
+              apiVersion: apps/v1 kind: Deployment metadata: name: express-app
+              spec: replicas: 1 selector: matchLabels: app: express template:
+              metadata: labels: app: express spec: containers: - name:
+              express-container image: express-demo:v2 ports: - containerPort:
+              3000
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('expressDeploy')"
+              >
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              express-deploy.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              deployment.apps/express-app created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-app-xxxxx&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;8s
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-check-circle mr-2"></i>Must See:
+            </h4>
+            <div class="flex items-center p-3 bg-green-500/10 rounded">
+              <div class="text-2xl mr-3">📦</div>
+              <div>
+                <code class="text-green-300 text-xl"
+                  >express-app-xxxxx Running</code
+                >
+                <div class="text-slate-300 text-sm mt-1">
+                  Your Express app is now running in its own pod!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Service -->
+      <section class="step-card p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-project-diagram mr-3"></i>✅ Step 2 — Service For
+            Express Pod
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-dns text-blue-400 mr-2"></i>
+              <strong>This gives a stable name.</strong> Pods can die and
+              restart with new IPs, but the service name stays the same!
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="expressService">
+              apiVersion: v1 kind: Service metadata: name: express-service spec:
+              selector: app: express ports: - protocol: TCP port: 3000
+              targetPort: 3000
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('expressService')"
+              >
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              express-service.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              service/express-service configured
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get svc
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-service&nbsp;&nbsp;ClusterIP&nbsp;&nbsp;10.97.66.77&nbsp;&nbsp;...&nbsp;&nbsp;3000/TCP
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-lightbulb mr-2"></i>Service Magic:
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-3 bg-blue-500/10 rounded text-center">
+                <div class="text-xl mb-2">🏷️</div>
+                <div class="font-bold text-blue-300">Stable DNS Name</div>
+                <div class="text-slate-400 text-sm">express-service</div>
+              </div>
+              <div class="p-3 bg-blue-500/10 rounded text-center">
+                <div class="text-xl mb-2">🎯</div>
+                <div class="font-bold text-blue-300">Load Balancer</div>
+                <div class="text-slate-400 text-sm">Routes to pods</div>
+              </div>
+              <div class="p-3 bg-blue-500/10 rounded text-center">
+                <div class="text-xl mb-2">🔗</div>
+                <div class="font-bold text-blue-300">ClusterIP</div>
+                <div class="text-slate-400 text-sm">
+                  Internal IP (10.97.66.77)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Client Pod -->
+      <section class="step-card p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-amber-300 mb-4">
+            <i class="fas fa-terminal mr-3"></i>✅ Step 3 — Second Pod (Separate
+            Container / Separate Pod)
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-users text-blue-400 mr-2"></i>
+              Create <strong>Busybox pod</strong> to test communication. This is
+              a completely separate pod!
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="clientPod">
+              apiVersion: v1 kind: Pod metadata: name: client-pod spec:
+              containers: - name: client image: busybox command: ['sh', '-c',
+              'while true; do sleep 5; done']
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('clientPod')"
+              >
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              client-pod.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              pod/client-pod created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              client-pod&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9s
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>Current Pod Status:
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-3 bg-green-500/10 rounded">
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-server text-green-400"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-green-300">
+                      express-app-xxxxx
+                    </div>
+                    <div class="text-slate-400 text-sm">
+                      Pod 1 - Express Server
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-3 bg-amber-500/10 rounded">
+                <div class="flex items-center">
+                  <div
+                    class="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center mr-3"
+                  >
+                    <i class="fas fa-terminal text-amber-400"></i>
+                  </div>
+                  <div>
+                    <div class="font-bold text-amber-300">client-pod</div>
+                    <div class="text-slate-400 text-sm">
+                      Pod 2 - Busybox Client
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-arrow-right text-blue-400 mr-2"></i>
+              <strong
+                >Two separate pods • Two separate containers • Ready to
+                communicate!</strong
+              >
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Communication Test -->
+      <section class="step-card p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-wifi mr-3"></i>🧪 Step 4 — PROVE Communication
+            (Most Important)
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="communicationTest">
+              # Enter client pod kubectl exec -it client-pod -- sh # Inside pod,
+              run: wget -qO- http://express-service:3000 # or curl
+              http://express-service:3000 # Exit pod exit
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('communicationTest')"
+              >
+                <i class="fas fa-copy"></i> Copy Commands
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl exec -it client-pod
+              -- sh
+            </div>
+            <div class="terminal-line ml-4">
+              / # wget -qO- http://express-service:3000
+            </div>
+            <div class="terminal-line ml-8 terminal-success">
+              Hello from Docker + Express 🚀
+            </div>
+            <div class="terminal-line ml-4">/ # exit</div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span>
+            </div>
+          </div>
+
+          <div class="success-box">
+            <div class="text-center">
+              <div class="text-4xl mb-3">🎉</div>
+              <h4 class="font-bold text-green-300 mb-2">
+                You should see your Express response 😎🔥
+              </h4>
+              <div class="p-3 bg-green-500/10 rounded mt-3">
+                <code class="text-green-300 text-xl"
+                  >Hello from Docker + Express 🚀</code
+                >
+              </div>
+              <p class="text-slate-300 mt-3">
+                <i class="fas fa-check-circle text-green-400 mr-2"></i>
+                <strong>Communication successful! 🎉</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn primary" onclick="simulateCommunication()">
+              <i class="fas fa-play mr-2"></i>Simulate Communication Test
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- What You Achieved -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-trophy mr-3"></i>✅ What You Achieved Step-By-Step
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 bg-green-500/10 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-server text-green-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-green-300 text-xl">
+                  🟢 Pod 1 — Express App
+                </h4>
+                <p class="text-slate-300">Runs your Node app</p>
+              </div>
+            </div>
+            <ul class="text-slate-300 space-y-2">
+              <li>
+                <i class="fas fa-check text-green-400 mr-2"></i>Independent
+                container
+              </li>
+              <li><i class="fas fa-check text-green-400 mr-2"></i>Own Pod</li>
+              <li>
+                <i class="fas fa-check text-green-400 mr-2"></i>Managed by
+                Kubernetes
+              </li>
+              <li>
+                <i class="fas fa-check text-green-400 mr-2"></i>Port 3000
+                exposed
+              </li>
+            </ul>
+          </div>
+
+          <div class="p-6 bg-blue-500/10 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-project-diagram text-blue-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-blue-300 text-xl">🟡 Service</h4>
+                <p class="text-slate-300">express-service</p>
+              </div>
+            </div>
+            <ul class="text-slate-300 space-y-2">
+              <li>
+                <i class="fas fa-check text-blue-400 mr-2"></i>Gave your pod a
+                stable name
+              </li>
+              <li>
+                <i class="fas fa-check text-blue-400 mr-2"></i>Load balances if
+                replicas increase
+              </li>
+              <li>
+                <i class="fas fa-check text-blue-400 mr-2"></i>DNS name
+                available inside cluster
+              </li>
+              <li>
+                <i class="fas fa-check text-blue-400 mr-2"></i
+                >express-service:3000
+              </li>
+            </ul>
+          </div>
+
+          <div class="p-6 bg-amber-500/10 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-terminal text-amber-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-amber-300 text-xl">
+                  🟢 Pod 2 — Client Pod
+                </h4>
+                <p class="text-slate-300">Independent pod</p>
+              </div>
+            </div>
+            <ul class="text-slate-300 space-y-2">
+              <li>
+                <i class="fas fa-check text-amber-400 mr-2"></i>No special
+                config
+              </li>
+              <li>
+                <i class="fas fa-check text-amber-400 mr-2"></i>Still able to
+                access Express
+              </li>
+              <li>
+                <i class="fas fa-check text-amber-400 mr-2"></i>Using DNS name
+              </li>
+              <li>
+                <i class="fas fa-check text-amber-400 mr-2"></i>Proves network
+                works
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="warning-box mt-6">
+          <h4 class="font-bold text-amber-300 mb-3">
+            <i class="fas fa-fire mr-2"></i>🔥 LIVE PROOF (The Best Part)
+          </h4>
+          <div class="text-center">
+            <div class="text-xl font-mono mb-3">
+              <span class="text-amber-300">client pod</span>
+              <span class="text-blue-300"> → </span>
+              <span class="text-green-300">service</span>
+              <span class="text-blue-300"> → </span>
+              <span class="text-green-300">express pod</span>
+              <span class="text-blue-300"> → </span>
+              <span class="text-green-300">success 🎉</span>
+            </div>
+            <p class="text-slate-300">
+              That line means:
+              <strong>Kubernetes networking is working perfectly ❤️</strong>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Real-World Understanding -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+          <i class="fas fa-graduation-cap mr-3"></i>🧠 Real-World Understanding
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Concept</th>
+                <th>Your Example</th>
+                <th>Why It Matters</th>
+                <th>Production Use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300">Multiple Pods</span>
+                </td>
+                <td>Yes ✅</td>
+                <td>Independent scaling & deployment</td>
+                <td>Microservices architecture</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-blue-300"
+                    >Each pod = separate container</span
+                  >
+                </td>
+                <td>Yes ✅</td>
+                <td>Clean separation of concerns</td>
+                <td>Single responsibility principle</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-purple-300"
+                    >Communication using Service DNS</span
+                  >
+                </td>
+                <td>Yes ✅</td>
+                <td>Decouples pods from IP addresses</td>
+                <td>Service discovery</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-amber-300"
+                    >Internal networking success</span
+                  >
+                </td>
+                <td>Yes ✅</td>
+                <td>Pods can talk to each other</td>
+                <td>Inter-service communication</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-cyan-300"
+                    >ClusterIP Service behaviour</span
+                  >
+                </td>
+                <td>Yes ✅</td>
+                <td>Internal load balancing</td>
+                <td>Internal API calls</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="info-box">
+            <h4 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-industry mr-2"></i>Production Scenario:
+            </h4>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-database text-purple-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Database Pod</strong>
+                  <div class="text-slate-400 text-sm">
+                    PostgreSQL/MySQL container
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-code text-green-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Backend API Pod</strong>
+                  <div class="text-slate-400 text-sm">Node.js/Go container</div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-globe text-amber-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Frontend Pod</strong>
+                  <div class="text-slate-400 text-sm">React/Vue container</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="warning-box">
+            <h4 class="font-bold text-amber-300 mb-3">
+              <i class="fas fa-sync-alt mr-2"></i>Scaling Benefits:
+            </h4>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-arrow-up text-green-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Scale independently</strong>
+                  <div class="text-slate-400 text-sm">
+                    Scale backend without frontend
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-redo text-blue-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Update independently</strong>
+                  <div class="text-slate-400 text-sm">
+                    Update API without DB downtime
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-shield-alt text-purple-400 mt-1 mr-3"></i>
+                <div>
+                  <strong>Isolate failures</strong>
+                  <div class="text-slate-400 text-sm">
+                    One pod crash doesn't affect others
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Practice -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-gamepad mr-3"></i>🎮 Interactive Multi-Pod Practice
+        </h2>
+
+        <div class="demo-controls">
+          <button class="demo-btn primary" onclick="showNetworkFlow()">
+            <i class="fas fa-project-diagram mr-2"></i>Show Network Flow
+          </button>
+          <button class="demo-btn" onclick="testDNSResolution()">
+            <i class="fas fa-dns mr-2"></i>Test DNS Resolution
+          </button>
+          <button class="demo-btn amber" onclick="scaleDeployment()">
+            <i class="fas fa-expand-alt mr-2"></i>Scale Deployment
+          </button>
+        </div>
+
+        <div class="network-visual" id="practiceArea">
+          <div class="text-center p-8">
+            <div class="text-5xl mb-4">🌐</div>
+            <h3 class="text-2xl font-bold text-slate-300 mb-2">
+              Multi-Pod Communication Lab
+            </h3>
+            <p class="text-slate-400">
+              Click buttons above to explore pod networking
+            </p>
+            <div class="mt-6 flex justify-center space-x-4">
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-terminal text-amber-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">Client Pod</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-dns text-blue-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">Service</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-server text-green-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">Server Pod</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-container mt-6">
+          <div class="code-text" id="allCommands">
+            # Complete Multi-Pod Commands: # 1. Check current setup kubectl get
+            pods kubectl get svc kubectl get deployments # 2. Test communication
+            from client kubectl exec client-pod -- wget -qO-
+            http://express-service:3000 # 3. View pod details kubectl describe
+            pod express-app-xxxxx kubectl describe pod client-pod # 4. View
+            service details kubectl describe svc express-service # 5. Scale the
+            deployment kubectl scale deployment express-app --replicas=3 # 6.
+            Check service load balancing kubectl exec client-pod -- wget -qO-
+            http://express-service:3000/hostname # 7. Clean up (optional)
+            kubectl delete pod client-pod kubectl delete deployment express-app
+            kubectl delete svc express-service
+          </div>
+          <div class="copy-btn-wrapper">
+            <button
+              class="copy-btn no-select"
+              onclick="copyCode('allCommands')"
+            >
+              <i class="fas fa-copy"></i> Copy All
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Success Summary -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-award mr-3"></i>🏆 What You Just Learned
+        </h2>
+
+        <div class="success-box">
+          <div class="text-center mb-6">
+            <div class="text-5xl mb-4">🎯</div>
+            <h3 class="text-2xl font-bold text-green-300">
+              You've Mastered Multi-Pod Communication!
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="text-center p-3 bg-slate-800/30 rounded">
+              <div class="text-xl mb-2">📦</div>
+              <div class="text-sm text-slate-300">Multiple pods</div>
+            </div>
+            <div class="text-center p-3 bg-slate-800/30 rounded">
+              <div class="text-xl mb-2">🐳</div>
+              <div class="text-sm text-slate-300">Single container per pod</div>
+            </div>
+            <div class="text-center p-3 bg-slate-800/30 rounded">
+              <div class="text-xl mb-2">🔗</div>
+              <div class="text-sm text-slate-300">Service DNS</div>
+            </div>
+            <div class="text-center p-3 bg-slate-800/30 rounded">
+              <div class="text-xl mb-2">🌐</div>
+              <div class="text-sm text-slate-300">Network communication</div>
+            </div>
+            <div class="text-center p-3 bg-slate-800/30 rounded">
+              <div class="text-xl mb-2">🏢</div>
+              <div class="text-sm text-slate-300">Production pattern</div>
+            </div>
+          </div>
+
+          <div class="mt-6 p-4 bg-purple-500/10 rounded">
+            <p class="text-purple-300 text-center">
+              <i class="fas fa-heart mr-2"></i>
+              <strong>This is how real production microservices work ❤️</strong>
+            </p>
+            <p class="text-slate-300 text-center mt-2">
+              From single-container pods to full microservices architecture!
+            </p>
+          </div>
+        </div>
+
+        <div class="info-box mt-6">
+          <h4 class="font-bold text-blue-300 mb-3">
+            <i class="fas fa-arrow-right mr-2"></i>Next Steps:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-3 bg-slate-800/50 rounded">
+              <h5 class="font-bold text-green-300 mb-2">Load Balancing</h5>
+              <p class="text-slate-300 text-sm">
+                Scale pods and see service distribute traffic
+              </p>
+            </div>
+            <div class="p-3 bg-slate-800/50 rounded">
+              <h5 class="font-bold text-blue-300 mb-2">Service Types</h5>
+              <p class="text-slate-300 text-sm">
+                NodePort, LoadBalancer, ExternalName
+              </p>
+            </div>
+            <div class="p-3 bg-slate-800/50 rounded">
+              <h5 class="font-bold text-purple-300 mb-2">
+                Advanced Networking
+              </h5>
+              <p class="text-slate-300 text-sm">
+                Network Policies, Ingress, Service Mesh
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-xl">
+            You now understand Kubernetes multi-pod communication! 🎉
+          </p>
+          <p class="text-slate-500 text-lg mt-2">
+            Separate pods talking via services = Real microservices
+            architecture! 🏢
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span
+            class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full text-lg"
+          >
+            <i class="fas fa-project-diagram mr-2"></i>Multi-Pod
+          </span>
+          <span
+            class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full text-lg"
+          >
+            <i class="fas fa-network-wired mr-2"></i>Service DNS
+          </span>
+          <span
+            class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full text-lg"
+          >
+            <i class="fas fa-microchip mr-2"></i>Independent Containers
+          </span>
+          <span
+            class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full text-lg"
+          >
+            <i class="fas fa-comments mr-2"></i>Pod Communication
+          </span>
+        </div>
+
+        <div class="mt-6 text-slate-500 text-lg">
+          <p>
+            Next: Learn about ConfigMaps, Secrets, and Persistent Volumes for
+            production apps! 📦
+          </p>
+          <p class="mt-2 text-sm">
+            Remember: Service names are stable, pod IPs change - always use
+            service DNS! 🔗
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Interactive visualizations
+      function showArchitecture() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-amber-300 mb-4">Multi-Pod Architecture</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-terminal text-amber-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-amber-300">Client Pod</div>
+                                    <div class="text-slate-400 text-sm">busybox image</div>
+                                </div>
+                            </div>
+                            <div class="text-amber-300">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-arrow-down text-blue-400"></i>
+                            <div class="text-slate-400 text-sm">DNS Resolution</div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-dns text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-blue-300">express-service</div>
+                                    <div class="text-slate-400 text-sm">ClusterIP: 10.97.66.77</div>
+                                </div>
+                            </div>
+                            <div class="text-blue-300">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-arrow-down text-green-400"></i>
+                            <div class="text-slate-400 text-sm">Load Balancing</div>
+                        </div>
+                        
+                        <div class="flex items-center p-3 bg-slate-800/50 rounded">
+                            <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-server text-green-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-green-300">Express App Pod</div>
+                                <div class="text-slate-400 text-sm">express-demo:v2 image</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function simulateCommunication() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-purple-300 mb-4">Simulating Pod Communication</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-terminal text-amber-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-amber-300">Client Pod Executing</div>
+                                <div class="text-slate-400 text-sm">wget http://express-service:3000</div>
+                            </div>
+                        </div>
+                        
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> kubectl exec client-pod -- wget -qO- http://express-service:3000
+                            </div>
+                            <div class="terminal-line ml-4">
+                                <i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i>
+                                Resolving DNS: express-service...
+                            </div>
+                        </div>
+                        
+                        <div id="commResult"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('commResult');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line ml-4 terminal-success">
+                            DNS resolved: 10.97.66.77
+                        </div>
+                        <div class="terminal-line ml-4">
+                            <i class="fas fa-spinner fa-spin text-green-400 mr-2"></i>
+                            Connecting to Express app...
+                        </div>
+                    </div>
+                `;
+
+          setTimeout(() => {
+            result.innerHTML += `
+                        <div class="terminal-output mt-3">
+                            <div class="terminal-line ml-4 terminal-success">
+                                Hello from Docker + Express 🚀
+                            </div>
+                            <div class="terminal-line ml-4 terminal-success">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Communication successful! Pods can talk via service.
+                            </div>
+                        </div>
+                        <div class="success-box mt-4" style="margin: 0;">
+                            <p class="text-slate-300">
+                                <i class="fas fa-network-wired text-green-400 mr-2"></i>
+                                <strong>Network flow:</strong> Client Pod → Service DNS → ClusterIP → Express Pod → Response
+                            </p>
+                        </div>
+                    `;
+          }, 1500);
+        }, 1000);
+      }
+
+      function showNetworkFlow() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-blue-300 mb-4">Network Flow Visualization</h3>
+                    <div class="space-y-6">
+                        <div class="relative">
+                            <div class="flex items-center mb-2">
+                                <div class="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-terminal text-amber-400"></i>
+                                </div>
+                                <div class="font-bold text-amber-300">1. Client sends request</div>
+                            </div>
+                            <div class="ml-11 text-slate-400 text-sm">
+                                wget http://express-service:3000
+                            </div>
+                        </div>
+                        
+                        <div class="relative ml-8">
+                            <div class="flex items-center mb-2">
+                                <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-dns text-blue-400"></i>
+                                </div>
+                                <div class="font-bold text-blue-300">2. Kubernetes DNS resolves</div>
+                            </div>
+                            <div class="ml-11 text-slate-400 text-sm">
+                                express-service → 10.97.66.77 (ClusterIP)
+                            </div>
+                        </div>
+                        
+                        <div class="relative ml-16">
+                            <div class="flex items-center mb-2">
+                                <div class="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-route text-purple-400"></i>
+                                </div>
+                                <div class="font-bold text-purple-300">3. Service routes to pod</div>
+                            </div>
+                            <div class="ml-11 text-slate-400 text-sm">
+                                Selects pod with label: app=express
+                            </div>
+                        </div>
+                        
+                        <div class="relative ml-24">
+                            <div class="flex items-center mb-2">
+                                <div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-server text-green-400"></i>
+                                </div>
+                                <div class="font-bold text-green-300">4. Express pod responds</div>
+                            </div>
+                            <div class="ml-11 text-slate-400 text-sm">
+                                Sends "Hello from Docker + Express 🚀"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function testDNSResolution() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-blue-300 mb-4">Testing DNS Resolution</h3>
+                    <div class="space-y-4">
+                        <div class="code-container" style="padding: 15px;">
+                            <div class="code-text">
+# Test DNS from inside client pod
+kubectl exec client-pod -- nslookup express-service
+                            </div>
+                        </div>
+                        
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> kubectl exec client-pod -- nslookup express-service
+                            </div>
+                            <div class="terminal-line ml-4">
+                                <i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i>
+                                Querying Kubernetes DNS...
+                            </div>
+                        </div>
+                        
+                        <div id="dnsResult"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('dnsResult');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line ml-4">
+                            Server:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10.96.0.10
+                        </div>
+                        <div class="terminal-line ml-4">
+                            Address:&nbsp;&nbsp;&nbsp;10.96.0.10#53
+                        </div>
+                        <div class="terminal-line ml-4">
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            Name:&nbsp;&nbsp;express-service.default.svc.cluster.local
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            Address: 10.97.66.77
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            DNS resolution working! Full name: express-service.default.svc.cluster.local
+                        </div>
+                    </div>
+                    <div class="info-box mt-4" style="margin: 0;">
+                        <p class="text-slate-300">
+                            <i class="fas fa-lightbulb text-blue-400 mr-2"></i>
+                            <strong>Full DNS name format:</strong> [service-name].[namespace].svc.cluster.local
+                        </p>
+                        <p class="text-slate-300 mt-2">
+                            You can use either: <code>express-service</code> or <code>express-service.default.svc.cluster.local</code>
+                        </p>
+                    </div>
+                `;
+        }, 1500);
+      }
+
+      function scaleDeployment() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-amber-300 mb-4">Scaling Deployment</h3>
+                    <div class="space-y-4">
+                        <div class="code-container" style="padding: 15px;">
+                            <div class="code-text">
+# Scale from 1 to 3 replicas
+kubectl scale deployment express-app --replicas=3
+                            </div>
+                        </div>
+                        
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> kubectl scale deployment express-app --replicas=3
+                            </div>
+                            <div class="terminal-line ml-4 terminal-success">
+                                deployment.apps/express-app scaled
+                            </div>
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> kubectl get pods
+                            </div>
+                            <div class="terminal-line ml-4">
+                                <i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i>
+                                Watching pods scale up...
+                            </div>
+                        </div>
+                        
+                        <div id="scaleResult"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('scaleResult');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line ml-4">
+                            NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            express-app-xxxxx-1&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5m
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            express-app-xxxxx-2&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30s
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            express-app-xxxxx-3&nbsp;&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;30s
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Now 3 Express pods! Service will load balance between them.
+                        </div>
+                    </div>
+                    <div class="success-box mt-4" style="margin: 0;">
+                        <p class="text-slate-300">
+                            <i class="fas fa-balance-scale text-green-400 mr-2"></i>
+                            <strong>Service automatically load balances</strong> across all 3 pods!
+                            Client still uses same <code>express-service:3000</code> URL.
+                        </p>
+                    </div>
+                `;
+        }, 2000);
+      }
+
+      // Initialize with syntax highlighting
+      document.addEventListener('DOMContentLoaded', () => {
+        // Make buttons touch-friendly
+        document
+          .querySelectorAll('.copy-btn, .demo-btn, button')
+          .forEach((btn) => {
+            btn.classList.add('touch-target');
+          });
+
+        // Add syntax highlighting
+        const codeElements = document.querySelectorAll('.code-text');
+        codeElements.forEach((element) => {
+          let code = element.innerHTML;
+
+          // Highlight YAML keywords
+          code = code.replace(
+            /\b(apiVersion|kind|metadata|name|spec|replicas|selector|matchLabels|template|containers|ports|containerPort|protocol|targetPort|command|image)\b/g,
+            '<span class="code-keyword">$1</span>',
+          );
+
+          // Highlight strings
+          code = code.replace(
+            /("express"|"express-container"|"express-demo:v2"|'sh'|'-c'|'while.*done')/g,
+            '<span class="code-string">$1</span>',
+          );
+
+          // Highlight numbers
+          code = code.replace(
+            /\b(3000|1|3|5)\b/g,
+            '<span class="code-number">$1</span>',
+          );
+
+          // Highlight kubectl commands
+          code = code.replace(
+            /\b(kubectl|apply|get|exec|scale|describe|delete|deployment|pods|svc|--replicas)\b/g,
+            '<span class="code-keyword" style="color: #4ec9b0;">$1</span>',
+          );
+
+          // Highlight IP addresses
+          code = code.replace(
+            /\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g,
+            '<span class="code-string" style="color: #ce9178;">$1</span>',
+          );
+
+          element.innerHTML = code;
+        });
+      });
+    </script>
+  </body>
+</html>

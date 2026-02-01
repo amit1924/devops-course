@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🏠 Kubernetes Multi-Container Pods - Sidecar Pattern</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      /* Larger fonts for better readability */
+      h1 {
+        font-size: 2.5rem !important;
+      }
+      h2 {
+        font-size: 2rem !important;
+      }
+      h3 {
+        font-size: 1.75rem !important;
+      }
+      h4 {
+        font-size: 1.5rem !important;
+      }
+      p,
+      li {
+        font-size: 1.25rem !important;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #f59e0b, #8b5cf6, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .pod-card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px auto;
+        max-width: 100%;
+      }
+
+      .pod-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        border-color: #8b5cf6;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+        padding: 25px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(245, 158, 11, 0.15);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 6px solid #f59e0b;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        word-break: break-word;
+        padding-right: 110px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 8px 0;
+        color: #e2e8f0;
+        font-size: 1.1rem;
+      }
+
+      .terminal-prompt {
+        color: #f59e0b;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-warning {
+        color: #f59e0b;
+      }
+
+      .pod-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        margin: 25px 0;
+        border: 3px solid #334155;
+        position: relative;
+        min-height: 300px;
+      }
+
+      .pod-box {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border: 3px solid #475569;
+        border-radius: 20px;
+        padding: 30px;
+        width: 100%;
+        max-width: 600px;
+        position: relative;
+        margin: 20px 0;
+      }
+
+      .container-box {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 15px 0;
+        border: 2px solid;
+        transition: all 0.3s ease;
+      }
+
+      .container-box:hover {
+        transform: translateY(-5px);
+      }
+
+      .container-app {
+        border-color: #10b981;
+      }
+
+      .container-sidecar {
+        border-color: #8b5cf6;
+      }
+
+      .shared-resources {
+        background: rgba(139, 92, 246, 0.1);
+        border-left: 5px solid #8b5cf6;
+        border-radius: 0 15px 15px 0;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.15),
+          rgba(37, 99, 235, 0.15)
+        );
+        border-left: 5px solid #3b82f6;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.15)
+        );
+        border-left: 5px solid #10b981;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15),
+          rgba(217, 119, 6, 0.15)
+        );
+        border-left: 5px solid #f59e0b;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .error-box {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.15),
+          rgba(220, 38, 38, 0.15)
+        );
+        border-left: 5px solid #ef4444;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .use-case-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin: 25px 0;
+      }
+
+      .use-case-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 25px;
+        border: 2px solid #475569;
+        transition: all 0.3s ease;
+      }
+
+      .use-case-card:hover {
+        transform: translateY(-5px);
+        border-color: #8b5cf6;
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .demo-btn {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .demo-btn:hover {
+        background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+      }
+
+      .demo-btn.primary {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .demo-btn.primary:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      }
+
+      .demo-btn.success {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+
+      .demo-btn.success:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 5px;
+      }
+
+      .status-running {
+        background: rgba(16, 185, 129, 0.25);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.5);
+      }
+
+      .status-creating {
+        background: rgba(245, 158, 11, 0.25);
+        color: #f59e0b;
+        border: 2px solid rgba(245, 158, 11, 0.5);
+      }
+
+      .status-error {
+        background: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        border: 2px solid rgba(239, 68, 68, 0.5);
+      }
+
+      .pod-lifecycle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 30px 0;
+      }
+
+      .lifecycle-step {
+        display: flex;
+        align-items: center;
+        margin: 15px 0;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .step-number {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.3rem;
+        margin-right: 20px;
+        flex-shrink: 0;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 15px;
+        overflow: hidden;
+        font-size: 1.2rem;
+      }
+
+      .comparison-table th {
+        background: rgba(139, 92, 246, 0.3);
+        padding: 20px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 3px solid #334155;
+        font-size: 1.3rem;
+      }
+
+      .comparison-table td {
+        padding: 18px 20px;
+        border-bottom: 2px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(139, 92, 246, 0.15);
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 60px;
+        min-width: 60px;
+      }
+
+      /* Mobile-specific optimizations */
+      @media (max-width: 768px) {
+        body {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 2rem !important;
+        }
+        h2 {
+          font-size: 1.75rem !important;
+        }
+        h3 {
+          font-size: 1.5rem !important;
+        }
+        h4 {
+          font-size: 1.3rem !important;
+        }
+        p,
+        li {
+          font-size: 1.1rem !important;
+        }
+
+        .pod-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+
+        .code-container {
+          padding: 20px;
+          padding-right: 90px;
+          font-size: 1rem;
+        }
+
+        .code-text {
+          font-size: 1rem;
+          padding-right: 80px;
+        }
+
+        .copy-btn {
+          padding: 10px 20px;
+          font-size: 1rem;
+          min-height: 45px;
+        }
+
+        .demo-btn {
+          padding: 14px 24px;
+          font-size: 1.1rem;
+          min-height: 55px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .demo-controls {
+          flex-direction: column;
+        }
+
+        .use-case-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+          font-size: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+          padding: 15px;
+          min-width: 150px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 480px) {
+        body {
+          font-size: 15px;
+        }
+        h1 {
+          font-size: 1.8rem !important;
+        }
+        h2 {
+          font-size: 1.6rem !important;
+        }
+        .code-text {
+          font-size: 0.95rem;
+        }
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .highlight {
+        background: rgba(245, 158, 11, 0.2);
+        padding: 3px 8px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="pod-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🏠 Kubernetes Multi-Container Pods
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            One Pod, Multiple Containers - Sidecar Pattern Explained! 🤝
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30 text-lg"
+            >
+              <i class="fas fa-house mr-2"></i>Pod = Room
+            </span>
+            <span
+              class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 text-lg"
+            >
+              <i class="fas fa-users mr-2"></i>Containers = Roommates
+            </span>
+            <span
+              class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30 text-lg"
+            >
+              <i class="fas fa-network-wired mr-2"></i>Shared Resources
+            </span>
+            <span
+              class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full border border-green-500/30 text-lg"
+            >
+              <i class="fas fa-heart mr-2"></i>Same Lifecycle
+            </span>
+          </div>
+
+          <div class="pod-visual">
+            <div class="pod-box">
+              <h3 class="text-center text-2xl font-bold text-cyan-300 mb-6">
+                🏠 Single Pod with Multiple Containers
+              </h3>
+
+              <div class="container-box container-app">
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4"
+                  >
+                    <i class="fas fa-server text-green-400 text-xl"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-green-300 text-xl">
+                      Container 1: Express App
+                    </h4>
+                    <p class="text-slate-300">Your main application</p>
+                  </div>
+                </div>
+                <div class="status-indicator status-running">
+                  <i class="fas fa-play mr-2"></i> Running on Port 3000
+                </div>
+              </div>
+
+              <div class="text-center my-4">
+                <i class="fas fa-arrows-alt-v text-amber-400 text-2xl"></i>
+                <div class="text-slate-400 text-sm mt-1">
+                  Same Pod Network & Storage
+                </div>
+              </div>
+
+              <div class="container-box container-sidecar">
+                <div class="flex items-center mb-3">
+                  <div
+                    class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4"
+                  >
+                    <i
+                      class="fas fa-satellite-dish text-purple-400 text-xl"
+                    ></i>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-purple-300 text-xl">
+                      Container 2: Busybox Sidecar
+                    </h4>
+                    <p class="text-slate-300">Logging & Monitoring</p>
+                  </div>
+                </div>
+                <div class="status-indicator status-running">
+                  <i class="fas fa-sync-alt mr-2"></i> Logging every 5 seconds
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Concept Explanation -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-lightbulb mr-3"></i>💡 First Understand the Concept
+        </h2>
+
+        <div class="info-box">
+          <p class="text-slate-300 mb-4">
+            <i class="fas fa-info-circle text-blue-400 mr-2 text-xl"></i>
+            <strong class="text-xl"
+              >A single Pod can contain multiple containers.</strong
+            >
+          </p>
+
+          <div class="ml-6">
+            <p class="text-slate-300 mb-3">
+              <i class="fas fa-arrow-right text-green-400 mr-2"></i>
+              <strong>👉 They share the same:</strong>
+            </p>
+            <ul class="space-y-3 text-slate-300 ml-6">
+              <li class="flex items-start">
+                <i
+                  class="fas fa-network-wired text-blue-400 mt-1 mr-3 text-lg"
+                ></i>
+                <div>
+                  <strong>Network</strong> (same IP, same ports)
+                  <div class="text-slate-400 text-sm">
+                    Containers can talk via localhost
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-hdd text-purple-400 mt-1 mr-3 text-lg"></i>
+                <div>
+                  <strong>Storage</strong> (if you mount volumes)
+                  <div class="text-slate-400 text-sm">
+                    Shared volumes accessible by all containers
+                  </div>
+                </div>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-heartbeat text-red-400 mt-1 mr-3 text-lg"></i>
+                <div>
+                  <strong>Lifecycle</strong> (start/stop together)
+                  <div class="text-slate-400 text-sm">
+                    All containers in pod start and stop together
+                  </div>
+                </div>
+              </li>
+            </ul>
+            <p class="text-slate-300 mt-4">
+              <i class="fas fa-exclamation-triangle text-amber-400 mr-2"></i>
+              But they are <strong>independent processes</strong> running inside
+              the same pod.
+            </p>
+          </div>
+        </div>
+
+        <div class="warning-box mt-6">
+          <h3 class="font-bold text-amber-300 mb-4 text-xl">
+            <i class="fas fa-brain mr-2"></i>🧠 Real-World Meaning
+          </h3>
+          <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-1/3 text-center mb-4 md:mb-0">
+              <div class="text-6xl mb-3">🏠</div>
+              <div class="text-slate-300 font-bold">Room = Pod</div>
+              <div class="text-slate-400 text-sm">Single Kubernetes Pod</div>
+            </div>
+            <div class="md:w-1/3 text-center mb-4 md:mb-0">
+              <div class="text-6xl mb-3">👥</div>
+              <div class="text-slate-300 font-bold">Roommates = Containers</div>
+              <div class="text-slate-400 text-sm">Multiple containers</div>
+            </div>
+            <div class="md:w-1/3 text-center">
+              <div class="text-6xl mb-3">🔗</div>
+              <div class="text-slate-300 font-bold">Shared Resources</div>
+              <div class="text-slate-400 text-sm">
+                Network, Storage, Lifecycle
+              </div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-wifi text-blue-400 mt-1 mr-3"></i>
+                <span
+                  ><strong>Same WiFi</strong> → shared network (localhost)</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-bolt text-yellow-400 mt-1 mr-3"></i>
+                <span
+                  ><strong>Same electricity</strong> → shared compute
+                  resources</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-archive text-purple-400 mt-1 mr-3"></i>
+                <span
+                  ><strong>Same cupboards</strong> → shared storage
+                  (volumes)</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-home text-red-400 mt-1 mr-3"></i>
+                <span
+                  ><strong>They live together.</strong> If room destroyed → all
+                  go 😅</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Use Cases -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-bullseye mr-3"></i>🎯 When Do We Need Multi-Container
+          Pods?
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Real World Use Case</th>
+                <th>Example</th>
+                <th>Benefit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300">Logging Sidecar</span>
+                </td>
+                <td>App + log collector (Fluentd)</td>
+                <td>Centralized logs without app changes</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-blue-300">Proxy Container</span>
+                </td>
+                <td>App + Nginx reverse proxy</td>
+                <td>SSL termination, load balancing</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-amber-300">Helper Container</span>
+                </td>
+                <td>App + init helper (db setup)</td>
+                <td>Initialize before main app starts</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-cyan-300">Data Processing</span>
+                </td>
+                <td>Main app + worker container</td>
+                <td>Parallel processing in same pod</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-purple-300"
+                    >Monitoring Sidecar</span
+                  >
+                </td>
+                <td>App + metrics exporter</td>
+                <td>Real-time monitoring data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="success-box mt-6">
+          <h3 class="font-bold text-green-300 mb-3 text-xl">
+            <i class="fas fa-star mr-2"></i>Most Common Pattern = Sidecar
+            Pattern
+          </h3>
+          <p class="text-slate-300">
+            <i class="fas fa-motorcycle text-amber-400 mr-2"></i>
+            Like a motorcycle sidecar -
+            <strong>main container + helper container</strong> working together!
+          </p>
+        </div>
+
+        <div class="info-box mt-6">
+          <h3 class="font-bold text-blue-300 mb-3 text-xl">
+            <i class="fas fa-rocket mr-2"></i>🚀 We'll Build This Today
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="flex items-center mb-3">
+                <div
+                  class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-server text-green-400 text-xl"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-green-300">🟢 Container 1</h4>
+                  <p class="text-slate-300">Your Express App</p>
+                </div>
+              </div>
+              <ul class="text-slate-300 ml-2 space-y-1">
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Runs on port
+                  3000
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Main
+                  application
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Serves HTTP
+                  requests
+                </li>
+              </ul>
+            </div>
+
+            <div class="p-4 bg-slate-800/50 rounded">
+              <div class="flex items-center mb-3">
+                <div
+                  class="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fas fa-satellite-dish text-amber-400 text-xl"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-amber-300">🟡 Container 2</h4>
+                  <p class="text-slate-300">Busybox Sidecar</p>
+                </div>
+              </div>
+              <ul class="text-slate-300 ml-2 space-y-1">
+                <li>
+                  <i class="fas fa-check text-amber-400 mr-2"></i>Watch pod and
+                  print logs
+                </li>
+                <li>
+                  <i class="fas fa-check text-amber-400 mr-2"></i>Monitoring
+                  container
+                </li>
+                <li>
+                  <i class="fas fa-check text-amber-400 mr-2"></i>Logs every 5
+                  seconds
+                </li>
+              </ul>
+            </div>
+          </div>
+          <p class="text-slate-300 mt-4 text-center">
+            <i class="fas fa-heart text-red-400 mr-2"></i>
+            <strong>Both live inside same pod ❤️</strong>
+          </p>
+        </div>
+      </section>
+
+      <!-- Step 1: Create YAML -->
+      <section class="step-card p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-check mr-3"></i>✅ Step 1 — Create Multi-Container
+            Pod YAML
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-folder-open text-blue-400 mr-2"></i>
+              Inside your Kubernetes folder create:
+              <code class="text-cyan-300 text-xl">multi-pod.yaml</code>
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="yamlFile">
+              apiVersion: v1 kind: Pod metadata: name: multi-container-pod spec:
+              containers: - name: express-app image: express-demo:v2 ports: -
+              containerPort: 3000 - name: sidecar-logger image: busybox command:
+              ["sh", "-c", "while true; do echo '📢 Sidecar running inside same
+              pod'; sleep 5; done"]
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('yamlFile')">
+                <i class="fas fa-copy"></i> Copy YAML
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f
+              multi-pod.yaml
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              pod/multi-container-pod created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              multi-container-pod&nbsp;&nbsp;&nbsp;<span class="text-green-400"
+                >2/2</span
+              >&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5s
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-eye mr-2"></i>Key Observation:
+            </h4>
+            <p class="text-slate-300">
+              <span class="highlight">2/2</span> in READY column means:
+              <strong>2 containers out of 2 are running!</strong> 🎉
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn primary" onclick="createPod()">
+              <i class="fas fa-magic mr-2"></i>Create Multi-Container Pod
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Check Containers -->
+      <section class="step-card p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-eye mr-3"></i>👀 Step 2 — Check Both Containers
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="checkContainers">
+              # Get detailed pod information kubectl describe pod
+              multi-container-pod # See both containers in output # Look for
+              "Containers:" section
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('checkContainers')"
+              >
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="terminal-output"
+            style="max-height: 300px; overflow-y: auto"
+          >
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl describe pod
+              multi-container-pod
+            </div>
+            <div class="terminal-line ml-4">
+              Name:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;multi-container-pod
+            </div>
+            <div class="terminal-line ml-4">
+              Namespace:&nbsp;&nbsp;&nbsp;&nbsp;default
+            </div>
+            <div class="terminal-line ml-4">
+              Status:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Running
+            </div>
+            <div class="terminal-line ml-4">
+              IP:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;10.244.0.5
+            </div>
+            <div class="terminal-line ml-4">
+              <strong class="text-cyan-300">Containers:</strong>
+            </div>
+            <div class="terminal-line ml-8">
+              <span class="text-green-300">express-app:</span>
+            </div>
+            <div class="terminal-line ml-12">
+              Container ID:&nbsp;&nbsp;docker://abc123...
+            </div>
+            <div class="terminal-line ml-12">
+              Image:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;express-demo:v2
+            </div>
+            <div class="terminal-line ml-12">
+              State:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Running
+            </div>
+            <div class="terminal-line ml-8">
+              <span class="text-amber-300">sidecar-logger:</span>
+            </div>
+            <div class="terminal-line ml-12">
+              Container ID:&nbsp;&nbsp;docker://def456...
+            </div>
+            <div class="terminal-line ml-12">
+              Image:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;busybox
+            </div>
+            <div class="terminal-line ml-12">
+              State:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Running
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-check-circle mr-2"></i>You'll See TWO Containers
+              Running 🎉
+            </h4>
+            <p class="text-slate-300">
+              <strong>Containers:</strong> section shows both containers with
+              their own:
+            </p>
+            <ul class="text-slate-300 ml-6 mt-2 space-y-1">
+              <li>
+                <i class="fas fa-id-badge text-blue-400 mr-2"></i>Container ID
+              </li>
+              <li>
+                <i class="fas fa-image text-purple-400 mr-2"></i>Image name
+              </li>
+              <li>
+                <i class="fas fa-play text-green-400 mr-2"></i>Running state
+              </li>
+              <li>
+                <i class="fas fa-bolt text-yellow-400 mr-2"></i>Resource usage
+              </li>
+            </ul>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn" onclick="showContainers()">
+              <i class="fas fa-boxes mr-2"></i>Show Containers View
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: View Logs -->
+      <section class="step-card p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-file-alt mr-3"></i>🧪 Step 3 — View Logs From Both
+            Containers
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 class="font-bold text-green-300 mb-3 text-xl">
+                <i class="fas fa-server mr-2"></i>Logs of Express App
+              </h3>
+              <div class="code-container">
+                <div class="code-text" id="logsApp">
+                  kubectl logs multi-container-pod -c express-app
+                </div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('logsApp')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+              <div class="terminal-output">
+                <div class="terminal-line">
+                  <span class="terminal-prompt">$</span> kubectl logs
+                  multi-container-pod -c express-app
+                </div>
+                <div class="terminal-line ml-4 terminal-success">
+                  Server running on port 3000
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-bold text-amber-300 mb-3 text-xl">
+                <i class="fas fa-satellite-dish mr-2"></i>Logs of Sidecar
+              </h3>
+              <div class="code-container">
+                <div class="code-text" id="logsSidecar">
+                  kubectl logs multi-container-pod -c sidecar-logger
+                </div>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('logsSidecar')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+              <div class="terminal-output">
+                <div class="terminal-line">
+                  <span class="terminal-prompt">$</span> kubectl logs
+                  multi-container-pod -c sidecar-logger
+                </div>
+                <div class="terminal-line ml-4">
+                  📢 Sidecar running inside same pod
+                </div>
+                <div class="terminal-line ml-4">
+                  📢 Sidecar running inside same pod
+                </div>
+                <div class="terminal-line ml-4">
+                  📢 Sidecar running inside same pod
+                </div>
+                <div class="terminal-line ml-4 text-slate-400">
+                  ... (every 5 seconds)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="success-box mt-6">
+            <h4 class="font-bold text-green-300 mb-2 text-xl">
+              <i class="fas fa-fire mr-2"></i>🔥 Proof → MULTI-CONTAINER POD
+              SUCCESS!
+            </h4>
+            <p class="text-slate-300">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              <strong>Two independent containers</strong> running in same pod
+            </p>
+            <p class="text-slate-300 mt-2">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              <strong>Different logs</strong> from each container
+            </p>
+            <p class="text-slate-300 mt-2">
+              <i class="fas fa-check-circle text-green-400 mr-2"></i>
+              <strong>Same pod lifecycle</strong> - they start and stop together
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn success" onclick="showLogs()">
+              <i class="fas fa-scroll mr-2"></i>Show Live Logs
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Test App -->
+      <section class="step-card p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-cyan-300 mb-4">
+            <i class="fas fa-globe mr-3"></i>🌐 Step 4 — Test The App
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="testApp">
+              # Forward port from container 1 (express-app) kubectl port-forward
+              pod/multi-container-pod 3001:3000 # Open browser and go to: #
+              http://localhost:3001
+            </div>
+            <div class="copy-btn-wrapper">
+              <button class="copy-btn no-select" onclick="copyCode('testApp')">
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl port-forward
+              pod/multi-container-pod 3001:3000
+            </div>
+            <div class="terminal-line ml-4">
+              Forwarding from 127.0.0.1:3001 -> 3000
+            </div>
+            <div class="terminal-line ml-4">
+              Forwarding from [::1]:3001 -> 3000
+            </div>
+            <div class="terminal-line">
+              <i class="fas fa-mouse-pointer text-blue-400 mr-2"></i>
+              Open browser:
+              <a
+                href="http://localhost:3001"
+                class="text-cyan-300 underline"
+                target="_blank"
+                >http://localhost:3001</a
+              >
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-rocket mr-2"></i>Express app works 🎉
+            </h4>
+            <p class="text-slate-300">
+              <i class="fas fa-check text-green-400 mr-2"></i>
+              Port forwarding works even with multiple containers
+            </p>
+            <p class="text-slate-300 mt-2">
+              <i class="fas fa-check text-green-400 mr-2"></i>
+              Only forwarding from <strong>express-app</strong> container (port
+              3000)
+            </p>
+            <p class="text-slate-300 mt-2">
+              <i class="fas fa-check text-green-400 mr-2"></i>
+              Sidecar container runs independently in background
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn" onclick="simulatePortForward()">
+              <i class="fas fa-plug mr-2"></i>Simulate Port Forwarding
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Key Knowledge -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+          <i class="fas fa-graduation-cap mr-3"></i>🧠 KEY KNOWLEDGE (Exam
+          Understanding)
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Meaning</th>
+                <th>When to Use</th>
+                <th>Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300"
+                    >Multi-Container Pod</span
+                  >
+                </td>
+                <td>Multiple containers inside ONE pod</td>
+                <td>Sidecar pattern, logging, proxies</td>
+                <td>App + logging sidecar (today!)</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-amber-300"
+                    >Multi-Pod Deployment</span
+                  >
+                </td>
+                <td>Multiple PODS communicating</td>
+                <td>Microservices, distributed apps</td>
+                <td>Frontend + Backend + Database</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="info-box">
+            <h3 class="font-bold text-green-300 mb-3 text-xl">
+              <i class="fas fa-check-circle mr-2"></i>✅ You Learned Today
+            </h3>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-box text-green-400 mt-1 mr-3 text-lg"></i>
+                <span><strong>Multi-container pod</strong> configuration</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-users text-blue-400 mt-1 mr-3 text-lg"></i>
+                <span><strong>Sidecar pattern</strong> implementation</span>
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-network-wired text-purple-400 mt-1 mr-3 text-lg"
+                ></i>
+                <span><strong>Shared resources</strong> in same pod</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-terminal text-amber-400 mt-1 mr-3 text-lg"></i>
+                <span><strong>Container-specific logs</strong> viewing</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="warning-box">
+            <h3 class="font-bold text-amber-300 mb-3 text-xl">
+              <i class="fas fa-arrow-right mr-2"></i>👉 Next You'll Learn
+            </h3>
+            <ul class="space-y-3 text-slate-300">
+              <li class="flex items-start">
+                <i
+                  class="fas fa-project-diagram text-purple-400 mt-1 mr-3 text-lg"
+                ></i>
+                <span
+                  ><strong>Multi-service microservices</strong> project</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-sitemap text-blue-400 mt-1 mr-3 text-lg"></i>
+                <span><strong>Service discovery</strong> between pods</span>
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-share-alt text-green-400 mt-1 mr-3 text-lg"
+                ></i>
+                <span><strong>Inter-pod communication</strong> patterns</span>
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fas fa-balance-scale text-red-400 mt-1 mr-3 text-lg"
+                ></i>
+                <span
+                  ><strong>Load balancing</strong> across multiple pods</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Troubleshooting Section -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-red-300 mb-6">
+          <i class="fas fa-bug mr-3"></i>🧩 Real Troubleshooting - What Could Go
+          Wrong
+        </h2>
+
+        <div class="pod-lifecycle">
+          <div class="lifecycle-step">
+            <div class="step-number">1</div>
+            <div>
+              <h4 class="font-bold text-red-300">Pod Creation Failed</h4>
+              <p class="text-slate-300">Error: "no route to host"</p>
+              <p class="text-slate-400 text-sm">
+                Minikube cluster was stopped!
+              </p>
+            </div>
+          </div>
+
+          <div class="lifecycle-step">
+            <div class="step-number">2</div>
+            <div>
+              <h4 class="font-bold text-amber-300">Check Cluster Status</h4>
+              <div class="code-container mt-2" style="padding: 15px">
+                <div class="code-text">minikube status</div>
+              </div>
+              <p class="text-slate-400 text-sm">
+                Shows: host: Stopped, kubelet: Stopped
+              </p>
+            </div>
+          </div>
+
+          <div class="lifecycle-step">
+            <div class="step-number">3</div>
+            <div>
+              <h4 class="font-bold text-green-300">Start Kubernetes</h4>
+              <div class="code-container mt-2" style="padding: 15px">
+                <div class="code-text">minikube start</div>
+              </div>
+              <p class="text-slate-300">Cluster starts → School opens! 😄</p>
+            </div>
+          </div>
+
+          <div class="lifecycle-step">
+            <div class="step-number">4</div>
+            <div>
+              <h4 class="font-bold text-blue-300">Create Pod Again</h4>
+              <div class="code-container mt-2" style="padding: 15px">
+                <div class="code-text">kubectl apply -f multi-pod.yaml</div>
+              </div>
+              <p class="text-slate-300">Success! Pod created 🎉</p>
+            </div>
+          </div>
+
+          <div class="lifecycle-step">
+            <div class="step-number">5</div>
+            <div>
+              <h4 class="font-bold text-purple-300">Check Pod Status</h4>
+              <div class="code-container mt-2" style="padding: 15px">
+                <div class="code-text">kubectl get pods</div>
+              </div>
+              <p class="text-slate-300">
+                Shows: <code>multi-container-pod 0/2 ContainerCreating</code>
+              </p>
+              <p class="text-slate-400 text-sm">
+                Kubernetes pulling images & starting containers
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-trophy mr-2"></i>🎯 Key Takeaways from
+            Troubleshooting
+          </h4>
+          <ul class="space-y-3 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+              <span
+                ><strong>Always check cluster status</strong> before creating
+                resources</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+              <span
+                ><strong>ContainerCreating</strong> means Kubernetes is
+                working</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+              <span
+                ><strong>0/2</strong> → 0 containers ready out of 2 total</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-400 mt-1 mr-3"></i>
+              <span
+                ><strong>2/2</strong> → Both containers running successfully!
+                🎊</span
+              >
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Interactive Practice -->
+      <section class="pod-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-gamepad mr-3"></i>🎮 Interactive Multi-Container
+          Practice
+        </h2>
+
+        <div class="demo-controls">
+          <button class="demo-btn primary" onclick="createPodVisual()">
+            <i class="fas fa-plus-circle mr-2"></i>Create Pod with 2 Containers
+          </button>
+          <button class="demo-btn" onclick="showLogsVisual()">
+            <i class="fas fa-scroll mr-2"></i>View Container Logs
+          </button>
+          <button class="demo-btn success" onclick="testConnectionVisual()">
+            <i class="fas fa-plug mr-2"></i>Test Container Communication
+          </button>
+        </div>
+
+        <div class="pod-visual" id="interactiveVisual">
+          <div class="text-center">
+            <div class="text-4xl mb-4">🏠</div>
+            <h3 class="text-xl font-bold text-slate-300">
+              Multi-Container Pod Simulation
+            </h3>
+            <p class="text-slate-400">Click buttons to interact</p>
+          </div>
+        </div>
+
+        <div class="code-container">
+          <div class="code-text" id="practiceCommands">
+            # Advanced Multi-Container Commands to Try: # 1. Execute command in
+            specific container kubectl exec -it multi-container-pod -c
+            express-app -- sh # 2. View logs from all containers kubectl logs
+            multi-container-pod --all-containers # 3. Follow logs (like tail -f)
+            kubectl logs multi-container-pod -c sidecar-logger -f # 4. Delete
+            the pod kubectl delete pod multi-container-pod # 5. Create with
+            initContainers (advanced) # initContainers run BEFORE main
+            containers
+          </div>
+          <div class="copy-btn-wrapper">
+            <button
+              class="copy-btn no-select"
+              onclick="copyCode('practiceCommands')"
+            >
+              <i class="fas fa-copy"></i> Copy All
+            </button>
+          </div>
+        </div>
+
+        <div class="success-box">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-award mr-2"></i>🏆 You've Mastered Multi-Container
+            Pods!
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h5 class="font-bold text-blue-300 mb-2">✅ Concepts Clear</h5>
+              <ul class="text-slate-300 space-y-1">
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Pod = Room
+                  analogy
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Sidecar
+                  pattern
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Shared
+                  resources
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Container
+                  lifecycle
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h5 class="font-bold text-purple-300 mb-2">
+                ✅ Commands Mastered
+              </h5>
+              <ul class="text-slate-300 space-y-1">
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i
+                  >Multi-container YAML
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i
+                  >Container-specific logs
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i>Port
+                  forwarding
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i
+                  >Troubleshooting
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-xl">You now understand multi-container pods! 🎊</p>
+          <p class="text-slate-500 text-lg mt-2">
+            One pod, multiple containers - working together like roommates! 🏠👥
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span
+            class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full text-lg"
+          >
+            <i class="fas fa-house mr-2"></i>Pod = Room
+          </span>
+          <span
+            class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full text-lg"
+          >
+            <i class="fas fa-users mr-2"></i>Containers = Roommates
+          </span>
+          <span
+            class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full text-lg"
+          >
+            <i class="fas fa-heart mr-2"></i>Same Lifecycle
+          </span>
+          <span
+            class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full text-lg"
+          >
+            <i class="fas fa-wifi mr-2"></i>Shared Network
+          </span>
+        </div>
+
+        <div class="mt-6 text-slate-500 text-lg">
+          <p>
+            Next: Learn about Services, ConfigMaps, and Secrets to connect
+            multiple pods! 🚀
+          </p>
+          <p class="mt-2 text-sm">
+            Remember: Use multi-container pods for sidecars, logging, and helper
+            containers! 🔧
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Interactive visualizations
+      function createPod() {
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-green-300 mb-4">Creating Multi-Container Pod...</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-spinner fa-spin text-green-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-green-300">Container 1: express-app</div>
+                                <div class="text-slate-400 text-sm">Pulling image: express-demo:v2</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-spinner fa-spin text-amber-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-amber-300">Container 2: sidecar-logger</div>
+                                <div class="text-slate-400 text-sm">Pulling image: busybox</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-slate-800/50 rounded">
+                            <div class="flex items-center text-green-400">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span>Pod Status: <span class="font-bold">ContainerCreating</span></span>
+                            </div>
+                            <div class="text-slate-400 text-sm mt-1">0/2 containers ready</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          visual.innerHTML = `
+                    <div class="w-full">
+                        <h3 class="text-xl font-bold text-green-300 mb-4">🎉 Multi-Container Pod Created!</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-check text-green-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-green-300">Container 1: express-app</div>
+                                    <div class="text-slate-400 text-sm">Running on port 3000</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-check text-amber-400"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-amber-300">Container 2: sidecar-logger</div>
+                                    <div class="text-slate-400 text-sm">Logging every 5 seconds</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 bg-green-500/10 rounded border border-green-500/30">
+                                <div class="flex items-center text-green-400">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    <span>Pod Status: <span class="font-bold">Running</span></span>
+                                </div>
+                                <div class="text-green-400 text-sm mt-1">2/2 containers ready ✅</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }, 2000);
+      }
+
+      function showContainers() {
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-blue-300 mb-4">Inside the Pod: Two Containers</h3>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-slate-800/50 rounded border-l-4 border-green-500">
+                            <h4 class="font-bold text-green-300 mb-2">Container: express-app</h4>
+                            <div class="space-y-2 text-slate-300">
+                                <div class="flex justify-between">
+                                    <span>Image:</span>
+                                    <code class="text-cyan-300">express-demo:v2</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Port:</span>
+                                    <code class="text-green-300">3000</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Status:</span>
+                                    <span class="status-indicator status-running">Running</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-slate-800/50 rounded border-l-4 border-amber-500">
+                            <h4 class="font-bold text-amber-300 mb-2">Container: sidecar-logger</h4>
+                            <div class="space-y-2 text-slate-300">
+                                <div class="flex justify-between">
+                                    <span>Image:</span>
+                                    <code class="text-cyan-300">busybox</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Command:</span>
+                                    <code class="text-purple-300">while true; do echo...</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Status:</span>
+                                    <span class="status-indicator status-running">Running</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-blue-500/10 rounded">
+                            <div class="text-blue-300">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>Shared Resources:</strong> Same IP, Same Volumes, Same Lifecycle
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function showLogs() {
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-purple-300 mb-4">Container Logs Simulation</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-bold text-green-300 mb-2">express-app logs:</h4>
+                            <div class="terminal-output">
+                                <div class="terminal-line terminal-success">
+                                    Server running on port 3000
+                                </div>
+                                <div class="terminal-line terminal-success">
+                                    GET / 200 - 15ms
+                                </div>
+                                <div class="terminal-line terminal-success">
+                                    GET /health 200 - 2ms
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-bold text-amber-300 mb-2">sidecar-logger logs:</h4>
+                            <div class="terminal-output">
+                                <div class="terminal-line">
+                                    📢 Sidecar running inside same pod
+                                </div>
+                                <div class="terminal-line">
+                                    📢 Sidecar running inside same pod
+                                </div>
+                                <div class="terminal-line">
+                                    📢 Sidecar running inside same pod
+                                </div>
+                                <div class="terminal-line text-slate-400">
+                                    <i class="fas fa-sync-alt fa-spin mr-2"></i>
+                                    Printing every 5 seconds...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function simulatePortForward() {
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-cyan-300 mb-4">Port Forwarding Simulation</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <div class="flex items-center mb-3">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-plug text-blue-400 text-xl"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-blue-300">Port Forwarding Active</div>
+                                    <div class="text-slate-300">localhost:3001 → pod:3000</div>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Local Port:</span>
+                                    <code class="text-blue-300">3001</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Container Port:</span>
+                                    <code class="text-green-300">3000</code>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Container:</span>
+                                    <code class="text-cyan-300">express-app</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-green-500/10 rounded">
+                            <div class="text-center">
+                                <div class="text-2xl mb-2">🌐</div>
+                                <div class="font-bold text-green-300">App Accessible at:</div>
+                                <a href="#" class="text-cyan-300 text-xl underline">http://localhost:3001</a>
+                                <div class="text-slate-400 text-sm mt-2">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Only container 1 (express-app) is exposed
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function createPodVisual() {
+        createPod();
+      }
+
+      function showLogsVisual() {
+        showLogs();
+      }
+
+      function testConnectionVisual() {
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-green-300 mb-4">Container Communication Test</h3>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <h4 class="font-bold text-green-300 mb-3">From sidecar to express-app:</h4>
+                            <div class="code-container" style="padding: 15px;">
+                                <div class="code-text">
+# Inside sidecar container:
+wget -qO- http://localhost:3000/health
+                                </div>
+                            </div>
+                            <div class="terminal-output mt-3">
+                                <div class="terminal-line terminal-prompt">$</div>
+                                <div class="terminal-line ml-4 terminal-success">
+                                    {"status":"healthy","timestamp":"2024-..."}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-purple-500/10 rounded">
+                            <div class="text-purple-300">
+                                <i class="fas fa-lightbulb mr-2"></i>
+                                <strong>Key Insight:</strong> Containers in same pod can communicate via <code>localhost</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      // Initialize with syntax highlighting
+      document.addEventListener('DOMContentLoaded', () => {
+        // Make buttons touch-friendly
+        document
+          .querySelectorAll('.copy-btn, .demo-btn, button')
+          .forEach((btn) => {
+            btn.classList.add('touch-target');
+          });
+
+        // Add syntax highlighting
+        const codeElements = document.querySelectorAll('.code-text');
+        codeElements.forEach((element) => {
+          let code = element.innerHTML;
+
+          // Highlight comments
+          code = code.replace(/#.*$/gm, '<span class="code-comment">$&</span>');
+
+          // Highlight YAML keywords
+          code = code.replace(
+            /\b(apiVersion|kind|metadata|spec|containers|name|image|ports|command|containerPort)\b/g,
+            '<span class="code-keyword">$1</span>',
+          );
+
+          // Highlight strings
+          code = code.replace(
+            /(["'][^"']*["'])/g,
+            '<span class="code-string">$1</span>',
+          );
+
+          // Highlight kubectl commands
+          code = code.replace(
+            /\b(kubectl|apply|get|describe|logs|port-forward|exec|delete)\b/g,
+            '<span class="code-keyword" style="color: #4ec9b0;">$1</span>',
+          );
+
+          element.innerHTML = code;
+        });
+
+        // Initialize interactive visual
+        const visual = document.getElementById('interactiveVisual');
+        visual.innerHTML = `
+                <div class="text-center p-8">
+                    <div class="text-5xl mb-4">🏠</div>
+                    <h3 class="text-2xl font-bold text-slate-300 mb-2">Multi-Container Pod</h3>
+                    <p class="text-slate-400">Click buttons above to explore</p>
+                    <div class="mt-6 flex justify-center space-x-4">
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-server text-green-400"></i>
+                            </div>
+                            <div class="text-sm text-slate-300">Container 1</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <i class="fas fa-satellite-dish text-amber-400"></i>
+                            </div>
+                            <div class="text-sm text-slate-300">Container 2</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      });
+    </script>
+  </body>
+</html>

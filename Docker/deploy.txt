@@ -1,0 +1,120 @@
+🚀 How We Deployed Your Express App — Step-By-Step
+🧱 Step-1 — We Built Our Docker Image
+
+Inside your Express project folder (where Dockerfile exists), we built the image:
+
+docker build -t express-demo:v2 .
+
+
+📌 Meaning:
+
+docker build → build a new image
+
+-t express-demo:v2 → gave image a name + version
+
+. → build from current folder
+
+Result → You got an image:
+
+express-demo:v2
+
+🏷️ Step-2 — We Tagged Image For Docker Hub
+
+Docker Hub needs images in format:
+
+username/repository:tag
+
+
+So you tagged your local image like this 👇
+
+docker tag express-demo:v2 amit1924/express-app:v2
+
+
+📌 Meaning:
+
+Source image → express-demo:v2
+
+Target name → amit1924/express-app:v2
+
+Now you had:
+
+express-demo:v2
+amit1924/express-app:v2  ✔️
+
+🔐 Step-3 — Logged Into Docker Hub
+
+You authenticated with Docker Hub:
+
+docker login
+
+
+✔️ Login succeeded
+✔️ Your PC is now allowed to upload to your Docker account
+
+☁️ Step-4 — We Pushed Image To Docker Hub
+
+This is when deployment actually began 🌍
+
+docker push amit1924/express-app:v2
+
+
+Docker uploaded all layers
+You saw:
+
+Pushed
+digest...
+done
+
+
+Boom 🎉
+Your app now lives on the internet inside Docker Hub!
+
+🧠 What Did This Achieve?
+
+You now have a cloud image like this:
+
+docker.io/amit1924/express-app:v2
+
+
+Anyone in the world can pull & run it.
+Even future-you on another PC 😎
+
+🏃‍♂️ Step-5 — We Ran The App From Docker
+
+We deployed locally by running container:
+
+docker run -d -p 3000:3000 amit1924/express-app:v2
+
+
+📌 Meaning:
+
+docker run → create + run a container
+
+-d → run in background (detached)
+
+-p 3000:3000
+
+left = your computer port
+
+right = port inside container
+
+amit1924/express-app:v2 → the image we pushed
+
+🧪 Test Like a Real Dev
+
+Try this on any system (even your friend's PC, or later your cloud server):
+
+docker pull amit1924/express-app:v2
+docker run -d -p 3000:3000 amit1924/express-app:v2
+
+
+Boom — your app runs.
+
+That’s real deployment.
+
+💡 “Docker commands → To push new tag” Section
+
+It’s telling you that you can push more tags later like:
+
+docker tag express-demo:v3 amit1924/express-app:v3
+docker push amit1924/express-app:v3

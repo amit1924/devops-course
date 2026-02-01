@@ -1,0 +1,9 @@
+cat << EOF > file.txt
+Hello Amit
+I live in Patna
+Learning Linux happily 😄
+EOF
+
+> file.txt → overwrite
+
+>> file.txt → append

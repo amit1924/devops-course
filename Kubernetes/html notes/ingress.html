@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🚪 Kubernetes Ingress - Complete External Access Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      /* Larger fonts for better readability */
+      h1 {
+        font-size: 2.5rem !important;
+      }
+      h2 {
+        font-size: 2rem !important;
+      }
+      h3 {
+        font-size: 1.75rem !important;
+      }
+      h4 {
+        font-size: 1.5rem !important;
+      }
+      p,
+      li {
+        font-size: 1.25rem !important;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #f59e0b, #8b5cf6, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .ingress-card {
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.4);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px auto;
+        max-width: 100%;
+      }
+
+      .ingress-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
+        border-color: #8b5cf6;
+      }
+
+      .step-card {
+        background: rgba(30, 41, 59, 0.9);
+        border-radius: 20px;
+        border: 2px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+        padding: 25px;
+      }
+
+      .step-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(245, 158, 11, 0.15);
+      }
+
+      .step-badge {
+        position: absolute;
+        top: -20px;
+        left: 25px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 6px solid #f59e0b;
+        border-radius: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 25px;
+        margin: 20px 0;
+        font-size: 1.1rem;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 1.1rem;
+        line-height: 1.8;
+        word-break: break-word;
+        padding-right: 110px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.1rem;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 8px 0;
+        color: #e2e8f0;
+        font-size: 1.1rem;
+      }
+
+      .terminal-prompt {
+        color: #f59e0b;
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .terminal-success {
+        color: #22c55e;
+      }
+
+      .terminal-error {
+        color: #ef4444;
+      }
+
+      .terminal-warning {
+        color: #f59e0b;
+      }
+
+      .ingress-visual {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 20px;
+        margin: 25px 0;
+        border: 3px solid #334155;
+        position: relative;
+        min-height: 300px;
+      }
+
+      .network-flow {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin: 20px 0;
+        width: 100%;
+        max-width: 900px;
+      }
+
+      .network-node {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        border: 2px solid;
+        transition: all 0.3s ease;
+      }
+
+      .network-node:hover {
+        transform: translateY(-5px);
+      }
+
+      .node-browser {
+        border-color: #3b82f6;
+      }
+
+      .node-ingress {
+        border-color: #8b5cf6;
+      }
+
+      .node-service {
+        border-color: #10b981;
+      }
+
+      .node-pod {
+        border-color: #f59e0b;
+      }
+
+      .connection-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #8b5cf6;
+        font-size: 1.5rem;
+      }
+
+      .info-box {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.15),
+          rgba(37, 99, 235, 0.15)
+        );
+        border-left: 5px solid #3b82f6;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.15),
+          rgba(5, 150, 105, 0.15)
+        );
+        border-left: 5px solid #10b981;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.15),
+          rgba(217, 119, 6, 0.15)
+        );
+        border-left: 5px solid #f59e0b;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .error-box {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.15),
+          rgba(220, 38, 38, 0.15)
+        );
+        border-left: 5px solid #ef4444;
+        border-radius: 0 15px 15px 0;
+        padding: 25px;
+        margin: 20px 0;
+      }
+
+      .demo-controls {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .demo-btn {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 1.2rem;
+        min-height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .demo-btn:hover {
+        background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+      }
+
+      .demo-btn.primary {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+      }
+
+      .demo-btn.primary:hover {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      }
+
+      .demo-btn.success {
+        background: linear-gradient(135deg, #10b981, #059669);
+      }
+
+      .demo-btn.success:hover {
+        background: linear-gradient(135deg, #34d399, #10b981);
+      }
+
+      .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 5px;
+      }
+
+      .status-running {
+        background: rgba(16, 185, 129, 0.25);
+        color: #10b981;
+        border: 2px solid rgba(16, 185, 129, 0.5);
+      }
+
+      .status-pending {
+        background: rgba(245, 158, 11, 0.25);
+        color: #f59e0b;
+        border: 2px solid rgba(245, 158, 11, 0.5);
+      }
+
+      .status-error {
+        background: rgba(239, 68, 68, 0.25);
+        color: #ef4444;
+        border: 2px solid rgba(239, 68, 68, 0.5);
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 25px 0;
+        background: rgba(30, 41, 59, 0.6);
+        border-radius: 15px;
+        overflow: hidden;
+        font-size: 1.2rem;
+      }
+
+      .comparison-table th {
+        background: rgba(245, 158, 11, 0.3);
+        padding: 20px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 3px solid #334155;
+        font-size: 1.3rem;
+      }
+
+      .comparison-table td {
+        padding: 18px 20px;
+        border-bottom: 2px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(245, 158, 11, 0.15);
+      }
+
+      .ingress-yaml {
+        background: #0f172a;
+        border-left: 6px solid #8b5cf6;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 20px 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 60px;
+        min-width: 60px;
+      }
+
+      /* Mobile-specific optimizations */
+      @media (max-width: 768px) {
+        body {
+          font-size: 16px;
+        }
+        h1 {
+          font-size: 2rem !important;
+        }
+        h2 {
+          font-size: 1.75rem !important;
+        }
+        h3 {
+          font-size: 1.5rem !important;
+        }
+        h4 {
+          font-size: 1.3rem !important;
+        }
+        p,
+        li {
+          font-size: 1.1rem !important;
+        }
+
+        .ingress-card,
+        .step-card {
+          padding: 20px 15px !important;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+
+        .code-container {
+          padding: 20px;
+          padding-right: 90px;
+          font-size: 1rem;
+        }
+
+        .code-text {
+          font-size: 1rem;
+          padding-right: 80px;
+        }
+
+        .copy-btn {
+          padding: 10px 20px;
+          font-size: 1rem;
+          min-height: 45px;
+        }
+
+        .demo-btn {
+          padding: 14px 24px;
+          font-size: 1.1rem;
+          min-height: 55px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .demo-controls {
+          flex-direction: column;
+        }
+
+        .network-flow {
+          grid-template-columns: 1fr;
+          gap: 30px;
+        }
+
+        .connection-arrow {
+          transform: rotate(90deg);
+          margin: 10px 0;
+        }
+
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+          font-size: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+          padding: 15px;
+          min-width: 150px;
+        }
+      }
+
+      /* Very small screens */
+      @media (max-width: 480px) {
+        body {
+          font-size: 15px;
+        }
+        h1 {
+          font-size: 1.8rem !important;
+        }
+        h2 {
+          font-size: 1.6rem !important;
+        }
+        .code-text {
+          font-size: 0.95rem;
+        }
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+
+      /* Animations */
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      .flow-animation {
+        animation: flow 3s linear infinite;
+      }
+
+      @keyframes flow {
+        0% {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        50% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+
+      .highlight {
+        background: rgba(245, 158, 11, 0.2);
+        padding: 3px 8px;
+        border-radius: 5px;
+        color: #f59e0b;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <div class="ingress-card p-6 mb-8">
+          <h1
+            class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+          >
+            🚪 Kubernetes Ingress - External Access Guide
+          </h1>
+          <p class="text-xl md:text-2xl text-slate-300 mb-6">
+            Access Your Apps via Custom URLs (express.local) 🌐
+          </p>
+
+          <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <span
+              class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 text-lg"
+            >
+              <i class="fas fa-door-open mr-2"></i>Ingress Gateway
+            </span>
+            <span
+              class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30 text-lg"
+            >
+              <i class="fas fa-globe mr-2"></i>Custom Domains
+            </span>
+            <span
+              class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30 text-lg"
+            >
+              <i class="fas fa-route mr-2"></i>Traffic Routing
+            </span>
+            <span
+              class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full border border-green-500/30 text-lg"
+            >
+              <i class="fas fa-external-link-alt mr-2"></i>External Access
+            </span>
+          </div>
+
+          <div class="ingress-visual">
+            <div class="network-flow">
+              <div class="network-node node-browser">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-globe"></i>
+                </div>
+                <h4 class="font-bold text-blue-300 text-xl">Browser</h4>
+                <p class="text-slate-300 text-sm">http://express.local</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-play mr-2"></i>Ready
+                  </span>
+                </div>
+              </div>
+
+              <div class="connection-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="network-node node-ingress">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-door-open"></i>
+                </div>
+                <h4 class="font-bold text-purple-300 text-xl">Ingress</h4>
+                <p class="text-slate-300 text-sm">express.local → service</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-route mr-2"></i>Routing
+                  </span>
+                </div>
+              </div>
+
+              <div class="connection-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="network-node node-service">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-project-diagram"></i>
+                </div>
+                <h4 class="font-bold text-green-300 text-xl">Service</h4>
+                <p class="text-slate-300 text-sm">express-service:3000</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-link mr-2"></i>Connected
+                  </span>
+                </div>
+              </div>
+
+              <div class="connection-arrow">
+                <i class="fas fa-arrow-right"></i>
+              </div>
+
+              <div class="network-node node-pod">
+                <div class="text-4xl mb-3">
+                  <i class="fas fa-server"></i>
+                </div>
+                <h4 class="font-bold text-amber-300 text-xl">Pods</h4>
+                <p class="text-slate-300 text-sm">Your Express App</p>
+                <div class="mt-3">
+                  <span class="status-indicator status-running">
+                    <i class="fas fa-check mr-2"></i>Running
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-6">
+              <div class="text-slate-400">
+                <i class="fas fa-info-circle mr-2"></i>
+                Ingress: <strong>"Door to your Kubernetes apps"</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Complete Step-by-Step Guide -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-list-ol mr-3"></i>📋 Complete Step-by-Step Guide
+        </h2>
+
+        <div class="warning-box">
+          <p class="text-slate-300 mb-4">
+            <i
+              class="fas fa-exclamation-circle text-amber-400 mr-2 text-xl"
+            ></i>
+            <strong class="text-xl"
+              >Follow these steps EXACTLY in order:</strong
+            >
+          </p>
+          <ol class="space-y-3 text-slate-300 ml-6">
+            <li>
+              <span class="highlight">Step 1</span> - Check Minikube & Enable
+              Ingress
+            </li>
+            <li>
+              <span class="highlight">Step 2</span> - Apply all files from
+              ingress folder
+            </li>
+            <li>
+              <span class="highlight">Step 3</span> - Get Minikube IP address
+            </li>
+            <li>
+              <span class="highlight">Step 4</span> - Update /etc/hosts file
+            </li>
+            <li><span class="highlight">Step 5</span> - Access via browser</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Step 1: Check Minikube & Ingress -->
+      <section class="step-card p-6">
+        <div class="step-badge">1</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-check mr-3"></i>✅ Step 1 — Make Sure Minikube &
+            Ingress Are Running
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="step1Commands">
+              # Check Minikube status minikube status # Enable Ingress addon
+              minikube addons enable ingress # Verify Ingress controller is
+              running kubectl get pods -n kube-system | grep ingress
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('step1Commands')"
+              >
+                <i class="fas fa-copy"></i> Copy All
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube status
+            </div>
+            <div class="terminal-line ml-4 terminal-success">host: Running</div>
+            <div class="terminal-line ml-4 terminal-success">
+              kubelet: Running
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              apiserver: Running
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              kubeconfig: Configured
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube addons enable
+              ingress
+            </div>
+            <div class="terminal-line ml-4">
+              🌟 The 'ingress' addon is enabled
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods -n
+              kube-system | grep ingress
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              ingress-nginx-controller-xxxxxxxxx-xxxxx 1/1 Running 0 2m
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-eye mr-2"></i>You MUST See:
+            </h4>
+            <div class="flex items-center p-3 bg-green-500/10 rounded">
+              <div class="text-2xl mr-3">🚦</div>
+              <div>
+                <code class="text-green-300 text-xl"
+                  >ingress-nginx-controller Running</code
+                >
+                <div class="text-slate-300 text-sm mt-1">If not → tell me.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn primary" onclick="simulateStep1()">
+              <i class="fas fa-play mr-2"></i>Simulate Step 1
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Apply All Files -->
+      <section class="step-card p-6">
+        <div class="step-badge">2</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-blue-300 mb-4">
+            <i class="fas fa-folder mr-3"></i>✅ Step 2 — Apply ALL FILES FROM
+            YOUR NEW FOLDER
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-folder-open text-blue-400 mr-2"></i>
+              Go to your ingress folder:
+              <code class="text-cyan-300 text-xl"
+                >cd ~/Desktop/Courses/Kubernetes/ingress</code
+              >
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="step2Commands">
+              # Apply EVERYTHING in current folder kubectl apply -f . # Now
+              check everything kubectl get pods kubectl get svc kubectl get
+              ingress
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('step2Commands')"
+              >
+                <i class="fas fa-copy"></i> Copy All
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl apply -f .
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              deployment.apps/express-demo-deploy configured
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              service/express-service unchanged
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              ingress.networking.k8s.io/express-app-ingress created
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get pods
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;READY&nbsp;&nbsp;STATUS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RESTARTS&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-demo-deploy-xxxxx&nbsp;&nbsp;1/1&nbsp;&nbsp;&nbsp;&nbsp;Running&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5m
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get svc
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CLUSTER-IP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORT(S)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-service&nbsp;&nbsp;NodePort&nbsp;&nbsp;10.96.xx.xx&nbsp;&nbsp;&nbsp;3000:3xxxx/TCP&nbsp;&nbsp;5m
+            </div>
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> kubectl get ingress
+            </div>
+            <div class="terminal-line ml-4">
+              NAME&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CLASS&nbsp;&nbsp;&nbsp;&nbsp;HOSTS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ADDRESS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORTS&nbsp;&nbsp;&nbsp;AGE
+            </div>
+            <div class="terminal-line ml-4 terminal-success">
+              express-app-ingress&nbsp;&nbsp;nginx&nbsp;&nbsp;&nbsp;express.local&nbsp;&nbsp;&nbsp;192.168.49.2&nbsp;&nbsp;&nbsp;80&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2m
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>You Should See:
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="p-3 bg-green-500/10 rounded text-center">
+                <div class="text-xl mb-2">📦</div>
+                <div class="font-bold text-green-300">Pods = Running</div>
+                <div class="text-slate-400 text-sm">Your app containers</div>
+              </div>
+              <div class="p-3 bg-blue-500/10 rounded text-center">
+                <div class="text-xl mb-2">🔗</div>
+                <div class="font-bold text-blue-300">
+                  Service = express-service
+                </div>
+                <div class="text-slate-400 text-sm">Port 3000</div>
+              </div>
+              <div class="p-3 bg-purple-500/10 rounded text-center">
+                <div class="text-xl mb-2">🚪</div>
+                <div class="font-bold text-purple-300">
+                  Ingress = express.local
+                </div>
+                <div class="text-slate-400 text-sm">Your custom domain</div>
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-exclamation-triangle text-amber-400 mr-2"></i>
+              If something missing → copy output to me 👍
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Get Minikube IP -->
+      <section class="step-card p-6">
+        <div class="step-badge">3</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-purple-300 mb-4">
+            <i class="fas fa-map-marker-alt mr-3"></i>✅ Step 3 — Confirm Your
+            Minikube IP
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="step3Commands">
+              # Get Minikube IP address minikube ip
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('step3Commands')"
+              >
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <span class="terminal-prompt">$</span> minikube ip
+            </div>
+            <div class="terminal-line ml-4 terminal-success">192.168.49.2</div>
+            <div class="terminal-line">
+              <i class="fas fa-info-circle text-blue-400 mr-2"></i>
+              Example result: <code class="text-cyan-300">192.168.49.2</code>
+            </div>
+          </div>
+
+          <div class="warning-box">
+            <h4 class="font-bold text-amber-300 mb-2">
+              <i class="fas fa-exclamation-triangle mr-2"></i>Important!
+            </h4>
+            <p class="text-slate-300">
+              Your IP might be different! Use <strong>YOUR actual IP</strong> in
+              next step.
+            </p>
+            <p class="text-slate-300 mt-2">
+              Common IPs: <code class="text-cyan-300">192.168.49.2</code>,
+              <code class="text-cyan-300">192.168.59.100</code>,
+              <code class="text-cyan-300">192.168.64.2</code>
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn" onclick="showIpImportance()">
+              <i class="fas fa-network-wired mr-2"></i>Why IP Matters
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 4: Update Hosts File -->
+      <section class="step-card p-6">
+        <div class="step-badge">4</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-cyan-300 mb-4">
+            <i class="fas fa-file-edit mr-3"></i>✅ Step 4 — Update /etc/hosts
+          </h2>
+
+          <div class="info-box">
+            <p class="text-slate-300">
+              <i class="fas fa-terminal text-blue-400 mr-2"></i>
+              Open hosts file with nano:
+              <code class="text-cyan-300 text-xl">sudo nano /etc/hosts</code>
+            </p>
+          </div>
+
+          <div class="code-container">
+            <div class="code-text" id="hostsEntry">
+              # ADD THIS LINE (replace IP if different) 192.168.49.2
+              express.local
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('hostsEntry')"
+              >
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <i class="fas fa-keyboard text-amber-400 mr-2"></i>
+              Nano Editor Commands:
+            </div>
+            <div class="terminal-line ml-4">
+              1. Add line at bottom:
+              <span class="text-cyan-300">192.168.49.2 express.local</span>
+            </div>
+            <div class="terminal-line ml-4">
+              2. Save: <span class="text-green-300">Ctrl + O</span> → Press
+              <span class="text-green-300">Enter</span>
+            </div>
+            <div class="terminal-line ml-4">
+              3. Exit: <span class="text-green-300">Ctrl + X</span>
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-2">
+              <i class="fas fa-lightbulb mr-2"></i>What This Does:
+            </h4>
+            <p class="text-slate-300">
+              <i class="fas fa-map-signs text-blue-400 mr-2"></i>
+              Tells your computer:
+              <strong>"express.local = 192.168.49.2"</strong>
+            </p>
+            <p class="text-slate-300 mt-2">
+              <i class="fas fa-globe text-green-400 mr-2"></i>
+              Without this, browser doesn't know where express.local is!
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn primary" onclick="simulateHostsEdit()">
+              <i class="fas fa-edit mr-2"></i>Simulate Hosts Edit
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 5: Open Browser -->
+      <section class="step-card p-6">
+        <div class="step-badge">5</div>
+        <div class="pt-10">
+          <h2 class="text-2xl font-bold text-green-300 mb-4">
+            <i class="fas fa-rocket mr-3"></i>🚀 Step 5 — Open Browser
+          </h2>
+
+          <div class="code-container">
+            <div class="code-text" id="browserUrl">
+              # Open your browser and go to: http://express.local
+            </div>
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('browserUrl')"
+              >
+                <i class="fas fa-copy"></i> Copy URL
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-output">
+            <div class="terminal-line">
+              <i class="fas fa-chrome text-blue-400 mr-2"></i>
+              Open browser and visit:
+            </div>
+            <div class="terminal-line ml-4">
+              <a
+                href="http://express.local"
+                class="text-cyan-300 text-xl underline"
+                target="_blank"
+                >http://express.local</a
+              >
+            </div>
+            <div class="terminal-line">
+              <i class="fas fa-mouse-pointer text-green-400 mr-2"></i>
+              Or click the link above!
+            </div>
+          </div>
+
+          <div class="success-box">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>Expected Result:
+            </h4>
+            <div class="flex items-center p-4 bg-green-500/10 rounded">
+              <div class="text-4xl mr-4">🎉</div>
+              <div>
+                <p class="text-xl font-bold text-green-300">
+                  Your Express App Loads!
+                </p>
+                <p class="text-slate-300">
+                  You should see your app running via custom domain.
+                </p>
+              </div>
+            </div>
+            <p class="text-slate-300 mt-3">
+              <i class="fas fa-fire text-orange-400 mr-2"></i>
+              <strong>If it opens → YOU DID IT 🎉🔥</strong>
+            </p>
+          </div>
+
+          <div class="demo-controls">
+            <button class="demo-btn success" onclick="celebrateSuccess()">
+              <i class="fas fa-trophy mr-2"></i>Celebrate Success!
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Troubleshooting -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-red-300 mb-6">
+          <i class="fas fa-bug mr-3"></i>❗ If Still Not Working — Quick Tests
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 bg-slate-800/50 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-terminal text-purple-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-purple-300 text-xl">
+                  🔎 Test Ingress Route
+                </h4>
+                <p class="text-slate-300">Manual curl test</p>
+              </div>
+            </div>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">
+                curl -H "Host: express.local" \ http://192.168.49.2
+              </div>
+            </div>
+            <p class="text-slate-300 text-sm mt-2">
+              You should get your Express response.
+            </p>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-search text-blue-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-blue-300 text-xl">
+                  🔎 Check Ingress Details
+                </h4>
+                <p class="text-slate-300">Look for errors</p>
+              </div>
+            </div>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">kubectl describe ingress</div>
+            </div>
+            <p class="text-slate-300 text-sm mt-2">
+              Look for errors at bottom. Send me output if any.
+            </p>
+          </div>
+
+          <div class="p-6 bg-slate-800/50 rounded">
+            <div class="flex items-center mb-4">
+              <div
+                class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4"
+              >
+                <i class="fas fa-link text-green-400 text-xl"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-green-300 text-xl">
+                  🔎 Ensure Service Match
+                </h4>
+                <p class="text-slate-300">Service name must match</p>
+              </div>
+            </div>
+            <div class="code-container" style="padding: 15px">
+              <div class="code-text">kubectl get svc</div>
+            </div>
+            <p class="text-slate-300 text-sm mt-2">
+              Service must be EXACTLY: <code>express-service</code> port
+              <code>3000</code>
+            </p>
+          </div>
+        </div>
+
+        <div class="error-box mt-6">
+          <h4 class="font-bold text-red-300 mb-3">
+            <i class="fas fa-exclamation-circle mr-2"></i>Common Issues:
+          </h4>
+          <div class="space-y-3 text-slate-300">
+            <div class="flex items-start">
+              <i class="fas fa-times text-red-400 mt-1 mr-3"></i>
+              <div>
+                <strong>Wrong IP in /etc/hosts</strong>
+                <div class="text-slate-400 text-sm">
+                  Use exact IP from <code>minikube ip</code>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-times text-red-400 mt-1 mr-3"></i>
+              <div>
+                <strong>Ingress controller not running</strong>
+                <div class="text-slate-400 text-sm">
+                  Check
+                  <code>kubectl get pods -n kube-system | grep ingress</code>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <i class="fas fa-times text-red-400 mt-1 mr-3"></i>
+              <div>
+                <strong>Service name mismatch</strong>
+                <div class="text-slate-400 text-sm">
+                  Ingress YAML must reference correct service
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-controls mt-6">
+          <button class="demo-btn" onclick="runTroubleshooting()">
+            <i class="fas fa-wrench mr-2"></i>Run Troubleshooting Tests
+          </button>
+        </div>
+      </section>
+
+      <!-- Ingress YAML File -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-code mr-3"></i>📄 Your Ingress YAML File
+        </h2>
+
+        <div class="warning-box">
+          <p class="text-slate-300">
+            <i class="fas fa-file-code text-amber-400 mr-2"></i>
+            <strong>Create this file in your ingress folder:</strong>
+            <code class="text-cyan-300 text-xl">express-ingress.yaml</code>
+          </p>
+        </div>
+
+        <div class="ingress-yaml">
+          <div class="code-text" id="ingressYaml">
+            apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name:
+            express-app-ingress annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: / spec: rules: - host:
+            express.local http: paths: - path: / pathType: Prefix backend:
+            service: name: express-service # ← MUST match your service name
+            port: number: 3000 # ← MUST match your service port
+          </div>
+          <div class="copy-btn-wrapper">
+            <button
+              class="copy-btn no-select"
+              onclick="copyCode('ingressYaml')"
+            >
+              <i class="fas fa-copy"></i> Copy YAML
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="p-4 bg-slate-800/50 rounded">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>Key Points:
+            </h4>
+            <ul class="space-y-2 text-slate-300">
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span
+                  ><code>host: express.local</code> - Your custom domain</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span
+                  ><code>name: express-service</code> - Must match service
+                  name</span
+                >
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span><code>port: 3000</code> - Must match service port</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                <span
+                  ><code>rewrite-target: /</code> - Rewrites paths
+                  correctly</span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="p-4 bg-slate-800/50 rounded">
+            <h4 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-terminal mr-2"></i>Commands to Apply:
+            </h4>
+            <div class="code-container" style="padding: 15px; margin: 10px 0">
+              <div class="code-text">
+                # Create the file nano express-ingress.yaml # Paste the YAML
+                (EXACTLY) # Save: Ctrl+O → Enter → Ctrl+X # Apply it kubectl
+                apply -f express-ingress.yaml # Verify kubectl get ingress
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Understanding Ingress Flow -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-project-diagram mr-3"></i>🔍 Understanding the Flow
+        </h2>
+
+        <div class="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>What Happens</th>
+                <th>Command to Check</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <span class="font-bold text-green-300"
+                    >1. Browser Request</span
+                  >
+                </td>
+                <td>You type http://express.local</td>
+                <td>n/a</td>
+                <td>🟢 User Action</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-blue-300">2. Hosts File</span>
+                </td>
+                <td>/etc/hosts maps to Minikube IP</td>
+                <td><code>cat /etc/hosts</code></td>
+                <td>🟢 DNS Resolution</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-purple-300"
+                    >3. Ingress Controller</span
+                  >
+                </td>
+                <td>Nginx receives request</td>
+                <td>
+                  <code>kubectl get pods -n kube-system | grep ingress</code>
+                </td>
+                <td>🟢 Traffic Router</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-amber-300"
+                    >4. Service Routing</span
+                  >
+                </td>
+                <td>Routes to express-service</td>
+                <td><code>kubectl get svc</code></td>
+                <td>🟢 Load Balancer</td>
+              </tr>
+              <tr>
+                <td>
+                  <span class="font-bold text-red-300">5. Pod Delivery</span>
+                </td>
+                <td>Service sends to pod(s)</td>
+                <td><code>kubectl get pods</code></td>
+                <td>🟢 App Response</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-3">
+            <i class="fas fa-lightbulb mr-2"></i>💡 Ingress vs NodePort:
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="p-4 bg-slate-800/50 rounded">
+              <h5 class="font-bold text-amber-300 mb-2">NodePort (Before)</h5>
+              <ul class="text-slate-300 space-y-1">
+                <li>
+                  <i class="fas fa-external-link-alt text-amber-400 mr-2"></i
+                  >Access via IP:Port
+                </li>
+                <li>
+                  <i class="fas fa-hashtag text-amber-400 mr-2"></i
+                  >http://192.168.49.2:3xxxx
+                </li>
+                <li>
+                  <i class="fas fa-random text-amber-400 mr-2"></i>Random port
+                  number
+                </li>
+                <li>
+                  <i class="fas fa-times text-amber-400 mr-2"></i>Not
+                  user-friendly
+                </li>
+              </ul>
+            </div>
+            <div class="p-4 bg-slate-800/50 rounded border border-green-500/30">
+              <h5 class="font-bold text-green-300 mb-2">Ingress (Now)</h5>
+              <ul class="text-slate-300 space-y-1">
+                <li>
+                  <i class="fas fa-globe text-green-400 mr-2"></i>Access via
+                  domain
+                </li>
+                <li>
+                  <i class="fas fa-check text-green-400 mr-2"></i
+                  >http://express.local
+                </li>
+                <li>
+                  <i class="fas fa-route text-green-400 mr-2"></i>Clean URL
+                  routing
+                </li>
+                <li>
+                  <i class="fas fa-star text-green-400 mr-2"></i
+                  >Production-ready
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Practice -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-amber-300 mb-6">
+          <i class="fas fa-gamepad mr-3"></i>🎮 Interactive Ingress Practice
+        </h2>
+
+        <div class="demo-controls">
+          <button class="demo-btn primary" onclick="simulateTrafficFlow()">
+            <i class="fas fa-traffic-light mr-2"></i>Simulate Traffic Flow
+          </button>
+          <button class="demo-btn" onclick="testIngressRouting()">
+            <i class="fas fa-route mr-2"></i>Test Ingress Routing
+          </button>
+          <button class="demo-btn success" onclick="debugCommonIssues()">
+            <i class="fas fa-bug mr-2"></i>Debug Common Issues
+          </button>
+        </div>
+
+        <div class="ingress-visual" id="practiceArea">
+          <div class="text-center p-8">
+            <div class="text-5xl mb-4">🚪</div>
+            <h3 class="text-2xl font-bold text-slate-300 mb-2">
+              Ingress Interactive Lab
+            </h3>
+            <p class="text-slate-400">
+              Click buttons above to practice Ingress concepts
+            </p>
+            <div class="mt-6 flex justify-center space-x-4">
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-globe text-blue-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">Browser</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-door-open text-purple-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">Ingress</div>
+              </div>
+              <div class="text-center">
+                <div
+                  class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-2"
+                >
+                  <i class="fas fa-server text-green-400"></i>
+                </div>
+                <div class="text-sm text-slate-300">App</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-container mt-6">
+          <div class="code-text" id="allCommands">
+            # All Ingress Commands for Reference: # 1. Check everything minikube
+            status minikube ip kubectl get pods kubectl get svc kubectl get
+            ingress # 2. Test manually curl -H "Host: express.local"
+            http://$(minikube ip) # 3. Debug details kubectl describe ingress
+            express-app-ingress kubectl describe svc express-service kubectl
+            logs -n kube-system -l app.kubernetes.io/name=ingress-nginx # 4.
+            Delete and recreate kubectl delete ingress express-app-ingress
+            kubectl apply -f express-ingress.yaml # 5. View hosts file cat
+            /etc/hosts | grep express
+          </div>
+          <div class="copy-btn-wrapper">
+            <button
+              class="copy-btn no-select"
+              onclick="copyCode('allCommands')"
+            >
+              <i class="fas fa-copy"></i> Copy All
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Success Celebration -->
+      <section class="ingress-card p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-green-300 mb-6">
+          <i class="fas fa-trophy mr-3"></i>🏆 Congratulations!
+        </h2>
+
+        <div class="success-box">
+          <div class="text-center">
+            <div class="text-5xl mb-4">🎉</div>
+            <h3 class="text-2xl font-bold text-green-300 mb-3">
+              You've Mastered Kubernetes Ingress!
+            </h3>
+            <p class="text-slate-300 text-xl">
+              From NodePort to Custom Domain - Production Level Setup! 🚀
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div class="text-center p-4 bg-slate-800/30 rounded">
+            <div class="text-3xl mb-2">🚪</div>
+            <h5 class="font-bold text-slate-300">Ingress Gateway</h5>
+            <p class="text-slate-400 text-sm">External access point</p>
+          </div>
+          <div class="text-center p-4 bg-slate-800/30 rounded">
+            <div class="text-3xl mb-2">🌐</div>
+            <h5 class="font-bold text-slate-300">Custom Domain</h5>
+            <p class="text-slate-400 text-sm">express.local</p>
+          </div>
+          <div class="text-center p-4 bg-slate-800/30 rounded">
+            <div class="text-3xl mb-2">🔧</div>
+            <h5 class="font-bold text-slate-300">Hosts File</h5>
+            <p class="text-slate-400 text-sm">Local DNS setup</p>
+          </div>
+          <div class="text-center p-4 bg-slate-800/30 rounded">
+            <div class="text-3xl mb-2">🐛</div>
+            <h5 class="font-bold text-slate-300">Troubleshooting</h5>
+            <p class="text-slate-400 text-sm">Debug skills</p>
+          </div>
+        </div>
+
+        <div class="info-box mt-6">
+          <h4 class="font-bold text-blue-300 mb-3">
+            <i class="fas fa-arrow-right mr-2"></i>What's Next?
+          </h4>
+          <ul class="space-y-3 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-lock text-purple-400 mt-1 mr-3"></i>
+              <div>
+                <strong>HTTPS with SSL/TLS</strong>
+                <div class="text-slate-400 text-sm">
+                  Add certificates to ingress
+                </div>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-code-branch text-green-400 mt-1 mr-3"></i>
+              <div>
+                <strong>Multiple Paths Routing</strong>
+                <div class="text-slate-400 text-sm">
+                  /api, /admin, /static paths
+                </div>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-cloud text-blue-400 mt-1 mr-3"></i>
+              <div>
+                <strong>Cloud Load Balancers</strong>
+                <div class="text-slate-400 text-sm">AWS ALB, GKE Ingress</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-xl">
+            Your app is now accessible via custom domain! 🌐
+          </p>
+          <p class="text-slate-500 text-lg mt-2">
+            No more ugly IP:PORT addresses - Professional URLs only! ✨
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span
+            class="px-5 py-3 bg-amber-500/20 text-amber-300 rounded-full text-lg"
+          >
+            <i class="fas fa-door-open mr-2"></i>Ingress Gateway
+          </span>
+          <span
+            class="px-5 py-3 bg-purple-500/20 text-purple-300 rounded-full text-lg"
+          >
+            <i class="fas fa-globe mr-2"></i>express.local
+          </span>
+          <span
+            class="px-5 py-3 bg-green-500/20 text-green-300 rounded-full text-lg"
+          >
+            <i class="fas fa-external-link-alt mr-2"></i>External Access
+          </span>
+          <span
+            class="px-5 py-3 bg-blue-500/20 text-blue-300 rounded-full text-lg"
+          >
+            <i class="fas fa-route mr-2"></i>Traffic Routing
+          </span>
+        </div>
+
+        <div class="mt-6 text-slate-500 text-lg">
+          <p>
+            Next: Learn about SSL/TLS, Load Balancers, and Production Ingress
+            Configurations! 🔒
+          </p>
+          <p class="mt-2 text-sm">
+            Remember: Always test with curl before browser when debugging! 🐛
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+
+      // Interactive visualizations
+      function simulateStep1() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-green-300 mb-4">Step 1: Minikube & Ingress Check</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-check text-green-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-green-300">Minikube Status</div>
+                                <div class="text-slate-400 text-sm">All components running</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-cog fa-spin text-amber-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-amber-300">Enabling Ingress Addon</div>
+                                <div class="text-slate-400 text-sm">This may take a minute...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> kubectl get pods -n kube-system | grep ingress
+                            </div>
+                            <div class="terminal-line ml-4">
+                                <i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i>
+                                Checking for ingress controller...
+                            </div>
+                        </div>
+                        
+                        <div id="step1Result"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('step1Result');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line ml-4 terminal-success">
+                            ingress-nginx-controller-xxxxx   1/1     Running   0          30s
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Ingress controller is running!
+                        </div>
+                    </div>
+                    <div class="success-box mt-4" style="margin: 0;">
+                        <p class="text-slate-300">
+                            <i class="fas fa-check text-green-400 mr-2"></i>
+                            <strong>Step 1 complete!</strong> Ingress is ready for traffic.
+                        </p>
+                    </div>
+                `;
+        }, 1500);
+      }
+
+      function showIpImportance() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-purple-300 mb-4">Why Minikube IP Matters</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-slate-800/50 rounded">
+                            <h4 class="font-bold text-blue-300 mb-2">Your Minikube Virtual Machine</h4>
+                            <p class="text-slate-300">
+                                Minikube runs Kubernetes inside a VM with its own IP address.
+                            </p>
+                            <div class="mt-3">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-desktop text-blue-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-300">Your Computer</div>
+                                        <div class="text-slate-400 text-sm">Host OS</div>
+                                    </div>
+                                </div>
+                                <div class="text-center my-2">
+                                    <i class="fas fa-arrow-down text-blue-400"></i>
+                                    <div class="text-slate-400 text-xs">Virtualization</div>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-server text-purple-400"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-300">Minikube VM</div>
+                                        <div class="text-slate-400 text-sm">IP: 192.168.49.2</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-blue-500/10 rounded">
+                            <div class="text-blue-300">
+                                <i class="fas fa-lightbulb mr-2"></i>
+                                <strong>Key Point:</strong> /etc/hosts tells your computer how to reach the Minikube VM
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function simulateHostsEdit() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-cyan-300 mb-4">Editing /etc/hosts File</h3>
+                    <div class="space-y-4">
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> sudo nano /etc/hosts
+                            </div>
+                            <div class="terminal-line ml-4">
+                                GNU nano 6.2                  /etc/hosts
+                            </div>
+                            <div class="terminal-line ml-4">
+                                127.0.0.1&nbsp;&nbsp;&nbsp;&nbsp;localhost
+                            </div>
+                            <div class="terminal-line ml-4">
+                                127.0.1.1&nbsp;&nbsp;&nbsp;&nbsp;ubuntu
+                            </div>
+                            <div class="terminal-line ml-4">
+                                # Kubernetes Ingress entries
+                            </div>
+                            <div class="terminal-line ml-4 text-cyan-300">
+                                192.168.49.2&nbsp;&nbsp;express.local
+                            </div>
+                            <div class="terminal-line ml-4 text-slate-400">
+                                ^G Help&nbsp;&nbsp;&nbsp;^O Write Out&nbsp;&nbsp;&nbsp;^X Exit
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center p-3 bg-slate-800/50 rounded">
+                                <div class="text-xl mb-2">📝</div>
+                                <div class="text-sm text-slate-300">Add Line</div>
+                            </div>
+                            <div class="text-center p-3 bg-slate-800/50 rounded">
+                                <div class="text-xl mb-2">💾</div>
+                                <div class="text-sm text-slate-300">Ctrl+O Save</div>
+                            </div>
+                            <div class="text-center p-3 bg-slate-800/50 rounded">
+                                <div class="text-xl mb-2">🚪</div>
+                                <div class="text-sm text-slate-300">Ctrl+X Exit</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function celebrateSuccess() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full text-center">
+                    <div class="text-6xl mb-4">🎉</div>
+                    <h3 class="text-2xl font-bold text-green-300 mb-3">SUCCESS! 🚀</h3>
+                    <p class="text-slate-300 text-xl mb-6">
+                        Your app is now accessible at:
+                    </p>
+                    <div class="p-4 bg-green-500/10 rounded border border-green-500/30">
+                        <a href="http://express.local" class="text-3xl font-bold text-cyan-300 underline">
+                            http://express.local
+                        </a>
+                    </div>
+                    <div class="mt-6">
+                        <div class="text-slate-400">
+                            <i class="fas fa-trophy text-yellow-400 mr-2"></i>
+                            You've successfully configured Kubernetes Ingress!
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function runTroubleshooting() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-red-300 mb-4">Running Troubleshooting Tests</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-search text-red-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-red-300">Test 1: Ingress Controller</div>
+                                <div class="text-slate-400 text-sm">Checking if running...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-search text-amber-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-amber-300">Test 2: Service Match</div>
+                                <div class="text-slate-400 text-sm">Verifying service name...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-search text-blue-400"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-blue-300">Test 3: Hosts File</div>
+                                <div class="text-slate-400 text-sm">Checking /etc/hosts...</div>
+                            </div>
+                        </div>
+                        
+                        <div id="troubleshootResult"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('troubleshootResult');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line terminal-success">
+                            ✓ Ingress controller: Running
+                        </div>
+                        <div class="terminal-line terminal-success">
+                            ✓ Service match: express-service:3000 ✓
+                        </div>
+                        <div class="terminal-line terminal-success">
+                            ✓ Hosts file: 192.168.49.2 → express.local ✓
+                        </div>
+                        <div class="terminal-line terminal-success">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            All tests passed! Everything looks good.
+                        </div>
+                    </div>
+                    <div class="success-box mt-4" style="margin: 0;">
+                        <p class="text-slate-300">
+                            <i class="fas fa-thumbs-up text-green-400 mr-2"></i>
+                            <strong>No issues found!</strong> Your setup is correctly configured.
+                        </p>
+                    </div>
+                `;
+        }, 2000);
+      }
+
+      function simulateTrafficFlow() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-blue-300 mb-4">Traffic Flow Simulation</h3>
+                    <div class="space-y-6">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
+                                <div class="text-xl">1️⃣</div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-blue-300">Browser Request</div>
+                                <div class="text-slate-400 text-sm">http://express.local</div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-arrow-down text-purple-400 text-2xl"></i>
+                            <div class="text-slate-400 text-sm">Hosts file lookup</div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4">
+                                <div class="text-xl">2️⃣</div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-purple-300">Ingress Controller</div>
+                                <div class="text-slate-400 text-sm">Nginx receives request</div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <i class="fas fa-arrow-down text-green-400 text-2xl"></i>
+                            <div class="text-slate-400 text-sm">Route to service</div>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                                <div class="text-xl">3️⃣</div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-green-300">Express App</div>
+                                <div class="text-slate-400 text-sm">Returns HTML response</div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-blue-500/10 rounded">
+                            <div class="text-blue-300">
+                                <i class="fas fa-bolt mr-2"></i>
+                                <strong>Real-time:</strong> All this happens in milliseconds!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function testIngressRouting() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-purple-300 mb-4">Testing Ingress Routing</h3>
+                    <div class="space-y-4">
+                        <div class="code-container" style="padding: 15px;">
+                            <div class="code-text">
+curl -H "Host: express.local" http://192.168.49.2
+                            </div>
+                        </div>
+                        
+                        <div class="terminal-output">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span> curl -H "Host: express.local" http://192.168.49.2
+                            </div>
+                            <div class="terminal-line ml-4">
+                                <i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i>
+                                Sending request through ingress...
+                            </div>
+                        </div>
+                        
+                        <div id="routingResult"></div>
+                    </div>
+                </div>
+            `;
+
+        setTimeout(() => {
+          const result = document.getElementById('routingResult');
+          result.innerHTML = `
+                    <div class="terminal-output">
+                        <div class="terminal-line ml-4 terminal-success">
+                            &lt;!DOCTYPE html&gt;
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            &lt;html&gt;&lt;head&gt;&lt;title&gt;Express App&lt;/title&gt;&lt;/head&gt;
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            &lt;body&gt;&lt;h1&gt;Hello from Express!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;
+                        </div>
+                        <div class="terminal-line ml-4 terminal-success">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Ingress routing successful! Response received.
+                        </div>
+                    </div>
+                `;
+        }, 1500);
+      }
+
+      function debugCommonIssues() {
+        const area = document.getElementById('practiceArea');
+        area.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-xl font-bold text-red-300 mb-4">Common Ingress Issues</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-red-500/10 rounded">
+                            <h4 class="font-bold text-red-300 mb-2">Issue 1: Ingress Controller Not Running</h4>
+                            <div class="code-container mt-2" style="padding: 10px;">
+                                <div class="code-text">
+kubectl get pods -n kube-system | grep ingress
+# If empty: minikube addons enable ingress
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-amber-500/10 rounded">
+                            <h4 class="font-bold text-amber-300 mb-2">Issue 2: Wrong Service Name</h4>
+                            <div class="code-container mt-2" style="padding: 10px;">
+                                <div class="code-text">
+# Check service name
+kubectl get svc
+
+# Fix: Update ingress YAML
+# backend.service.name MUST match exactly
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-blue-500/10 rounded">
+                            <h4 class="font-bold text-blue-300 mb-2">Issue 3: Wrong /etc/hosts Entry</h4>
+                            <div class="code-container mt-2" style="padding: 10px;">
+                                <div class="code-text">
+# Get correct IP
+minikube ip
+
+# Update hosts file
+sudo nano /etc/hosts
+# Add: [YOUR-IP] express.local
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      // Initialize with syntax highlighting
+      document.addEventListener('DOMContentLoaded', () => {
+        // Make buttons touch-friendly
+        document
+          .querySelectorAll('.copy-btn, .demo-btn, button')
+          .forEach((btn) => {
+            btn.classList.add('touch-target');
+          });
+
+        // Add syntax highlighting
+        const codeElements = document.querySelectorAll('.code-text');
+        codeElements.forEach((element) => {
+          let code = element.innerHTML;
+
+          // Highlight YAML keywords
+          code = code.replace(
+            /\b(apiVersion|kind|metadata|name|annotations|spec|rules|host|http|paths|path|pathType|backend|service|port|number)\b/g,
+            '<span class="code-keyword">$1</span>',
+          );
+
+          // Highlight strings
+          code = code.replace(
+            /("express.local"|"express-service"|\/|Prefix)/g,
+            '<span class="code-string">$1</span>',
+          );
+
+          // Highlight numbers
+          code = code.replace(
+            /\b(3000|80|v1)\b/g,
+            '<span class="code-number">$1</span>',
+          );
+
+          // Highlight kubectl commands
+          code = code.replace(
+            /\b(kubectl|minikube|apply|get|describe|logs|delete|status|ip|addons|enable|curl|grep)\b/g,
+            '<span class="code-keyword" style="color: #4ec9b0;">$1</span>',
+          );
+
+          // Highlight IP addresses
+          code = code.replace(
+            /\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g,
+            '<span class="code-string" style="color: #ce9178;">$1</span>',
+          );
+
+          element.innerHTML = code;
+        });
+      });
+    </script>
+  </body>
+</html>

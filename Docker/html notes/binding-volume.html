@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"
+    />
+    <title>🐳 Docker Port Binding & Volumes - Complete Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #334155 100%
+        );
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .gradient-text {
+        background: linear-gradient(45deg, #3b82f6, #8b5cf6, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 200% auto;
+        animation: gradient 3s ease infinite;
+      }
+
+      @keyframes gradient {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .concept-card {
+        background: rgba(30, 41, 59, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .concept-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px rgba(59, 130, 246, 0.15);
+        border-color: #3b82f6;
+      }
+
+      .section-card {
+        background: rgba(30, 41, 59, 0.8);
+        border-radius: 16px;
+        border: 1px solid rgba(71, 85, 105, 0.3);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .section-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+      }
+
+      .icon-badge {
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        z-index: 2;
+      }
+
+      .code-container {
+        background: #0f172a;
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        font-family: 'JetBrains Mono', monospace;
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        margin: 15px 0;
+      }
+
+      .code-text {
+        color: #ffffff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        word-break: break-word;
+        padding-right: 100px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+      }
+
+      .copy-btn-wrapper {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+      }
+
+      .copy-btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+      }
+
+      .copy-btn:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+      }
+
+      .copy-btn.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+
+      .terminal-output {
+        background: #1e293b;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        overflow-x: auto;
+      }
+
+      .terminal-line {
+        margin: 5px 0;
+        color: #e2e8f0;
+      }
+
+      .terminal-prompt {
+        color: #10b981;
+        font-weight: bold;
+      }
+
+      .visual-diagram {
+        position: relative;
+        height: 250px;
+        background: linear-gradient(
+          135deg,
+          rgba(30, 41, 59, 0.8),
+          rgba(15, 23, 42, 0.8)
+        );
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 20px 0;
+        border: 2px solid #334155;
+      }
+
+      .port-mapping {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        position: relative;
+      }
+
+      .host-machine,
+      .container {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        min-width: 200px;
+        z-index: 2;
+      }
+
+      .host-machine {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2),
+          rgba(37, 99, 235, 0.2)
+        );
+        border: 2px solid #3b82f6;
+      }
+
+      .container {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.2),
+          rgba(21, 128, 61, 0.2)
+        );
+        border: 2px solid #22c55e;
+      }
+
+      .arrow {
+        margin: 0 30px;
+        font-size: 2rem;
+        color: #8b5cf6;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.7;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+
+      .port-bubble {
+        position: absolute;
+        background: rgba(139, 92, 246, 0.9);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: bold;
+        animation: float 3s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .volume-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        position: relative;
+        margin: 20px 0;
+      }
+
+      .storage-pool {
+        width: 300px;
+        height: 150px;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.3),
+          rgba(37, 99, 235, 0.3)
+        );
+        border-radius: 10px;
+        border: 2px dashed #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .volume-icon {
+        font-size: 3rem;
+        color: #3b82f6;
+        animation: rotate 10s linear infinite;
+      }
+
+      @keyframes rotate {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .data-flow {
+        position: absolute;
+        background: #22c55e;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: flow 2s linear infinite;
+      }
+
+      @keyframes flow {
+        0% {
+          transform: translateX(-100px);
+          opacity: 0;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateX(100px);
+          opacity: 0;
+        }
+      }
+
+      .example-box {
+        background: rgba(15, 23, 42, 0.7);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+        border-left: 4px solid #8b5cf6;
+      }
+
+      .command-line {
+        background: #1e293b;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 10px 0;
+        font-family: 'JetBrains Mono', monospace;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: rgba(30, 41, 59, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .comparison-table th {
+        background: rgba(59, 130, 246, 0.3);
+        padding: 15px;
+        text-align: left;
+        color: #e2e8f0;
+        border-bottom: 2px solid #334155;
+      }
+
+      .comparison-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #334155;
+        color: #cbd5e1;
+      }
+
+      .comparison-table tr:hover {
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      .file-container {
+        background: #0f172a;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        overflow: hidden;
+        margin: 15px 0;
+      }
+
+      .file-header {
+        background: #1e293b;
+        padding: 12px 20px;
+        border-bottom: 1px solid #334155;
+        font-family: 'JetBrains Mono', monospace;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .file-content {
+        padding: 20px;
+        overflow-x: auto;
+      }
+
+      /* Mobile-specific improvements */
+      @media (max-width: 767px) {
+        .concept-card,
+        .section-card {
+          padding: 20px 15px !important;
+          margin: 8px 0;
+        }
+
+        .code-container {
+          padding: 15px;
+          padding-right: 80px;
+        }
+
+        .code-text {
+          font-size: 0.85rem;
+          padding-right: 70px;
+        }
+
+        .copy-btn {
+          padding: 6px 12px;
+          font-size: 0.8rem;
+          min-height: 32px;
+        }
+
+        .visual-diagram,
+        .volume-visual {
+          height: 200px;
+        }
+
+        .host-machine,
+        .container {
+          min-width: 150px;
+          padding: 15px;
+        }
+
+        .comparison-table {
+          font-size: 0.85rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+          padding: 8px 10px;
+        }
+      }
+
+      /* Touch-friendly improvements */
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Syntax highlighting */
+      .code-keyword {
+        color: #c586c0;
+      }
+      .code-string {
+        color: #ce9178;
+      }
+      .code-number {
+        color: #b5cea8;
+      }
+      .code-comment {
+        color: #6a9955;
+      }
+      .code-function {
+        color: #dcdcaa;
+      }
+      .code-operator {
+        color: #d4d4d4;
+      }
+      .code-property {
+        color: #9cdcfe;
+      }
+
+      /* Step indicators */
+      .step-indicator {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      .warning-box {
+        background: linear-gradient(
+          135deg,
+          rgba(245, 158, 11, 0.1),
+          rgba(217, 119, 6, 0.1)
+        );
+        border-left: 4px solid #f59e0b;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .success-box {
+        background: linear-gradient(
+          135deg,
+          rgba(34, 197, 94, 0.1),
+          rgba(21, 128, 61, 0.1)
+        );
+        border-left: 4px solid #22c55e;
+        border-radius: 0 8px 8px 0;
+        padding: 15px;
+        margin: 15px 0;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-6xl mx-auto">
+      <!-- Hero Header -->
+      <header class="text-center mb-10 md:mb-12">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-bold gradient-text mb-4"
+        >
+          🐳 Docker Port Binding & Volumes
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-300 mb-6">
+          Complete Guide with Real Examples
+        </p>
+
+        <div class="flex flex-wrap justify-center gap-3 mb-6">
+          <span
+            class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/30"
+          >
+            <i class="fas fa-plug mr-2"></i>Port Binding
+          </span>
+          <span
+            class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30"
+          >
+            <i class="fas fa-hdd mr-2"></i>Volumes
+          </span>
+          <span
+            class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full border border-green-500/30"
+          >
+            <i class="fas fa-code mr-2"></i>Real Examples
+          </span>
+          <span
+            class="px-4 py-2 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30"
+          >
+            <i class="fas fa-terminal mr-2"></i>Commands
+          </span>
+        </div>
+      </header>
+
+      <!-- Introduction -->
+      <section class="concept-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-4">
+          <i class="fas fa-info-circle mr-3"></i>Why Ports & Volumes Matter
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="example-box">
+            <h3 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-plug mr-2"></i>Without Port Binding
+            </h3>
+            <p class="text-slate-300">
+              Your container runs perfectly... but you can't access it from
+              outside!<br />
+              It's like having a website that only you can visit.
+            </p>
+          </div>
+
+          <div class="example-box">
+            <h3 class="font-bold text-purple-300 mb-3">
+              <i class="fas fa-hdd mr-2"></i>Without Volumes
+            </h3>
+            <p class="text-slate-300">
+              Your data disappears when container stops!<br />
+              Like writing on a whiteboard that gets erased daily.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART 1: PORT BINDING -->
+      <section class="section-card p-5 md:p-6 mb-8">
+        <div class="icon-badge">🔌</div>
+        <div class="pt-10">
+          <h2 class="text-2xl md:text-3xl font-bold text-blue-300 mb-6">
+            <i class="fas fa-network-wired mr-3"></i>Part 1: Port Binding
+          </h2>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-green-300 mb-4">
+              <span class="step-indicator">1</span>What is Port Binding?
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Port binding creates a bridge between your computer and the
+              container.<br />
+              It's like opening a door from your machine into the container
+              world.
+            </p>
+
+            <div class="visual-diagram">
+              <div class="port-mapping">
+                <div class="host-machine">
+                  <div class="text-lg font-bold text-blue-300 mb-2">
+                    Your Computer
+                  </div>
+                  <div class="text-sm text-slate-300">Localhost</div>
+                  <div class="mt-2">
+                    <div class="port-bubble" style="top: 20px; left: 50px">
+                      8080
+                    </div>
+                  </div>
+                </div>
+
+                <div class="arrow">
+                  <i class="fas fa-arrows-alt-h"></i>
+                </div>
+
+                <div class="container">
+                  <div class="text-lg font-bold text-green-300 mb-2">
+                    Container
+                  </div>
+                  <div class="text-sm text-slate-300">Isolated Environment</div>
+                  <div class="mt-2">
+                    <div class="port-bubble" style="top: 20px; right: 50px">
+                      80
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Syntax Explanation -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-amber-300 mb-4">
+              <span class="step-indicator">2</span>Port Binding Syntax
+            </h3>
+
+            <div class="code-container">
+              <div class="code-text" id="portSyntax">
+                # Basic Syntax -p HOST_PORT:CONTAINER_PORT # Example 1: Map host
+                port 3000 to container port 3000 -p 3000:3000 # Example 2: Map
+                host port 8080 to container port 80 -p 8080:80 # Example 3: Map
+                host port 5432 to container port 5432 (PostgreSQL) -p 5432:5432
+              </div>
+              <div class="copy-btn-wrapper">
+                <button
+                  class="copy-btn no-select"
+                  onclick="copyCode('portSyntax')"
+                >
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div class="example-box">
+                <h4 class="font-bold text-blue-300 mb-2">
+                  <i class="fas fa-laptop mr-2"></i>HOST_PORT
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  The port on YOUR computer<br />
+                  This is what you type in browser:<br />
+                  <code class="text-green-300">localhost:HOST_PORT</code>
+                </p>
+              </div>
+
+              <div class="example-box">
+                <h4 class="font-bold text-green-300 mb-2">
+                  <i class="fas fa-box mr-2"></i>CONTAINER_PORT
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  The port INSIDE the container<br />
+                  Where your app actually runs<br />
+                  Defined in your application code
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real Example -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-purple-300 mb-4">
+              <span class="step-indicator">3</span>Real Example: Web Server
+            </h3>
+
+            <p class="text-slate-300 mb-4">
+              Let's run an Nginx web server and access it from our browser.
+            </p>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2"
+                >docker run -d -p 8080:80 --name my-nginx nginx</span
+              >
+            </div>
+
+            <div class="terminal-output mt-4">
+              <div class="terminal-line">
+                <span class="terminal-prompt">→ Explanation:</span>
+              </div>
+              <div class="terminal-line ml-4">
+                <i class="fas fa-play text-green-400 mr-2"></i>
+                <code class="text-cyan-300">docker run</code> - Create and start
+                container
+              </div>
+              <div class="terminal-line ml-4">
+                <i class="fas fa-play text-green-400 mr-2"></i>
+                <code class="text-cyan-300">-d</code> - Run in background
+                (detached)
+              </div>
+              <div class="terminal-line ml-4">
+                <i class="fas fa-play text-green-400 mr-2"></i>
+                <code class="text-cyan-300">-p 8080:80</code> - Map port 8080 →
+                80
+              </div>
+              <div class="terminal-line ml-4">
+                <i class="fas fa-play text-green-400 mr-2"></i>
+                <code class="text-cyan-300">--name my-nginx</code> - Name the
+                container
+              </div>
+              <div class="terminal-line ml-4">
+                <i class="fas fa-play text-green-400 mr-2"></i>
+                <code class="text-cyan-300">nginx</code> - Use nginx image
+              </div>
+            </div>
+
+            <div class="success-box mt-4">
+              <h4 class="font-bold text-green-300 mb-2">
+                <i class="fas fa-check-circle mr-2"></i>Now Access It!
+              </h4>
+              <p class="text-slate-300">
+                Open your browser and visit:<br />
+                <a
+                  href="http://localhost:8080"
+                  target="_blank"
+                  class="text-blue-300 hover:text-blue-200 underline"
+                >
+                  http://localhost:8080
+                </a>
+              </p>
+              <p class="text-slate-400 text-sm mt-2">
+                You'll see the Nginx welcome page! 🎉
+              </p>
+            </div>
+          </div>
+
+          <!-- Port Binding in Dockerfile -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-amber-300 mb-4">
+              <span class="step-indicator">4</span>Port Binding in Docker
+              Compose
+            </h3>
+
+            <div class="file-container">
+              <div class="file-header">
+                <span class="text-blue-300 font-bold">docker-compose.yml</span>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('composePorts')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+              <div class="file-content">
+                <div class="code-text" id="composePorts">
+                  version: '3.8' services: web: image: nginx:alpine ports: -
+                  "8080:80" # Map host:8080 → container:80 - "8443:443" # Map
+                  host:8443 → container:443 (HTTPS) api: build: ./api ports: -
+                  "3000:3000" # Node.js API database: image: postgres:15 ports:
+                  - "5432:5432" # PostgreSQL database
+                </div>
+              </div>
+            </div>
+
+            <div class="warning-box mt-4">
+              <h4 class="font-bold text-amber-300 mb-2">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Important Notes
+              </h4>
+              <ul class="text-slate-300 space-y-2">
+                <li class="flex items-start">
+                  <i class="fas fa-circle text-xs mt-2 mr-2"></i>
+                  <span
+                    >Ports must be available on your host (not already in
+                    use)</span
+                  >
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-circle text-xs mt-2 mr-2"></i>
+                  <span>You can map multiple ports for one container</span>
+                </li>
+                <li class="flex items-start">
+                  <i class="fas fa-circle text-xs mt-2 mr-2"></i>
+                  <span>Only map ports you actually need to access</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Port Commands -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-green-300 mb-4">
+              <span class="step-indicator">5</span>Port Management Commands
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">docker ps</span>
+                <p class="text-slate-400 text-sm mt-1">
+                  List running containers and their port mappings
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">docker port my-nginx</span>
+                <p class="text-slate-400 text-sm mt-1">
+                  Show port mappings for specific container
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">lsof -i :3000</span>
+                <p class="text-slate-400 text-sm mt-1">
+                  Check if port 3000 is in use (macOS/Linux)
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >netstat -ano | findstr :3000</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Check if port 3000 is in use (Windows)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART 2: VOLUMES -->
+      <section class="section-card p-5 md:p-6 mb-8">
+        <div class="icon-badge">💾</div>
+        <div class="pt-10">
+          <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+            <i class="fas fa-database mr-3"></i>Part 2: Volumes
+          </h2>
+
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-green-300 mb-4">
+              <span class="step-indicator">1</span>What are Volumes?
+            </h3>
+            <p class="text-slate-300 mb-4">
+              Volumes are Docker's solution for persistent data storage.<br />
+              They survive container removal and can be shared between
+              containers.
+            </p>
+
+            <div class="volume-visual">
+              <div class="storage-pool">
+                <div class="volume-icon">
+                  <i class="fas fa-database"></i>
+                </div>
+                <div
+                  class="data-flow"
+                  style="top: 50px; animation-delay: 0s"
+                ></div>
+                <div
+                  class="data-flow"
+                  style="top: 80px; animation-delay: 0.5s"
+                ></div>
+                <div
+                  class="data-flow"
+                  style="top: 110px; animation-delay: 1s"
+                ></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div class="text-center p-3 bg-slate-800/50 rounded">
+                <div class="text-lg font-bold text-green-300 mb-1">
+                  Persistence
+                </div>
+                <p class="text-slate-300 text-sm">
+                  Data survives container restart/removal
+                </p>
+              </div>
+
+              <div class="text-center p-3 bg-slate-800/50 rounded">
+                <div class="text-lg font-bold text-blue-300 mb-1">Sharing</div>
+                <p class="text-slate-300 text-sm">
+                  Multiple containers can use same volume
+                </p>
+              </div>
+
+              <div class="text-center p-3 bg-slate-800/50 rounded">
+                <div class="text-lg font-bold text-purple-300 mb-1">Backup</div>
+                <p class="text-slate-300 text-sm">Easy to backup and restore</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume Types -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-amber-300 mb-4">
+              <span class="step-indicator">2</span>Types of Volumes
+            </h3>
+
+            <div class="comparison-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Syntax</th>
+                    <th>Use Case</th>
+                    <th>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <span class="text-blue-300 font-bold">Named Volume</span>
+                    </td>
+                    <td>
+                      <code class="text-green-300"
+                        >-v volume_name:/path/in/container</code
+                      >
+                    </td>
+                    <td>Database storage, persistent data</td>
+                    <td>
+                      <code class="text-cyan-300"
+                        >-v postgres_data:/var/lib/postgresql/data</code
+                      >
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <span class="text-green-300 font-bold">Bind Mount</span>
+                    </td>
+                    <td>
+                      <code class="text-green-300"
+                        >-v /host/path:/container/path</code
+                      >
+                    </td>
+                    <td>Development, code hot-reload</td>
+                    <td>
+                      <code class="text-cyan-300">-v ./src:/app/src</code>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <span class="text-purple-300 font-bold"
+                        >Anonymous Volume</span
+                      >
+                    </td>
+                    <td>
+                      <code class="text-green-300">-v /container/path</code>
+                    </td>
+                    <td>Temporary data, caching</td>
+                    <td><code class="text-cyan-300">-v /tmp</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Named Volume Example -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-blue-300 mb-4">
+              <span class="step-indicator">3</span>Named Volume Example:
+              PostgreSQL
+            </h3>
+
+            <p class="text-slate-300 mb-4">
+              Let's run PostgreSQL with a named volume to persist database data.
+            </p>
+
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">docker run -d \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">--name postgres-db \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white"
+                >-e POSTGRES_PASSWORD=mysecretpassword \</span
+              >
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white"
+                >-v postgres_data:/var/lib/postgresql/data \</span
+              >
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">postgres:15</span>
+            </div>
+
+            <div class="terminal-output mt-4">
+              <div class="terminal-line">
+                <span class="terminal-prompt">→ Step-by-Step:</span>
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-blue-300">1.</span> Creates volume named
+                <code class="text-green-300">postgres_data</code>
+              </div>
+              <div class="terminal-line ml-8 text-slate-400">
+                (If it doesn't exist, Docker creates it)
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-blue-300">2.</span> Maps volume to container
+                path
+              </div>
+              <div class="terminal-line ml-8 text-slate-400">
+                <code class="text-cyan-300">/var/lib/postgresql/data</code> is
+                where PostgreSQL stores data
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-blue-300">3.</span> All database writes go to
+                the volume
+              </div>
+            </div>
+
+            <div class="success-box mt-4">
+              <h4 class="font-bold text-green-300 mb-2">
+                <i class="fas fa-shield-alt mr-2"></i>Data Safety Test
+              </h4>
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >docker stop postgres-db && docker rm postgres-db</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Stop and remove container
+                </p>
+              </div>
+
+              <div class="command-line mt-2">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >docker run -d --name new-postgres -v
+                  postgres_data:/var/lib/postgresql/data postgres:15</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Create new container with same volume
+                </p>
+              </div>
+
+              <p class="text-slate-300 mt-3">
+                Your data is still there! The volume persists independently of
+                containers. ✅
+              </p>
+            </div>
+          </div>
+
+          <!-- Bind Mount Example -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-green-300 mb-4">
+              <span class="step-indicator">4</span>Bind Mount Example:
+              Development
+            </h3>
+
+            <p class="text-slate-300 mb-4">
+              Perfect for development - edit code on your machine, see changes
+              in container instantly.
+            </p>
+
+            <div class="file-container">
+              <div class="file-header">
+                <span class="text-green-300 font-bold">Project Structure</span>
+              </div>
+              <div class="file-content">
+                <div class="space-y-2">
+                  <div class="flex items-center">
+                    <i class="fas fa-folder text-blue-400 mr-3"></i>
+                    <span class="text-slate-300">my-node-app/</span>
+                  </div>
+                  <div class="flex items-center ml-6">
+                    <i class="fas fa-file-code text-green-400 mr-3"></i>
+                    <span class="text-slate-300">app.js</span>
+                  </div>
+                  <div class="flex items-center ml-6">
+                    <i class="fas fa-file-alt text-yellow-400 mr-3"></i>
+                    <span class="text-slate-300">package.json</span>
+                  </div>
+                  <div class="flex items-center ml-6">
+                    <i class="fas fa-docker text-cyan-400 mr-3"></i>
+                    <span class="text-slate-300">Dockerfile</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="command-line mt-4">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">docker run -d \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">--name dev-server \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">-p 3000:3000 \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">-v $(pwd):/app \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">-w /app \</span>
+            </div>
+            <div class="command-line ml-8">
+              <span class="text-white">node:18 npm start</span>
+            </div>
+
+            <div class="terminal-output mt-4">
+              <div class="terminal-line">
+                <span class="terminal-prompt">→ Magic Happens:</span>
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-blue-300">-v $(pwd):/app</span> - Mounts
+                current directory to /app in container
+              </div>
+              <div class="terminal-line ml-8 text-slate-400">
+                Edit files on your machine → Changes reflect instantly in
+                container
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-green-300">-w /app</span> - Sets working
+                directory to /app
+              </div>
+              <div class="terminal-line ml-4">
+                <span class="text-purple-300">npm start</span> - Runs your
+                Node.js app
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume in Docker Compose -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-amber-300 mb-4">
+              <span class="step-indicator">5</span>Volumes in Docker Compose
+            </h3>
+
+            <div class="file-container">
+              <div class="file-header">
+                <span class="text-amber-300 font-bold">docker-compose.yml</span>
+                <div class="copy-btn-wrapper">
+                  <button
+                    class="copy-btn no-select"
+                    onclick="copyCode('composeVolumes')"
+                  >
+                    <i class="fas fa-copy"></i> Copy
+                  </button>
+                </div>
+              </div>
+              <div class="file-content">
+                <div class="code-text" id="composeVolumes">
+                  version: '3.8' services: database: image: postgres:15
+                  environment: POSTGRES_PASSWORD: mysecretpassword volumes: -
+                  postgres_data:/var/lib/postgresql/data ports: - "5432:5432"
+                  backend: build: ./backend volumes: - ./backend:/app # Bind
+                  mount for development - node_modules:/app/node_modules # Named
+                  volume for dependencies ports: - "3000:3000" frontend: build:
+                  ./frontend volumes: - ./frontend:/app # Hot reload for React -
+                  /app/node_modules # Anonymous volume ports: - "5173:5173" #
+                  Vite dev server volumes: postgres_data: # Named volume
+                  declaration node_modules: # Another named volume
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div class="example-box">
+                <h4 class="font-bold text-blue-300 mb-2">
+                  <i class="fas fa-database mr-2"></i>Named Volume
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  <code class="text-green-300"
+                    >postgres_data:/var/lib/postgresql/data</code
+                  ><br />
+                  Declared in
+                  <code class="text-cyan-300">volumes:</code> section<br />
+                  Managed by Docker, best for production
+                </p>
+              </div>
+
+              <div class="example-box">
+                <h4 class="font-bold text-green-300 mb-2">
+                  <i class="fas fa-code mr-2"></i>Bind Mount
+                </h4>
+                <p class="text-slate-300 text-sm">
+                  <code class="text-green-300">./backend:/app</code><br />
+                  Maps local directory to container<br />
+                  Perfect for development
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume Commands -->
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-purple-300 mb-4">
+              <span class="step-indicator">6</span>Volume Management Commands
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">docker volume ls</span>
+                <p class="text-slate-400 text-sm mt-1">List all volumes</p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >docker volume create my_volume</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Create a new named volume
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >docker volume inspect postgres_data</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Show volume details and mount point
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2"
+                  >docker volume rm postgres_data</span
+                >
+                <p class="text-slate-400 text-sm mt-1">
+                  Remove a volume (⚠️ deletes data!)
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">docker volume prune</span>
+                <p class="text-slate-400 text-sm mt-1">
+                  Remove all unused volumes
+                </p>
+              </div>
+
+              <div class="command-line">
+                <span class="terminal-prompt">$</span>
+                <span class="text-white ml-2">docker system df -v</span>
+                <p class="text-slate-400 text-sm mt-1">
+                  Show disk usage including volumes
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Practical Example -->
+      <section class="concept-card p-5 md:p-6 mb-8">
+        <h2 class="text-2xl md:text-3xl font-bold text-cyan-300 mb-6">
+          <i class="fas fa-rocket mr-3"></i>Practical Example: Full-Stack App
+        </h2>
+
+        <div class="file-container">
+          <div class="file-header">
+            <span class="text-cyan-300 font-bold"
+              >Complete docker-compose.yml</span
+            >
+            <div class="copy-btn-wrapper">
+              <button
+                class="copy-btn no-select"
+                onclick="copyCode('fullExample')"
+              >
+                <i class="fas fa-copy"></i> Copy
+              </button>
+            </div>
+          </div>
+          <div class="file-content">
+            <div class="code-text" id="fullExample">
+              version: '3.8' services: # React Frontend with Hot Reload
+              frontend: build: ./frontend ports: - "3000:3000" # Access at
+              localhost:3000 volumes: - ./frontend/src:/app/src # Bind mount for
+              instant updates - frontend_node_modules:/app/node_modules #
+              Persistent node_modules # Node.js Backend API backend: build:
+              ./backend ports: - "5000:5000" # API at localhost:5000 volumes: -
+              ./backend:/app # Code hot reload -
+              backend_node_modules:/app/node_modules environment: -
+              NODE_ENV=development -
+              DATABASE_URL=postgres://user:pass@database:5432/mydb # PostgreSQL
+              Database database: image: postgres:15 ports: - "5432:5432" #
+              Direct DB access at localhost:5432 volumes: -
+              postgres_data:/var/lib/postgresql/data # Persistent database
+              environment: - POSTGRES_PASSWORD=mysecretpassword -
+              POSTGRES_DB=mydb # Redis Cache redis: image: redis:alpine ports: -
+              "6379:6379" # Redis at localhost:6379 volumes: - redis_data:/data
+              # Persistent Redis data volumes: postgres_data: # Database
+              persistence redis_data: # Redis persistence frontend_node_modules:
+              # Avoid reinstalling packages backend_node_modules: # Avoid
+              reinstalling packages
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="example-box">
+            <h4 class="font-bold text-green-300 mb-3">
+              <i class="fas fa-play-circle mr-2"></i>Run It
+            </h4>
+            <div class="command-line">
+              <span class="terminal-prompt">$</span>
+              <span class="text-white ml-2">docker compose up --build</span>
+            </div>
+            <p class="text-slate-300 text-sm mt-2">
+              Builds images, creates volumes, starts all services
+            </p>
+          </div>
+
+          <div class="example-box">
+            <h4 class="font-bold text-blue-300 mb-3">
+              <i class="fas fa-check-circle mr-2"></i>Access Services
+            </h4>
+            <ul class="space-y-2 text-slate-300">
+              <li>
+                🌐 Frontend:
+                <code class="text-cyan-300">http://localhost:3000</code>
+              </li>
+              <li>
+                🚀 API: <code class="text-cyan-300">http://localhost:5000</code>
+              </li>
+              <li>
+                🗄️ Database: <code class="text-cyan-300">localhost:5432</code>
+              </li>
+              <li>
+                ⚡ Redis: <code class="text-cyan-300">localhost:6379</code>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cheat Sheet -->
+      <section class="section-card p-5 md:p-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-purple-300 mb-6">
+          <i class="fas fa-clipboard-list mr-3"></i>Quick Reference Cheat Sheet
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-xl font-bold text-blue-300 mb-4">
+              <i class="fas fa-plug mr-2"></i>Port Binding
+            </h3>
+            <div class="space-y-3">
+              <div class="command-line">
+                <code class="text-green-300">-p 80:80</code>
+                <p class="text-slate-400 text-sm">
+                  Map port 80 on both host and container
+                </p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-p 8080:80</code>
+                <p class="text-slate-400 text-sm">
+                  Access container port 80 via host port 8080
+                </p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-p 127.0.0.1:3000:3000</code>
+                <p class="text-slate-400 text-sm">
+                  Only accessible from localhost
+                </p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-p 3000-3010:3000-3010</code>
+                <p class="text-slate-400 text-sm">Map range of ports</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold text-green-300 mb-4">
+              <i class="fas fa-hdd mr-2"></i>Volumes
+            </h3>
+            <div class="space-y-3">
+              <div class="command-line">
+                <code class="text-green-300">-v mydata:/app/data</code>
+                <p class="text-slate-400 text-sm">
+                  Named volume for persistence
+                </p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-v ./src:/app/src</code>
+                <p class="text-slate-400 text-sm">Bind mount for development</p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-v /app/node_modules</code>
+                <p class="text-slate-400 text-sm">
+                  Anonymous volume for caching
+                </p>
+              </div>
+              <div class="command-line">
+                <code class="text-green-300">-v mydata:/app/data:ro</code>
+                <p class="text-slate-400 text-sm">Read-only volume</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="success-box mt-6">
+          <h4 class="font-bold text-green-300 mb-2">
+            <i class="fas fa-lightbulb mr-2"></i>Pro Tips
+          </h4>
+          <ul class="space-y-2 text-slate-300">
+            <li class="flex items-start">
+              <i class="fas fa-star text-yellow-400 mt-1 mr-2"></i>
+              <span
+                >Use <code class="text-cyan-300">docker compose</code> for
+                multi-container apps</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-star text-yellow-400 mt-1 mr-2"></i>
+              <span
+                >Named volumes for production, bind mounts for development</span
+              >
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-star text-yellow-400 mt-1 mr-2"></i>
+              <span>Only expose ports you actually need to access</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-star text-yellow-400 mt-1 mr-2"></i>
+              <span
+                >Use
+                <code class="text-cyan-300">docker volume prune</code>
+                periodically to clean up</span
+              >
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center mt-12 mb-8">
+        <div class="text-slate-400 mb-4">
+          <p class="text-lg">
+            Now you're ready to build real applications with Docker! 🎉
+          </p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4">
+          <span class="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full">
+            <i class="fas fa-graduation-cap mr-2"></i>Mastered Port Binding
+          </span>
+          <span class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full">
+            <i class="fas fa-graduation-cap mr-2"></i>Mastered Volumes
+          </span>
+          <span class="px-4 py-2 bg-green-500/20 text-green-300 rounded-full">
+            <i class="fas fa-graduation-cap mr-2"></i>Ready for Production
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Copy to clipboard functionality
+      function copyCode(elementId) {
+        const element = document.getElementById(elementId);
+        let text = element.innerText || element.textContent;
+
+        // Clean up the text (remove extra whitespace)
+        text = text.trim();
+
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            const button =
+              element.parentElement.querySelector('.copy-btn') ||
+              element.parentElement.parentElement.querySelector('.copy-btn');
+            const originalText = button.innerHTML;
+
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('copied');
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+            alert(
+              'Failed to copy to clipboard. Please select and copy manually.',
+            );
+          });
+      }
+
+      // Make buttons touch-friendly
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.copy-btn').forEach((btn) => {
+          btn.classList.add('touch-target');
+        });
+
+        // Add syntax highlighting
+        const codeElements = document.querySelectorAll('.code-text');
+        codeElements.forEach((element) => {
+          let code = element.innerHTML;
+
+          // Highlight comments
+          code = code.replace(/#.*$/gm, '<span class="code-comment">$&</span>');
+
+          // Highlight ports
+          code = code.replace(
+            /(\d+):(\d+)/g,
+            '<span class="code-number">$1</span>:<span class="code-number">$2</span>',
+          );
+
+          // Highlight Docker commands
+          const dockerCommands = [
+            'docker',
+            'run',
+            '-d',
+            '-p',
+            '-v',
+            '--name',
+            'image',
+            'build',
+            'ports',
+            'volumes',
+            'environment',
+          ];
+          dockerCommands.forEach((cmd) => {
+            const regex = new RegExp(`\\b${cmd}\\b`, 'g');
+            code = code.replace(
+              regex,
+              `<span class="code-keyword">${cmd}</span>`,
+            );
+          });
+
+          // Highlight paths
+          code = code.replace(
+            /(\/[\w\/.-]+)/g,
+            '<span class="code-string">$1</span>',
+          );
+
+          element.innerHTML = code;
+        });
+      });
+
+      // Add interactive port visualization
+      function updatePortVisualization() {
+        const portBubbles = document.querySelectorAll('.port-bubble');
+        portBubbles.forEach((bubble, index) => {
+          // Reset animation
+          bubble.style.animation = 'none';
+          bubble.offsetHeight; // Trigger reflow
+          bubble.style.animation = 'float 3s ease-in-out infinite';
+          bubble.style.animationDelay = `${index * 0.5}s`;
+        });
+      }
+
+      // Initialize visualization
+      updatePortVisualization();
+      setInterval(updatePortVisualization, 5000);
+    </script>
+  </body>
+</html>

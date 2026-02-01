@@ -1,0 +1,172 @@
+🎯 Lesson — What Exactly Is Running on That Port?
+
+Earlier Nmap told you:
+
+22/tcp open   ssh
+80/tcp open   http
+53/udp open   domain
+
+
+Cool.
+But as a security learner, you need MORE:
+
+Which SSH? OpenSSH? Dropbear?
+
+Which HTTP server? Apache? Nginx? Version?
+
+Which DNS? BIND? Microsoft DNS?
+
+Because:
+👉 Version = Vulnerability clarity
+If you know version → you know what’s weak / outdated.
+
+That’s what version detection does.
+
+🧠 What Nmap Actually Does
+
+After discovering open ports,
+Nmap sends smart probes to those ports and watches how they respond.
+
+It detects:
+✔️ Protocol (HTTP? SSH? FTP?)
+✔️ Application (Apache? OpenSSH?)
+✔️ Version number
+✔️ OS family
+✔️ Device type
+✔️ Hostname
+✔️ CPE (standard vulnerability format)
+
+Sometimes even cool things like:
+
+SSH key info
+
+SSL certificate info
+
+Printer brand
+
+Router model 😎
+
+🛠️ Command to Enable Version Detection
+⭐ Most Important:
+nmap -sV <target>
+
+
+or
+
+🔥 Power Mode
+nmap -A <target>
+
+
+(A also includes OS detection + scripts + traceroute)
+
+🧩 What Happens Internally?
+
+Nmap uses:
+📂 nmap-service-probes database
+which contains thousands of probes like:
+
+special HTTP requests
+
+SSH hello messages
+
+DNS queries
+
+SSL/TLS greetings
+
+It compares responses to its huge fingerprint database (~6500+ matches)
+
+If something is new:
+👉 Nmap prints UNKNOWN fingerprint
+👉 Gives URL to submit
+👉 Community grows the database 😎
+
+🧬 Bonus Superpower
+
+Sometimes a UDP port appears:
+
+open|filtered
+
+
+Meaning Nmap can’t tell.
+
+Version detection tries again with smarter probes and if it gets a reply:
+✔️ It changes to OPEN
+
+Same for TCP too.
+
+🏷️ RPC Detection (Automatic!)
+
+If Nmap finds RPC services:
+👉 It automatically runs RPC grinder
+(which is like rpcinfo -p even behind firewall!)
+
+You don’t need to do anything extra ✌️
+
+⚙️ Version Detection Options (Simple & Practical)
+1️⃣ Enable Version Scan
+-sV
+
+
+Alias:
+
+-sR
+
+
+(both same now)
+
+2️⃣ Scan ALL PORTS including risky ones
+
+By default, Nmap skips printer port 9100
+because many printers would literally PRINT your scan output 😆
+
+To force scanning everything:
+
+--allports
+
+3️⃣ Control Scan Aggressiveness
+
+Intensity scale:
+0 = super light
+9 = try EVERYTHING
+
+Default = 7
+
+Light mode (fast)
+--version-light
+
+
+(same as intensity 2)
+
+Full hardcore scan
+--version-all
+
+
+(same as intensity 9)
+
+4️⃣ Debugging Version Scan
+
+Want to see exactly what Nmap is doing?
+
+--version-trace
+
+
+This shows:
+
+every probe sent
+
+every response received
+
+matching logic
+
+Great for learning 👍
+
+❤️ Ethical Reminder
+
+Use version scanning:
+✔️ On your own devices
+✔️ in labs
+✔️ on systems you have permission for
+
+Because version scanning is more “touchy” than simple port scan.
+
+You’re learning ethical hacking and that’s awesome 😊
