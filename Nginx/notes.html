@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backend Deployment Guide | Depth Notes & Theory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --neon-cyan: #0ff0fc;
+        --neon-pink: #ff00ff;
+        --neon-green: #00ff00;
+        --neon-purple: #9d00ff;
+        --dark-bg: #0a0a0f;
+        --darker-bg: #05050a;
+        --card-bg: rgba(20, 20, 40, 0.7);
+      }
+
+      body {
+        background-color: var(--dark-bg);
+        color: #e0e0ff;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        overflow-x: hidden;
+      }
+
+      .neon-border {
+        border: 1px solid var(--neon-cyan);
+        box-shadow: 0 0 10px rgba(0, 255, 252, 0.3);
+      }
+
+      .neon-text-cyan {
+        color: var(--neon-cyan);
+        text-shadow: 0 0 5px rgba(0, 255, 252, 0.7);
+      }
+
+      .neon-text-pink {
+        color: var(--neon-pink);
+        text-shadow: 0 0 5px rgba(255, 0, 255, 0.7);
+      }
+
+      .neon-text-green {
+        color: var(--neon-green);
+        text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+      }
+
+      .neon-text-purple {
+        color: var(--neon-purple);
+        text-shadow: 0 0 5px rgba(157, 0, 255, 0.7);
+      }
+
+      .glow-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+      }
+
+      .glow-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 255, 252, 0.2);
+      }
+
+      .step-number {
+        background: linear-gradient(
+          135deg,
+          var(--neon-purple),
+          var(--neon-pink)
+        );
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+      }
+
+      .architecture-flow {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        padding: 20px;
+      }
+
+      .flow-item {
+        background: rgba(30, 30, 60, 0.8);
+        padding: 10px 20px;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .flow-arrow {
+        color: var(--neon-cyan);
+        font-size: 1.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .architecture-flow {
+          flex-direction: column;
+        }
+
+        .flow-arrow {
+          transform: rotate(90deg);
+        }
+      }
+
+      .tab-button {
+        background: rgba(30, 30, 60, 0.7);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px 8px 0 0;
+        color: #a0a0ff;
+        transition: all 0.3s;
+      }
+
+      .tab-button.active {
+        background: var(--card-bg);
+        color: var(--neon-cyan);
+        border-top: 2px solid var(--neon-cyan);
+      }
+
+      .code-block {
+        background: rgba(10, 10, 20, 0.9);
+        border-left: 4px solid var(--neon-green);
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+      }
+
+      .terminal {
+        background: #000;
+        color: #0f0;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        border: 1px solid #333;
+      }
+
+      .command {
+        color: var(--neon-cyan);
+      }
+
+      .highlight {
+        background: rgba(255, 0, 255, 0.1);
+        padding: 2px 5px;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6">
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto mb-10">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold neon-text-cyan mb-2">
+            <i class="fas fa-server mr-3"></i>Backend Deployment Master Guide
+          </h1>
+          <p class="text-lg text-gray-300">
+            Complete Depth Notes & Theory for Production-Ready Node.js Apps
+          </p>
+        </div>
+        <div class="mt-4 md:mt-0">
+          <span class="px-4 py-2 glow-card inline-block">
+            <i class="fas fa-code-branch mr-2"></i>Node.js + Express + PM2 +
+            NGINX
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+      <!-- Tabs Navigation -->
+      <div class="flex flex-wrap border-b border-gray-800 mb-8">
+        <button class="tab-button active" onclick="showTab('theory')">
+          <i class="fas fa-brain mr-2"></i>Core Theory
+        </button>
+        <button class="tab-button" onclick="showTab('steps')">
+          <i class="fas fa-list-ol mr-2"></i>Step-by-Step
+        </button>
+        <button class="tab-button" onclick="showTab('architecture')">
+          <i class="fas fa-project-diagram mr-2"></i>Architecture
+        </button>
+        <button class="tab-button" onclick="showTab('commands')">
+          <i class="fas fa-terminal mr-2"></i>Commands & Code
+        </button>
+        <button class="tab-button" onclick="showTab('debug')">
+          <i class="fas fa-bug mr-2"></i>Debug & Troubleshoot
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="tab-content">
+        <!-- Theory Tab -->
+        <div id="theory" class="tab-pane active">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="glow-card p-6">
+              <h3 class="text-xl font-bold neon-text-pink mb-4">
+                <i class="fas fa-shield-alt mr-2"></i>Security Layers Theory
+              </h3>
+              <p class="mb-4">
+                Production deployment requires multiple security layers working
+                together:
+              </p>
+              <ul class="list-disc pl-5 space-y-2">
+                <li>
+                  <span class="highlight">Helmet.js</span> - Secures HTTP
+                  headers to prevent common attacks
+                </li>
+                <li>
+                  <span class="highlight">NGINX</span> - Reverse proxy that
+                  hides internal ports and provides SSL termination
+                </li>
+                <li>
+                  <span class="highlight">PM2 Cluster</span> - Process manager
+                  with load balancing and zero-downtime reloads
+                </li>
+                <li>
+                  <span class="highlight">Environment Variables</span> -
+                  Separation of configuration from code
+                </li>
+                <li>
+                  <span class="highlight">Firewall</span> - Only expose ports 80
+                  (HTTP) and 443 (HTTPS)
+                </li>
+              </ul>
+            </div>
+
+            <div class="glow-card p-6">
+              <h3 class="text-xl font-bold neon-text-green mb-4">
+                <i class="fas fa-random mr-2"></i>Reverse Proxy Theory
+              </h3>
+              <p class="mb-4">
+                NGINX acts as a <strong>reverse proxy</strong> - critical for
+                production:
+              </p>
+              <div class="terminal mb-4">
+                Client → NGINX (port 80/443) → Express (port 3000)
+              </div>
+              <p>This architecture provides:</p>
+              <ul class="list-disc pl-5 space-y-2">
+                <li>
+                  <strong>SSL Termination</strong> - NGINX handles HTTPS,
+                  Express runs HTTP internally
+                </li>
+                <li>
+                  <strong>Load Distribution</strong> - Can distribute traffic
+                  across multiple servers
+                </li>
+                <li>
+                  <strong>Attack Buffer</strong> - NGINX absorbs DDoS attempts
+                  before they reach Node.js
+                </li>
+                <li>
+                  <strong>Static File Serving</strong> - NGINX serves static
+                  files efficiently, freeing Express for APIs
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="glow-card p-6 mb-8">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-cogs mr-2"></i>Process Management Theory
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h4 class="font-bold text-lg mb-2 neon-text-cyan">Why PM2?</h4>
+                <p>Node.js runs single-threaded. PM2 enables:</p>
+                <ul class="list-disc pl-5 mt-2">
+                  <li>Multi-core utilization via clustering</li>
+                  <li>Automatic restarts on crashes</li>
+                  <li>Zero-downtime deployments</li>
+                  <li>Log management</li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="font-bold text-lg mb-2 neon-text-cyan">
+                  Cluster Mode
+                </h4>
+                <p>PM2 creates multiple instances of your app:</p>
+                <div class="terminal mt-2 text-sm">
+                  Master Process<br />
+                  ├── Instance 1 (PID: 12345)<br />
+                  ├── Instance 2 (PID: 12346)<br />
+                  └── Instance N (uses all CPU cores)
+                </div>
+              </div>
+              <div>
+                <h4 class="font-bold text-lg mb-2 neon-text-cyan">
+                  Load Balancing
+                </h4>
+                <p>Built into Node.js cluster module:</p>
+                <ul class="list-disc pl-5 mt-2">
+                  <li>Round-robin distribution</li>
+                  <li>Shared socket connections</li>
+                  <li>Automatic failover</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steps Tab -->
+        <div id="steps" class="tab-pane hidden">
+          <div class="mb-10">
+            <h2 class="text-2xl font-bold neon-text-cyan mb-6">
+              <i class="fas fa-road mr-2"></i>Complete Deployment Roadmap
+            </h2>
+
+            <!-- Step 1 -->
+            <div class="glow-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <div class="step-number">1</div>
+                <h3 class="text-xl font-bold">Project Initialization</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 class="font-bold mb-2 neon-text-green">
+                    Folder Structure
+                  </h4>
+                  <div class="code-block text-sm">
+                    myapp/<br />
+                    ├── src/<br />
+                    │ ├── app.js # Main application<br />
+                    │ ├── routes/ # API routes<br />
+                    │ ├── controllers/ # Business logic<br />
+                    │ └── middlewares/ # Custom middleware<br />
+                    ├── logs/ # Application logs<br />
+                    ├── .env # Environment variables<br />
+                    ├── ecosystem.config.cjs # PM2 configuration<br />
+                    └── package.json # Dependencies
+                  </div>
+                </div>
+                <div>
+                  <h4 class="font-bold mb-2 neon-text-green">
+                    Key Files Created
+                  </h4>
+                  <ul class="list-disc pl-5 space-y-2">
+                    <li>
+                      <span class="highlight">package.json</span> - Project
+                      metadata and dependencies
+                    </li>
+                    <li>
+                      <span class="highlight">.env</span> - Environment-specific
+                      configuration
+                    </li>
+                    <li>
+                      <span class="highlight">ecosystem.config.cjs</span> - PM2
+                      cluster configuration
+                    </li>
+                    <li>
+                      <span class="highlight">src/app.js</span> -
+                      Production-ready Express app
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="glow-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <div class="step-number">2</div>
+                <h3 class="text-xl font-bold">Dependencies & Security</h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead>
+                    <tr class="border-b border-gray-700">
+                      <th class="py-2 px-4 text-left neon-text-pink">
+                        Package
+                      </th>
+                      <th class="py-2 px-4 text-left neon-text-pink">
+                        Purpose
+                      </th>
+                      <th class="py-2 px-4 text-left neon-text-pink">
+                        Production Critical
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 px-4">
+                        <code class="command">express</code>
+                      </td>
+                      <td class="py-2 px-4">Web framework for building APIs</td>
+                      <td class="py-2 px-4">
+                        <i class="fas fa-check text-green-400"></i>
+                      </td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 px-4">
+                        <code class="command">helmet</code>
+                      </td>
+                      <td class="py-2 px-4">Security headers protection</td>
+                      <td class="py-2 px-4">
+                        <i class="fas fa-check text-green-400"></i>
+                      </td>
+                    </tr>
+                    <tr class="border-b border-gray-800">
+                      <td class="py-2 px-4">
+                        <code class="command">morgan</code>
+                      </td>
+                      <td class="py-2 px-4">HTTP request logging</td>
+                      <td class="py-2 px-4">
+                        <i class="fas fa-check text-green-400"></i>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 px-4">
+                        <code class="command">dotenv</code>
+                      </td>
+                      <td class="py-2 px-4">Environment variable management</td>
+                      <td class="py-2 px-4">
+                        <i class="fas fa-check text-green-400"></i>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="glow-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <div class="step-number">3</div>
+                <h3 class="text-xl font-bold">Express App Configuration</h3>
+              </div>
+              <div class="code-block mb-4">
+                <span class="text-gray-400"
+                  >// src/app.js - Production Ready</span
+                ><br />
+                require('dotenv').config();<br />
+                const express = require('express');<br />
+                const helmet = require('helmet');<br />
+                const morgan = require('morgan');<br />
+                <br />
+                const app = express();<br />
+                <br />
+                <span class="text-green-400">// Security first</span><br />
+                app.use(helmet());<br />
+                <br />
+                <span class="text-green-400">// JSON parsing</span><br />
+                app.use(express.json());<br />
+                <br />
+                <span class="text-green-400"
+                  >// Logging (combined format for production)</span
+                ><br />
+                app.use(morgan('combined'));<br />
+                <br />
+                <span class="text-green-400"
+                  >// Health check endpoint (essential for monitoring)</span
+                ><br />
+                app.get('/health', (req, res) => {<br />
+                &nbsp;&nbsp;res.status(200).json({ status: 'OK', pid:
+                process.pid });<br />
+                });<br />
+                <br />
+                <span class="text-green-400"
+                  >// Root route shows which process handled request</span
+                ><br />
+                app.get('/', (req, res) => {<br />
+                &nbsp;&nbsp;res.send(`Handled by process ${process.pid}`);<br />
+                });<br />
+                <br />
+                const PORT = process.env.PORT || 3000;<br />
+                app.listen(PORT, () => {<br />
+                &nbsp;&nbsp;console.log(`Server running on port ${PORT}`);<br />
+                });
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 class="font-bold mb-2 neon-text-green">Key Concepts</h4>
+                  <ul class="list-disc pl-5">
+                    <li>
+                      <strong>process.pid</strong> - Shows which cluster
+                      instance handled request
+                    </li>
+                    <li>
+                      <strong>helmet()</strong> - Adds 11 security headers
+                      automatically
+                    </li>
+                    <li>
+                      <strong>morgan('combined')</strong> - Production logging
+                      format
+                    </li>
+                    <li>
+                      <strong>/health endpoint</strong> - Essential for load
+                      balancers and monitoring
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 class="font-bold mb-2 neon-text-green">Testing</h4>
+                  <div class="terminal">
+                    $ node src/app.js<br />
+                    <span class="text-gray-400"># Open browser to:</span><br />
+                    http://localhost:3000<br />
+                    http://localhost:3000/health
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4-11 would continue similarly -->
+          </div>
+        </div>
+
+        <!-- Architecture Tab -->
+        <div id="architecture" class="tab-pane hidden">
+          <div class="glow-card p-6 mb-8">
+            <h2 class="text-2xl font-bold neon-text-cyan mb-6">
+              <i class="fas fa-sitemap mr-2"></i>Production Architecture Flow
+            </h2>
+
+            <!-- Visual Flow -->
+            <div class="architecture-flow mb-8">
+              <div class="flow-item neon-border">
+                <i class="fas fa-user mr-2"></i>User/Browser
+              </div>
+              <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+
+              <div class="flow-item neon-border">
+                <i class="fas fa-lock mr-2"></i>HTTPS (443)
+              </div>
+              <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+
+              <div
+                class="flow-item glow-card"
+                style="background: rgba(157, 0, 255, 0.2)"
+              >
+                <i class="fas fa-server mr-2"></i>NGINX
+                <div class="text-xs mt-1">Reverse Proxy + SSL</div>
+              </div>
+              <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+
+              <div
+                class="flow-item glow-card"
+                style="background: rgba(255, 0, 255, 0.2)"
+              >
+                <i class="fas fa-code mr-2"></i>PM2 Cluster
+                <div class="text-xs mt-1">Process Manager</div>
+              </div>
+              <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+
+              <div
+                class="flow-item glow-card"
+                style="background: rgba(0, 255, 252, 0.2)"
+              >
+                <i class="fab fa-node-js mr-2"></i>Express App
+                <div class="text-xs mt-1">Port 3000</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="text-xl font-bold neon-text-pink mb-4">
+                  <i class="fas fa-unlock-alt mr-2"></i>SSL Termination Theory
+                </h3>
+                <p>
+                  NGINX handles SSL decryption, passing plain HTTP to your app:
+                </p>
+                <div class="terminal mt-4">
+                  <span class="text-cyan-300">Client</span> → HTTPS (encrypted)
+                  → <span class="text-purple-300">NGINX</span><br />
+                  <span class="text-purple-300">NGINX</span> → HTTP (plain) →
+                  <span class="text-green-300">Express</span>
+                </div>
+                <ul class="list-disc pl-5 mt-4 space-y-2">
+                  <li>
+                    <strong>Performance:</strong> SSL/TLS is CPU-intensive,
+                    offloaded to NGINX
+                  </li>
+                  <li>
+                    <strong>Simplicity:</strong> Express doesn't need SSL
+                    configuration
+                  </li>
+                  <li>
+                    <strong>Flexibility:</strong> Easily update SSL certificates
+                    without touching app
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="text-xl font-bold neon-text-green mb-4">
+                  <i class="fas fa-network-wired mr-2"></i>NGINX as Reverse
+                  Proxy
+                </h3>
+                <div class="code-block mb-4 text-sm">
+                  server {<br />
+                  &nbsp;&nbsp;listen 80;<br />
+                  &nbsp;&nbsp;server_name your_domain.com;<br />
+                  <br />
+                  &nbsp;&nbsp;location / {<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_pass http://localhost:3000;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_http_version 1.1;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Upgrade
+                  $http_upgrade;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Connection
+                  'upgrade';<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_set_header Host $host;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;proxy_cache_bypass $http_upgrade;<br />
+                  &nbsp;&nbsp;}<br />
+                  }
+                </div>
+                <p class="text-sm">
+                  <strong>Key Directive:</strong>
+                  <code class="command">proxy_pass</code> forwards requests to
+                  your Node app
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glow-card p-6">
+            <h3 class="text-xl font-bold neon-text-purple mb-4">
+              <i class="fas fa-layer-group mr-2"></i>Directory Structure Theory
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h4 class="font-bold mb-2 neon-text-cyan">NGINX Directories</h4>
+                <div class="code-block text-sm">
+                  /etc/nginx/<br />
+                  ├── sites-available/
+                  <span class="text-gray-400"># All configs stored here</span
+                  ><br />
+                  │ └── myapp <span class="text-gray-400"># Your config</span
+                  ><br />
+                  └── sites-enabled/
+                  <span class="text-gray-400"># Active configs (symlinks)</span
+                  ><br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;└── myapp → ../sites-available/myapp
+                </div>
+              </div>
+              <div>
+                <h4 class="font-bold mb-2 neon-text-cyan">Symlink Purpose</h4>
+                <p>The command:</p>
+                <div class="terminal mt-2">
+                  sudo ln -s /etc/nginx/sites-available/myapp \<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/etc/nginx/sites-enabled/
+                </div>
+                <p class="mt-2 text-sm">
+                  Creates a symbolic link (shortcut) to enable the site without
+                  copying files.
+                </p>
+              </div>
+              <div>
+                <h4 class="font-bold mb-2 neon-text-cyan">
+                  Verification Commands
+                </h4>
+                <div class="space-y-2">
+                  <div class="terminal text-sm">
+                    <span class="command">sudo nginx -t</span><br />
+                    <span class="text-gray-400"
+                      ># Tests configuration syntax</span
+                    >
+                  </div>
+                  <div class="terminal text-sm">
+                    <span class="command">sudo systemctl restart nginx</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Applies new configuration</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Commands Tab -->
+        <div id="commands" class="tab-pane hidden">
+          <div class="glow-card p-6 mb-8">
+            <h2 class="text-2xl font-bold neon-text-cyan mb-6">
+              <i class="fas fa-terminal mr-2"></i>Essential Commands Reference
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="text-xl font-bold neon-text-pink mb-4">
+                  Project Setup
+                </h3>
+                <div class="space-y-4">
+                  <div class="terminal">
+                    <span class="command">mkdir myapp && cd myapp</span><br />
+                    <span class="text-gray-400"
+                      ># Create and enter project directory</span
+                    >
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command">npm init -y</span><br />
+                    <span class="text-gray-400"
+                      ># Initialize Node.js project with default settings</span
+                    >
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command"
+                      >npm install express morgan helmet dotenv</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Install production dependencies</span
+                    >
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command">npm install -g pm2</span><br />
+                    <span class="text-gray-400"
+                      ># Install PM2 globally (process manager)</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-xl font-bold neon-text-green mb-4">
+                  PM2 Management
+                </h3>
+                <div class="space-y-4">
+                  <div class="terminal">
+                    <span class="command">pm2 start ecosystem.config.cjs</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Start app in cluster mode</span
+                    >
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command">pm2 status</span><br />
+                    <span class="text-gray-400"># Check running processes</span>
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command">pm2 logs myapp</span><br />
+                    <span class="text-gray-400"># View application logs</span>
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command">pm2 delete all</span><br />
+                    <span class="text-gray-400"
+                      ># Stop and delete all processes</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8">
+              <h3 class="text-xl font-bold neon-text-purple mb-4">
+                NGINX & SSL Commands
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div class="terminal mb-4">
+                    <span class="command">sudo apt install nginx</span><br />
+                    <span class="text-gray-400"># Install NGINX on Ubuntu</span>
+                  </div>
+
+                  <div class="terminal mb-4">
+                    <span class="command"
+                      >sudo ln -s /etc/nginx/sites-available/myapp \<br />
+                      &nbsp;&nbsp;&nbsp;&nbsp;/etc/nginx/sites-enabled/</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Enable website configuration</span
+                    >
+                  </div>
+                </div>
+
+                <div>
+                  <div class="terminal mb-4">
+                    <span class="command">sudo nginx -t</span><br />
+                    <span class="text-gray-400"
+                      ># Test NGINX configuration syntax</span
+                    >
+                  </div>
+
+                  <div class="terminal mb-4">
+                    <span class="command">sudo systemctl restart nginx</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Apply new NGINX configuration</span
+                    >
+                  </div>
+
+                  <div class="terminal">
+                    <span class="command"
+                      >sudo certbot --nginx -d your_domain.com</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Obtain and install SSL certificate</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glow-card p-6">
+            <h3 class="text-xl font-bold neon-text-cyan mb-4">
+              <i class="fas fa-file-code mr-2"></i>Configuration Files
+            </h3>
+
+            <div class="mb-6">
+              <h4 class="font-bold mb-2 neon-text-pink">
+                ecosystem.config.cjs (PM2)
+              </h4>
+              <div class="code-block">
+                module.exports = {<br />
+                &nbsp;&nbsp;apps: [{<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;name: "myapp",<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;script: "src/app.js",<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400"
+                  >// Cluster mode - utilizes all CPU cores</span
+                ><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;instances: "max",<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;exec_mode: "cluster",<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;env: {<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NODE_ENV: "production",<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PORT: 3000<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;}<br />
+                &nbsp;&nbsp;}]<br />
+                };
+              </div>
+            </div>
+
+            <div>
+              <h4 class="font-bold mb-2 neon-text-green">.env File</h4>
+              <div class="code-block">
+                <span class="text-gray-400"
+                  ># Environment variables (never commit to Git!)</span
+                ><br />
+                PORT=3000<br />
+                NODE_ENV=production<br />
+                <span class="text-gray-400"
+                  ># DATABASE_URL=postgres://user:pass@localhost/db</span
+                ><br />
+                <span class="text-gray-400"
+                  ># REDIS_URL=redis://localhost:6379</span
+                ><br />
+                <span class="text-gray-400"
+                  ># JWT_SECRET=your_super_secret_key_here</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Debug Tab -->
+        <div id="debug" class="tab-pane hidden">
+          <div class="glow-card p-6 mb-8">
+            <h2 class="text-2xl font-bold neon-text-cyan mb-6">
+              <i class="fas fa-search mr-2"></i>Debugging & Troubleshooting
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div>
+                <h3 class="text-xl font-bold neon-text-pink mb-4">
+                  Common Issues
+                </h3>
+                <div class="space-y-4">
+                  <div class="p-4 bg-red-900/30 rounded-lg">
+                    <h4 class="font-bold mb-1">Port Already in Use</h4>
+                    <div class="terminal text-sm">
+                      <span class="command"
+                        >Error: listen EADDRINUSE: address already in use
+                        :::3000</span
+                      ><br />
+                      <span class="command"># Solution:</span><br />
+                      lsof -i :3000
+                      <span class="text-gray-400"
+                        ># Find process using port</span
+                      ><br />
+                      kill -9 PID
+                      <span class="text-gray-400"
+                        ># Replace PID with actual process ID</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="p-4 bg-yellow-900/30 rounded-lg">
+                    <h4 class="font-bold mb-1">PM2 Not Starting</h4>
+                    <div class="terminal text-sm">
+                      <span class="command"># Check logs:</span><br />
+                      pm2 logs myapp --lines 100<br />
+                      <br />
+                      <span class="command"
+                        ># Restart in fork mode for debugging:</span
+                      ><br />
+                      pm2 delete myapp<br />
+                      pm2 start src/app.js --name myapp
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-xl font-bold neon-text-green mb-4">
+                  NGINX Debugging
+                </h3>
+                <div class="space-y-4">
+                  <div class="p-4 bg-blue-900/30 rounded-lg">
+                    <h4 class="font-bold mb-1">Test NGINX Configuration</h4>
+                    <div class="terminal text-sm">
+                      <span class="command">sudo nginx -t</span><br />
+                      <span class="text-gray-400"># Expected output:</span
+                      ><br />
+                      nginx: configuration file /etc/nginx/nginx.conf<br />
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;test
+                      is successful
+                    </div>
+                  </div>
+
+                  <div class="p-4 bg-purple-900/30 rounded-lg">
+                    <h4 class="font-bold mb-1">Check NGINX Status</h4>
+                    <div class="terminal text-sm">
+                      <span class="command">sudo systemctl status nginx</span
+                      ><br />
+                      <span class="text-gray-400"
+                        ># Should show "active (running)"</span
+                      ><br />
+                      <br />
+                      <span class="command"># View error logs:</span><br />
+                      sudo tail -f /var/log/nginx/error.log
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-bold neon-text-purple mb-4">
+                Development vs Production Access
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 glow-card">
+                  <h4 class="font-bold mb-2 neon-text-cyan">Development</h4>
+                  <div class="terminal mb-4">
+                    <span class="command">http://localhost:3000</span><br />
+                    <span class="text-gray-400"># Direct access to Express</span
+                    ><br />
+                    <span class="text-gray-400"># No SSL, no NGINX</span>
+                  </div>
+                  <ul class="list-disc pl-5 text-sm">
+                    <li>Simple debugging</li>
+                    <li>Direct error messages</li>
+                    <li>Automatic restart on changes (nodemon)</li>
+                  </ul>
+                </div>
+
+                <div class="p-4 glow-card">
+                  <h4 class="font-bold mb-2 neon-text-green">Production</h4>
+                  <div class="terminal mb-4">
+                    <span class="command">https://your_domain.com</span><br />
+                    <span class="text-gray-400"
+                      ># NGINX handles SSL termination</span
+                    ><br />
+                    <span class="text-gray-400"
+                      ># Express runs internally on port 3000</span
+                    >
+                  </div>
+                  <ul class="list-disc pl-5 text-sm">
+                    <li>SSL certificate required</li>
+                    <li>DNS must point to server IP</li>
+                    <li>Port 443 must be open in firewall</li>
+                    <li>NGINX proxies to Express internally</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glow-card p-6">
+            <h3 class="text-xl font-bold neon-text-cyan mb-4">
+              <i class="fas fa-question-circle mr-2"></i>Critical Understanding
+              Points
+            </h3>
+            <div class="space-y-4">
+              <div class="p-4 bg-gray-800/50 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-pink">
+                  Why not access localhost:3000 in production?
+                </h4>
+                <p>In production with NGINX + SSL:</p>
+                <ul class="list-disc pl-5 mt-2">
+                  <li>
+                    <strong>localhost</strong> means "this machine only" - not
+                    accessible from internet
+                  </li>
+                  <li>
+                    SSL certificates are issued for domain names, not localhost
+                  </li>
+                  <li>NGINX hides port 3000 for security reasons</li>
+                  <li>
+                    You should access <code>https://your_domain.com</code> not
+                    <code>http://localhost:3000</code>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="p-4 bg-gray-800/50 rounded-lg">
+                <h4 class="font-bold mb-2 neon-text-green">
+                  What happens when Certbot runs?
+                </h4>
+                <div class="terminal text-sm mb-2">
+                  <span class="command"
+                    >sudo certbot --nginx -d your_domain.com</span
+                  >
+                </div>
+                <p>Certbot automatically:</p>
+                <ol class="list-decimal pl-5 mt-2">
+                  <li>Verifies domain ownership (DNS must point correctly)</li>
+                  <li>Obtains SSL certificate from Let's Encrypt</li>
+                  <li>Modifies NGINX config to enable HTTPS</li>
+                  <li>Sets up automatic renewal</li>
+                  <li>Usually redirects HTTP → HTTPS automatically</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto mt-12 pt-8 border-t border-gray-800">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <h3 class="text-lg font-bold neon-text-cyan mb-2">
+            <i class="fas fa-graduation-cap mr-2"></i>Backend Deployment Guide
+          </h3>
+          <p class="text-gray-400 text-sm">
+            Complete theory and implementation for production Node.js
+            applications
+          </p>
+        </div>
+        <div class="flex space-x-4">
+          <div class="p-3 glow-card rounded-full">
+            <i class="fab fa-node-js text-green-400"></i>
+          </div>
+          <div class="p-3 glow-card rounded-full">
+            <i class="fas fa-server text-cyan-400"></i>
+          </div>
+          <div class="p-3 glow-card rounded-full">
+            <i class="fas fa-shield-alt text-purple-400"></i>
+          </div>
+          <div class="p-3 glow-card rounded-full">
+            <i class="fas fa-bolt text-yellow-400"></i>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-8 text-gray-500 text-sm">
+        <p>
+          © 2023 Backend Deployment Guide | Created with detailed theory for
+          production-ready applications
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Tab switching functionality
+      function showTab(tabName) {
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach((pane) => {
+          pane.classList.add('hidden');
+          pane.classList.remove('active');
+        });
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-button').forEach((button) => {
+          button.classList.remove('active');
+        });
+
+        // Show selected tab pane
+        document.getElementById(tabName).classList.remove('hidden');
+        document.getElementById(tabName).classList.add('active');
+
+        // Add active class to clicked tab button
+        event.currentTarget.classList.add('active');
+      }
+
+      // Initialize with first tab active
+      document.addEventListener('DOMContentLoaded', function () {
+        // Set first tab as active if none is active
+        if (!document.querySelector('.tab-button.active')) {
+          document.querySelector('.tab-button').click();
+        }
+      });
+    </script>
+  </body>
+</html>
